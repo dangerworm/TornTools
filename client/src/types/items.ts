@@ -1,5 +1,7 @@
 export interface Vendor { country: string; name: string }
+
 export interface Value { vendor: Vendor; buy_price: number; sell_price: number; market_price: number }
+
 export interface Item {
   id: number
   name: string
@@ -15,4 +17,7 @@ export interface Item {
   value?: Value | null
   circulation?: number
 }
-export interface ItemsFile { items: Item[] }
+
+export interface ItemsCollection { items: Item[] }
+
+export type ItemsMap = Record<number, Item>;

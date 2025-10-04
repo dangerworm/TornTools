@@ -1,19 +1,22 @@
 import {
+  Alert,
   Card,
   CardContent,
   Divider,
   Grid,
+  List,
+  ListItem,
+  ListItemText,
   TextField,
   Typography,
 } from "@mui/material";
 import { Link } from "react-router";
+import { useItems } from "../contexts/ItemsContext";
+import Loading from "../components/Loading";
 
-interface HomeProps {
-  apiKey: string | null;
-  setApiKey: (key: string | null) => void;
-}
+function Home() {
+  const { apiKey, setApiKey, loading } = useItems();
 
-function Home({ apiKey, setApiKey }: HomeProps) {
   return (
     <>
       <Typography variant="body1" gutterBottom>
@@ -37,7 +40,32 @@ function Home({ apiKey, setApiKey }: HomeProps) {
       <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
         API Key
       </Typography>
+
+      <Typography variant="h6" gutterBottom>
+        Why do you need my API key?
+      </Typography>
       <Typography variant="body1" gutterBottom>
+        The API key is required to fetch item data from the Torn API, which is
+        necessary for the tools to function properly.
+      </Typography>
+
+      <Typography variant="h6" gutterBottom>
+        Will the API key be stored securely and who can access it?	
+      </Typography>
+      <Typography variant="body1" gutterBottom>
+        Yes, the API key is stored securely in your browser's local storage.
+        If you delete the key from the text box, it will be removed from the cache.
+        The key is only sent to the Torn servers, it is not stored or shared to anywhere else.
+      </Typography>
+
+      <Typography variant="h6" gutterBottom>
+        What key access level or specific selections are required?
+      </Typography>
+      <Typography variant="body1" gutterBottom>
+        The tools only need the 'Public' access level. This is the lowest level of access.
+      </Typography>
+
+      <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
         Enter your Torn API key here.
       </Typography>
       <TextField
@@ -59,28 +87,41 @@ function Home({ apiKey, setApiKey }: HomeProps) {
         .
       </Typography>
 
-      <Divider sx={{ my: 4 }} />
+      {apiKey && (
+        <>
+          {loading ? (
+            <Loading message="Loading items..." />
+          ) : (
+            <Alert severity="success" sx={{ mt: 2 }}>
+              Items loaded. You can now use the tools in the navigation menu.
+            </Alert>
+          )}
+          <Divider sx={{ my: 4 }} />
 
-      <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
-        Tools
-      </Typography>
-      <Grid container spacing={4} sx={{ mt: 2 }}>
-        <Grid size={{ xs: 2, sm: 6 }}>
-          <Card variant="outlined" sx={{ height: "100%" }}>
-            <CardContent>
-              <Typography variant="h5" gutterBottom>
-                <Link to="/resale" className="no-underline">
-                  Market
-                </Link>
-              </Typography>
-              <Typography variant="body1">- Market Price Checker</Typography>
-              <Typography variant="body1">- Item Price History</Typography>
-              <Typography variant="h6">Feature 1</Typography>
-              <Typography variant="body1">Description of feature 1.</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        {/* <Grid size={{ xs: 2, sm: 6 }}>
+          <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
+            Tools
+          </Typography>
+          <Grid container spacing={4} sx={{ mt: 2 }}>
+            <Grid size={{ xs: 2, sm: 6 }}>
+              <Card variant="outlined" sx={{ height: "100%" }}>
+                <CardContent>
+                  <Typography variant="h5" gutterBottom>
+                    <Link to="/resale" className="no-underline">
+                      Resale Opportunities
+                    </Link>
+                  </Typography>
+                  <Typography variant="body1">
+                    Checks the market for profitable resale listings.
+                  </Typography>
+                  <ul>
+                    <li><Typography variant="body2">Go to the resale page</Typography></li>
+                    <li><Typography variant="body2">Wait for the page to scan the market. Profitable listings will be moved to the top of the list as they are found</Typography></li>
+                    <li><Typography variant="body2">Buy what you can afford and resell in the city for a profit</Typography></li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </Grid>
+            {/* <Grid size={{ xs: 2, sm: 6 }}>
           <Card variant="outlined" sx={{ height: '100%' }}>
             <CardContent>
               <Typography variant="h5" gutterBottom>
@@ -99,7 +140,9 @@ function Home({ apiKey, setApiKey }: HomeProps) {
             </CardContent>
           </Card>
         </Grid> */}
-      </Grid>
+          </Grid>
+        </>
+      )}
     </>
   );
 }

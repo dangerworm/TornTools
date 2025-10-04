@@ -1,5 +1,3 @@
-import { useEffect, useState } from "react";
-import type { ItemsFile } from "../types/items";
 import {
   Alert,
   Box,
@@ -17,6 +15,7 @@ import {
 import Loading from "../components/Loading";
 import { useMarketScan } from "../hooks/useMarketScan";
 import { Link } from "react-router-dom";
+import { useItems } from "../contexts/ItemsContext";
 
 function StatusChip({ s }: { s: import("../hooks/useMarketScan").RowStatus }) {
   const map: Record<
@@ -36,22 +35,8 @@ function StatusChip({ s }: { s: import("../hooks/useMarketScan").RowStatus }) {
   return <Chip size="small" color={color} label={label} />;
 }
 
-interface MarketProps {
-  apiKey: string | null;
-}
-
-export default function Resale({ apiKey }: MarketProps) {
-  const [items, setItems] = useState<ItemsFile["items"] | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-    import("../data/items.json").then((mod) => {
-      if (mounted) setItems((mod.default as ItemsFile).items);
-    });
-    return () => {
-      mounted = false;
-    };
-  }, []);
+export default function Resale() {
+  const { apiKey, items } = useItems();
 
   const { rows, status, error } = useMarketScan(apiKey, items, {
     maxItems: 200,
@@ -82,10 +67,10 @@ export default function Resale({ apiKey }: MarketProps) {
         <Box sx={{ mb: 2 }}>
           <LinearProgress />
           <Typography variant="body2" sx={{ mt: 1 }}>
-            Scanning top items by sell price… this may take a minute or two.
+            Scanning items by sale price… this may take a minute or two.
           </Typography>
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            Any profitable items found will be moved to the top of the list automatically.
+          <Typography variant="body1" sx={{ mt: 2 }}>
+            Any items which can be sold in the city for profit will be moved to the top of the list automatically.
           </Typography>
         </Box>
       )}

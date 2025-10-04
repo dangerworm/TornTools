@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Outlet, NavLink, useLocation } from "react-router-dom";
 import {
+  Alert,
   Box,
   Divider,
   Drawer,
@@ -17,18 +18,17 @@ import TopAppBar from "./TopAppBar";
 import Footer from "./Footer";
 import { DRAWER_WIDTH } from "../constants";
 import "../index.css";
+import { useItems } from "../contexts/ItemsContext";
 
 const menu = [
-  { label: "Home", to: "/", icon: <HomeIcon /> },
-  { label: "Resale", to: "/resale", icon: <InfoIcon /> },
-  { label: "Trades", to: "/trades", icon: <InfoIcon /> },
+  { label: "Home", to: "/", icon: <HomeIcon />, requiresItems: false },
+  { label: "Resale", to: "/resale", icon: <InfoIcon />, requiresItems: true },
+  { label: "Trades", to: "/trades", icon: <InfoIcon />, requiresItems: true },
 ];
 
-interface LayoutProps {
-  apiKey: string | null;
-}
+export default function Layout() {
+  const { apiKey, items } = useItems();
 
-export default function Layout({ apiKey }: LayoutProps) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const location = useLocation();
 
@@ -46,18 +46,35 @@ export default function Layout({ apiKey }: LayoutProps) {
       <Toolbar />
       <Divider />
       <List>
-        {menu.map((item) => (
-          <ListItemButton
-            key={item.to}
-            component={NavLink}
-            to={item.to}
-            selected={isActive(item.to)}
-            onClick={() => setMobileOpen(false)} // close temporary drawer after click
-          >
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.label} />
-          </ListItemButton>
-        ))}
+        {menu.map((item) => {
+          if (item.requiresItems && (!items || items.length === 0)) {
+            return null;
+          }
+
+          return (
+            <ListItemButton
+              key={item.to}
+              component={NavLink}
+              to={item.to}
+              selected={isActive(item.to)}
+              onClick={() => setMobileOpen(false)} // close temporary drawer after click
+            >
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.label} />
+            </ListItemButton>
+          );
+        })}
+
+        {!apiKey && (
+          <Alert severity="info" sx={{ m: 2 }}>
+            There are additional features available if you
+            {" "}
+            <NavLink to="/">
+             add an API key
+            </NavLink>
+            .
+          </Alert>
+        )}
       </List>
     </div>
   );

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Routes, Route } from "react-router";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
@@ -6,14 +5,12 @@ import Market from "./pages/Resale";
 import Trading from "./pages/Trading";
 
 function App() {
-  const [apiKey, setApiKey] = useState<string | null>(null);
-
   return (
     <Routes>
-      <Route element={<Layout apiKey={apiKey} />}>
-        <Route path="/" element={<Home apiKey={apiKey} setApiKey={setApiKey} />} />
-        <Route path="/resale" element={<Market apiKey={apiKey} />} />
-        <Route path="/trades" element={<Trading apiKey={apiKey} />} />
+      <Route element={<Layout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/resale" element={<Market />} />
+        <Route path="/trades" element={<Trading />} />
         {/* <Route path="/other">
           <Route index element={<OtherIndex />} />
           <Route path="settings" element={<OtherSettings />} />

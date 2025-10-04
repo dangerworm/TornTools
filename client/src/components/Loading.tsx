@@ -1,10 +1,18 @@
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
 
-export default function Loading() {
+interface LoadingProps {
+  message?: string;
+  width?: string;
+}
+
+export function Loading({ message = "Loading...", width = "100%" }: LoadingProps) {
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ alignItems: 'center', display: 'flex', gap: 2, justifyContent: 'center', p: 2, width }}>
       <CircularProgress />
+      {"  "}{message && <span>{message}</span>}
     </Box>
   );
 }
+
+export default Loading;
