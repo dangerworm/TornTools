@@ -1,4 +1,3 @@
-// src/contexts/TornItemsContext.tsx
 import React, {
   createContext,
   useContext,
@@ -7,7 +6,9 @@ import React, {
   useRef,
   useState,
 } from "react";
-import type { Item, ItemsCollection, ItemsMap } from "../types/items";
+import type { Item, ItemsMap } from "../types/items";
+import type { TornItemsPayload } from "../lib/torn";
+import { fetchItems } from "../lib/torn";
 
 type ItemsState = {
   items: Item[];
@@ -26,15 +27,15 @@ const LS_KEY_TS = "torn:items:v2:ts";
 const LS_KEY_API = "torn:apiKey";
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
 
-function normalizeItems(resp: ItemsCollection): ItemsMap {
+function normalizeItems(resp: TornItemsPayload): ItemsMap {
   const map: ItemsMap = {};
-  if (Array.isArray((resp as ItemsCollection).items)) {
-    for (const it of (resp as ItemsCollection).items) {
+  if (Array.isArray((resp as TornItemsPayload).items) && (resp as TornItemsPayload).items) {
+    for (const it of (resp as TornItemsPayload).items!) {
       const id = Number(it.id);
       if (Number.isFinite(id)) map[id] = { ...it };
     }
   } else {
-    for (const [idStr, it] of Object.entries(resp.items)) {
+    for (const [idStr, it] of Object.entries(resp.items!)) {
       const id = Number((it as Item).id ?? idStr);
       if (Number.isFinite(id)) map[id] = { ...(it as Item) };
     }
@@ -80,7 +81,7 @@ export const ItemsProvider: React.FC<{
     abortRef.current = new AbortController();
 
     try {
-      const url = `https://api.torn.com/v2/torn/items?sort=ASC&key=${encodeURIComponent(
+      const url = `https://api.torn.com/v2/torn/items?comment=dangerworm%27s%20Torn%20Tools&sort=ASC&key=${encodeURIComponent(
         apiKey
       )}`;
       const res = await fetch(url, {
@@ -89,10 +90,9 @@ export const ItemsProvider: React.FC<{
       });
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
 
-      const json = await res.json();
-      if (json.error) throw new Error(json.error.error ?? "Torn API error");
+      const payload = await fetchItems(apiKey).then(p => p);
 
-      const map = normalizeItems(json);
+      const map = normalizeItems(payload);
       setItemsById(map);
       localStorage.setItem(LS_KEY, JSON.stringify(map));
       localStorage.setItem(LS_KEY_TS, String(Date.now()));

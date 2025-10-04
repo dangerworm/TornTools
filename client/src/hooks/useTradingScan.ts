@@ -1,9 +1,9 @@
 // src/hooks/useMarketScan.ts
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Item } from "../types/items";
+import type { Item, ItemsMap } from "../types/items";
 import { createRateLimiter } from "../lib/rateLimiter";
 import { createTtlCache } from "../lib/cache";
-import { fetchItemmarket, type TornItemMarketPayload } from "../lib/torn";
+import { fetchItemMarket, type TornItemMarketPayload } from "../lib/torn";
 
 export type RowStatus = "queued" | "fetching" | "cached" | "done" | "error";
 
@@ -20,26 +20,23 @@ export interface ScanRow {
 }
 
 interface Options {
+  budget?: number;
   maxItems?: number;
-  minSellPrice?: number;
-  margin?: number;
-  minAmount?: number;
   limitPerCall?: number;
   ttlSeconds?: number;
   intervalMs?: number; // one call per interval (keeps us <100/min by default)
   pinInterestingFirst?: boolean;
 }
 
-export function useMarketScan(
+export function useTradingScan(
   apiKey: string | null,
   items: Item[] | null,
+  itemsById: ItemsMap,
   opts?: Options
 ) {
   const {
-    maxItems = 200,
-    minSellPrice = 3000,
-    margin = Number(import.meta.env.VITE_TORN_MARGIN ?? 500),
-    minAmount = 1,
+    budget = 1000,
+    maxItems = 1000,
     limitPerCall = 20,
     ttlSeconds = 60,
     intervalMs = 750,             // ~80/min -> under Torn’s 100/min
@@ -65,15 +62,15 @@ export function useMarketScan(
     }
 
     const candidates = [...items]
-      .filter(i => (i.value?.sell_price ?? 0) >= minSellPrice)
-      .sort((a, b) => (b.value?.sell_price ?? 0) - (a.value?.sell_price ?? 0))
+      .filter(i => i.value?.market_price && i.value?.market_price >= budget / 2.0 && i.value?.market_price <= budget)
+      .sort((a, b) => (b.value?.market_price ?? 0) - (a.value?.market_price ?? 0))
       .slice(0, maxItems);
 
     // Prepopulate the table so the user sees everything immediately
     const seed: ScanRow[] = candidates.map(i => ({
       id: i.id,
       name: i.name,
-      sell_price: i.value?.sell_price ?? 0,
+      sell_price: i.value?.market_price ?? 0,
       status: "queued",
       interesting: false,
     }));
@@ -83,8 +80,7 @@ export function useMarketScan(
     const run = async () => {
       try {
         const tasks = candidates.map((it) => {
-          const sellPrice = it.value?.sell_price ?? 0;
-          const targetMax = sellPrice - margin;
+          const sellPrice = it.value?.market_price ?? 0;
 
           return limiter.enqueue(async () => {
             if (cancelled.current) return;
@@ -110,18 +106,19 @@ export function useMarketScan(
 
             const payload = cached
               ? cached
-              : await fetchItemmarket(apiKey, it.id, limitPerCall, 0).then(p => {
+              : await fetchItemMarket(apiKey, it.id, limitPerCall, 0).then(p => {
                   cache.current.set(it.id, p);
                   return p;
                 });
 
             const listings = payload?.itemmarket?.listings ?? [];
-            const interesting = listings.filter(l => l.amount >= minAmount && l.price <= targetMax);
+            const marketPrice = itemsById[it.id].value?.market_price ?? 0;
+            const interesting = listings.filter(l => l.price > marketPrice && marketPrice <= budget);
             let nextRowPatch: Partial<ScanRow> = { status: "done" };
 
             if (interesting.length) {
               const best = interesting.reduce((m, l) => (l.price < m.price ? l : m), interesting[0]);
-              const profit = sellPrice - best.price;
+              const profit = best.price - sellPrice;
               nextRowPatch = {
                 ...nextRowPatch,
                 interesting: true,
@@ -176,7 +173,7 @@ export function useMarketScan(
       cancelled.current = true;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiKey, items, maxItems, minSellPrice, margin, minAmount, limitPerCall, ttlSeconds, intervalMs, pinInterestingFirst]);
+  }, [apiKey, items, maxItems, limitPerCall, ttlSeconds, intervalMs, pinInterestingFirst]);
 
   return { rows, status, error };
 }

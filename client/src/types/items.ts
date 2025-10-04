@@ -18,6 +18,4 @@ export interface Item {
   circulation?: number
 }
 
-export interface ItemsCollection { items: Item[] }
-
 export type ItemsMap = Record<number, Item>;

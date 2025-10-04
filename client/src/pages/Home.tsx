@@ -89,14 +89,14 @@ function Home() {
 
       {apiKey && (
         <>
+        <Divider sx={{ my: 4 }} />
           {loading ? (
             <Loading message="Loading items..." />
           ) : (
             <Alert severity="success" sx={{ mt: 2 }}>
-              Items loaded. You can now use the tools in the navigation menu.
+              Items loaded. You can now use the tools listed below. These can also be accessed from the navigation menu.
             </Alert>
           )}
-          <Divider sx={{ my: 4 }} />
 
           <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
             Tools
