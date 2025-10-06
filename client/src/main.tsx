@@ -17,7 +17,7 @@ createRoot(document.getElementById("root")!).render(
     <ThemeProvider theme={theme}>
       <ItemsProvider>
         <CssBaseline />
-        <BrowserRouter>
+        <BrowserRouter basename="/TornTools">
           <App />
         </BrowserRouter>
       </ItemsProvider>

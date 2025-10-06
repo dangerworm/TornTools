@@ -6,11 +6,12 @@
   "homepage": "https://dangerworm.github.io/TornTools/",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && cp -f dist/index.html dist/404.html",
+    "build": "tsc -b && vite build",
+    "deploy": "gh-pages -d dist",
     "lint": "eslint .",
-    "preview": "vite preview",
+    "postbuild": "cp dist/index.html dist/404.html",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
