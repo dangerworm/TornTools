@@ -21,6 +21,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import IconButton from "@mui/material/IconButton";
 import CopyWithSuccess from "./CopyWithSuccess";
+import type { ScanRow } from "../hooks/useResaleScan";
 
 function StatusChip({ s }: { s: import("../hooks/useResaleScan").RowStatus }) {
   const map: Record<
@@ -40,12 +41,14 @@ function StatusChip({ s }: { s: import("../hooks/useResaleScan").RowStatus }) {
   return <Chip size="small" color={color} label={label} />;
 }
 
+type RowClickAction = "none" | "generate-autobuy-script" | "visit-market-page";
+
 interface MarketItemsTableProps {
   rows: import("../hooks/useResaleScan").ScanRow[];
   status: "idle" | "running" | "done" | "error";
   error: string | null;
   sellPriceColumnNameOverride?: string;
-  allowAutoBuyScriptGeneration?: boolean;
+  rowClickAction?: RowClickAction;
 }
 
 export default function MarketItemsTable({
@@ -53,7 +56,7 @@ export default function MarketItemsTable({
   status,
   error,
   sellPriceColumnNameOverride = "Sell Price",
-  allowAutoBuyScriptGeneration = false,
+  rowClickAction = "none",
 }: MarketItemsTableProps) {
   const [autoBuyScript, setAutoBuyScript] = useState<string | null>(null);
   const [lastClickedRow, setLastClickedRow] = useState<
@@ -61,13 +64,26 @@ export default function MarketItemsTable({
   >(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  const onRowClick = (row: ScanRow) => {
+    if (rowClickAction === "generate-autobuy-script") {
+      return generateAutoBuyScript(row);
+    }
+
+    if (rowClickAction === "visit-market-page") {
+      window.open(
+        `https://www.torn.com/page.php?sid=ItemMarket#/market/view=search&itemID=${row.id}&sortField=price&sortOrder=ASC`,
+        "_blank"
+      );
+    }
+  };
+
   const generateAutoBuyScript = (
-    row: import("../hooks/useResaleScan").ScanRow
+    row: ScanRow
   ) => {
     if (
       row.status !== "done" ||
       !row.best_price ||
-      !allowAutoBuyScriptGeneration
+      rowClickAction !== "generate-autobuy-script"
     ) {
       return;
     }
@@ -87,7 +103,7 @@ const intervalId = setInterval(async () => {
     if (lastText !== "") {
       let li = $("ul.sellerList___kgAh_ > li:first")
       let row = li.children(0).children(0)
-      let lowestPriceString = row.eq(2).text().substring(1).replace(",", "");
+      let lowestPriceString = row.eq(2).text().substring(1).replace(/,/g, "");
       let lowestPrice = parseInt(lowestPriceString);
       console.log("New price:", lowestPrice);
 
@@ -97,7 +113,6 @@ const intervalId = setInterval(async () => {
 
         let yesButton = li.find("div.confirmButtons___Imp8D button:contains('Yes')");
         yesButton.click();
-        //yesButton.css("border", "solid red 2px");
       }
     }
     lastText = currentText;
@@ -153,7 +168,7 @@ const intervalId = setInterval(async () => {
                   key={r.id}
                   hover
                   selected={r.interesting}
-                  onClick={() => generateAutoBuyScript(r)}
+                  onClick={() => onRowClick(r)}
                 >
                   <TableCell>
                     <StatusChip s={r.status} />

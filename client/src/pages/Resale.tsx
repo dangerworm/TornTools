@@ -33,7 +33,7 @@ export default function Resale() {
         </Alert>
       )}
 
-      {apiKey && <MarketItemsTable rows={rows} status={status} error={error} />}
+      {apiKey && <MarketItemsTable rows={rows} status={status} error={error} rowClickAction={"visit-market-page"} />}
     </Box>
   );
 }

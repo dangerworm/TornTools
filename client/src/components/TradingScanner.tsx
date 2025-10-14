@@ -23,7 +23,7 @@ export default function TradingScanner({ budget }: TradingScannerProps) {
         status={status}
         error={error}
         sellPriceColumnNameOverride="Market Price"
-        allowAutoBuyScriptGeneration={true}
+        rowClickAction={"generate-autobuy-script"}
       />
     );
    
