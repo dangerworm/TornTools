@@ -65,6 +65,30 @@ export default function Trading() {
               Start Scanning
             </Button>
           )}
+
+          <Typography variant="body1" gutterBottom>
+            Be careful here, this requires a little thought and a little patience.
+          </Typography>
+
+          <Typography variant="body1" gutterBottom>
+            This tool will search for each item's current lowest price on the market.
+            Often (though not always) users won't bother to check the current lowest price 
+            and will add listings using the current market rate, which is often significantly
+            lower than the actual going rate.
+          </Typography>
+
+          <Typography variant="body1" gutterBottom>
+            If you find an item that gets new offers posted often and just wait, there's
+            a chance someone will add a listing at that lower price. At that point you can
+            snap it up, add it back to the market at the going rate/higher price, and resell
+            it for a profit.
+          </Typography>
+
+          <Typography variant="body1" gutterBottom>
+            If you click on the row you're interested in the tool will also generate a script
+            you can paste into your browser console that will click 'buy' quickly if anything
+            pops up which is significantly cheaper than the going rate.
+          </Typography>
         </>
       )}
 
