@@ -134,6 +134,24 @@ dist
 !.yarn/sdks
 !.yarn/versions
 
+# ----- CUSTOM -----
+api/*/bin
+api/*/obj
+api/.vs
+api/*/*.csproj.user
+api/*/Properties/launchSettings.json
+
+# Terraform config files
+infra/**/.terraform
+infra/*.config
+infra/github_sp_credentials.json
+infra/*.tfstate
+infra/*.tfstate.backup
+infra/*.tfvars
+infra/*.tfvars.json
+infra/tfdestroy
+infra/tfplan
+
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
