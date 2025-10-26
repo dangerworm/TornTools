@@ -1,0 +1,3 @@
+FROM flyway/flyway
+
+COPY ./sql /flyway/sql
