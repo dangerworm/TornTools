@@ -4,7 +4,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace TornTools.Persistence.Entities;
 
 [Table("items", Schema = "public")]
-
 public class ItemEntity
 {
     [Key]

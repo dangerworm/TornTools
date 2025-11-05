@@ -1,18 +1,15 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using TornTools.Cron.Enums;
 using TornTools.Persistence.Entities;
 using TornTools.Persistence.Interfaces;
 
 namespace TornTools.Persistence;
 
-public class TornToolsDbContext : DbContext, ITornToolsDbContext
+public class TornToolsDbContext(DbContextOptions<TornToolsDbContext> options) : DbContext(options), ITornToolsDbContext
 {
     public DbSet<ItemEntity> Items { get; set; } = null!;
     public DbSet<ListingEntity> Listings { get; set; } = null!;
     public DbSet<PlayerEntity> Players { get; set; } = null!;
     public DbSet<QueueItemEntity> QueueItems { get; set; } = null!;
-
-    public TornToolsDbContext(DbContextOptions<TornToolsDbContext> options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -55,9 +52,8 @@ public class TornToolsDbContext : DbContext, ITornToolsDbContext
         modelBuilder.Entity<QueueItemEntity>(e =>
         {
             e.HasKey(x => x.Id);
-            e.Property(x => x.Status).HasConversion<QueueStatus>();
 
-            e.HasIndex(x => new { x.Status, x.NextAttemptAt, x.CreatedAt });
+            e.HasIndex(x => new { x.ItemStatus, x.NextAttemptAt, x.CreatedAt });
         });
     }
 

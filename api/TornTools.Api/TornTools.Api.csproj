@@ -12,4 +12,9 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\TornTools.Application\TornTools.Application.csproj" />
+    <ProjectReference Include="..\TornTools.Cron\TornTools.Cron.csproj" />
+  </ItemGroup>
+
 </Project>

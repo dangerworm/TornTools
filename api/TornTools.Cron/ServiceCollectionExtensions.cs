@@ -3,6 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Hangfire;
 using Hangfire.PostgreSql;
+using TornTools.Cron.Interfaces;
+using TornTools.Cron.Schedulers;
 
 namespace TornTools.Cron;
 
@@ -28,6 +30,9 @@ public static class ServiceCollectionExtensions
         });
 
         services.AddHangfireServer();
+
+        services.AddScoped<IApiJobScheduler, ApiJobScheduler>();
+
         return services;
     }
 }

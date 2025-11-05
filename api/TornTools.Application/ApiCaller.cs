@@ -1,45 +1,28 @@
 ﻿using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using TornTools.Application.DataTransferObjects;
 using TornTools.Application.Interfaces;
+using TornTools.Core.DataTransferObjects;
 
-namespace TornTools.Application.Handlers;
-public class ApiCallHandler : IApiCallHandler
+namespace TornTools.Application;
+public class ApiCaller(IHttpClientFactory httpClientFactory, ILogger<ApiCaller> logger) : IApiCaller
 {
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly ILogger<ApiCallHandler> _logger;
+    private readonly IHttpClientFactory _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+    private readonly ILogger<ApiCaller> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-    public ApiCallHandler(IHttpClientFactory httpClientFactory, ILogger<ApiCallHandler> logger)
-    {
-        _httpClientFactory = httpClientFactory;
-        _logger = logger;
-    }
-
-    public async Task<bool> ProcessAsync(QueueItemDto item, CancellationToken ct)
+    public async Task<bool> CallAsync(QueueItemDto item, CancellationToken ct)
     {
         var client = _httpClientFactory.CreateClient("queue-worker");
 
         using var req = new HttpRequestMessage(new HttpMethod(item.HttpMethod ?? "GET"), item.EndpointUrl);
 
         // Headers (optional)
-        if (!string.IsNullOrWhiteSpace(item.HeadersJson))
+        if (item.HeadersJson is not null)
         {
-            try
+            foreach (var kvp in item.HeadersJson)
             {
-                var headers = JsonSerializer.Deserialize<Dictionary<string, string>>(item.HeadersJson);
-                if (headers != null)
-                {
-                    foreach (var kvp in headers)
-                    {
-                        // TryAddWithoutValidation avoids format exceptions on custom headers
-                        req.Headers.TryAddWithoutValidation(kvp.Key, kvp.Value);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Invalid HeadersJson on QueueItem {Id}. Ignoring headers.", item.Id);
+                // TryAddWithoutValidation avoids format exceptions on custom headers
+                req.Headers.TryAddWithoutValidation(kvp.Key, kvp.Value);
             }
         }
 
@@ -47,9 +30,10 @@ public class ApiCallHandler : IApiCallHandler
         var method = (item.HttpMethod ?? "GET").ToUpperInvariant();
         if (method is "POST" or "PUT" or "PATCH")
         {
-            if (!string.IsNullOrWhiteSpace(item.PayloadJson))
+            if (item.PayloadJson is not null)
             {
-                req.Content = new StringContent(item.PayloadJson, Encoding.UTF8, "application/json");
+                var payloadJson = JsonSerializer.Serialize(item.PayloadJson);
+                req.Content = new StringContent(payloadJson, Encoding.UTF8, "application/json");
             }
             else
             {

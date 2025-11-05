@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TornTools.Persistence.Entities;
 
+[Table("players", Schema = "public")]
 public class PlayerEntity
 {
     [Key]

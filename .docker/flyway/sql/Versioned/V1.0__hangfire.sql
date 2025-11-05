@@ -1,1 +1,1 @@
-CREATE SCHEMA hangfire;
+--CREATE SCHEMA hangfire;

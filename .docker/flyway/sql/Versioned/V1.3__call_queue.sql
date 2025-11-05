@@ -1,16 +1,16 @@
 CREATE TABLE public.queue_items (
 	id uuid DEFAULT gen_random_uuid() NOT NULL,
-	call_type int4 NOT NULL,
+	call_type text NOT NULL,
 	endpoint_url text NOT NULL,
-  http_method varchar(255) NOT NULL,
+  http_method varchar(8) NOT NULL,
   headers_json jsonb NULL,
 	payload_json jsonb NULL,
-  item_status int4 NOT NULL DEFAULT 0,
+  item_status text NOT NULL DEFAULT 'pending',
   attempts int4 NOT NULL DEFAULT 0,
-  created_at timestamp NOT NULL DEFAULT now(),
-  last_attempt_at timestamp NULL,
-  processed_at timestamp NULL,
-  next_attempt_at timestamp NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  last_attempt_at timestamptz NULL,
+  next_attempt_at timestamptz NULL,
+  processed_at timestamptz NULL,
 	queue_index int8 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START 1 CACHE 1 NO CYCLE) NOT NULL,
 	
   CONSTRAINT call_queue_pk PRIMARY KEY (id)

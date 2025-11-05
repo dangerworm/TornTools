@@ -1,24 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore.Internal;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
-using TornTools.Core;
+using TornTools.Core.Constants;
+using TornTools.Core.DataTransferObjects;
 using TornTools.Cron.Enums;
 
-namespace TornTools.Application.Services;
+namespace TornTools.Cron.Processors;
 
-
-public class QueueProcessor : BackgroundService
+public class QueueProcessor(IServiceScopeFactory scopeFactory, ILogger<QueueProcessor> logger) : BackgroundService
 {
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly ILogger<QueueProcessor> _logger;
-
-    public QueueProcessor(IServiceScopeFactory scopeFactory, ILogger<QueueProcessor> logger)
-    {
-        _scopeFactory = scopeFactory;
-        _logger = logger;
-    }
+    private readonly IServiceScopeFactory _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
+    private readonly ILogger<QueueProcessor> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -29,80 +22,77 @@ public class QueueProcessor : BackgroundService
             try
             {
                 using var scope = _scopeFactory.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<TornToolsDbContext>();
-                var handler = scope.ServiceProvider.GetRequiredService<IApiCallHandler>();
-
+                var caller = scope.ServiceProvider.GetRequiredService<IApiCaller>();
+                var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
                 var now = DateTimeOffset.UtcNow;
 
-                // Find a candidate (oldest pending whose NextAttemptAt is due or null)
-                var candidate = await db.QueueItems
-                    .Where(q => q.Status == QueueStatus.Pending &&
-                               (q.NextAttemptAt == null || q.NextAttemptAt <= now))
-                    .OrderBy(q => q.CreatedAt)
-                    .FirstOrDefaultAsync(stoppingToken);
-
-                if (candidate is null)
+                // Dequeue
+                QueueItemDto? item = null;
+                try
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
+                    item = await databaseService.GetNextQueueItem(stoppingToken);
+                    if (item?.Id is null)
+                    {
+                        // Queue is empty
+                        await Task.Delay(TimeSpan.FromSeconds(QueueProcessorConstants.SecondsToWaitOnEmptyQueue), stoppingToken);
+                        continue;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Unhandled exception getting next QueueItem.");
                     continue;
                 }
 
-                // Attempt to "claim" the item by moving it to InProgress with a concurrency check
-                candidate.Status = QueueStatus.InProgress;
-                var originalRowVersion = candidate.RowVersion;
+                var itemId = item.Id.Value;
 
+                // Increment attempt count
                 try
                 {
-                    await db.SaveChangesAsync(stoppingToken); // if someone else grabbed it, this will fail later via concurrency
+                    await databaseService.IncrementQueueItemAttempts(itemId);
                 }
-                catch (DbUpdateConcurrencyException)
+                catch (Exception ex)
                 {
-                    // Another worker took it—just try again
-                    _logger.LogDebug("Concurrency claim failed for QueueItem {Id}. Retrying.", candidate.Id);
+                    _logger.LogError(ex, "Unhandled exception incrementing attempts for QueueItem {Id}.", itemId);
                     continue;
                 }
 
                 // Process
+                var success = false;
                 try
                 {
-                    var success = await handler.ProcessAsync(candidate, stoppingToken);
-                    var db2 = scope.ServiceProvider.GetRequiredService<TornToolsDbContext>(); // fresh context or same scope
-
-                    var item = _dbService.IncrementQueueItemAttempts(candidate.Id);
-                    if (item is null) continue;
-
-                    if (success)
-                    {
-                        item.Status = _dbService.SetQueueItemCompleted(candidate.Id);
-                        _logger.LogInformation("QueueItem {Id} completed.", item.Id);
-                    }
-                    else
-                    {
-
-                        if (item.Status == QueueStatus.Failed)
-                        {
-                            _logger.LogWarning("QueueItem {Id} failed after {Attempts} attempts.", item.Id, item.Attempts);
-                        }
-                        else
-                        {
-                            _logger.LogWarning("QueueItem {Id} failed. Will retry at {NextAttemptAt}.",
-                                item.Id, item.NextAttemptAt);
-                        }
-                    }
-
-                    await db2.SaveChangesAsync(stoppingToken);
+                    success = await caller.CallAsync(item, stoppingToken);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Unhandled exception processing QueueItem {Id}. Marking for retry.", candidate.Id);
+                    _logger.LogError(ex, "Unhandled exception processing QueueItem {Id}. Marking for retry.", itemId);
+                }
 
-                    try { 
-                        _dbService.IncrementQueueItemAttempts(candidate.Id);
-                    } 
-                    catch 
+                // Handle failure
+                if (!success)
+                {
+                    if (string.Equals(item.ItemStatus, nameof(QueueStatus.Failed)))
                     {
-                        /* swallow */ 
+                        _logger.LogWarning("QueueItem {Id} failed after {Attempts} attempts.",
+                            item.Id, item.Attempts);
                     }
+                    else
+                    {
+                        _logger.LogWarning("QueueItem {Id} failed. Will retry at {NextAttemptAt}.",
+                            item.Id, item.NextAttemptAt);
+                    }
+                    continue;
+                }
+
+                // Update item status
+                try
+                {
+                    item = await databaseService.SetQueueItemCompleted(itemId);
+                    _logger.LogInformation("QueueItem {Id} completed.", itemId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "QueueItem {Id} completion failed to update.", itemId);
                 }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -116,8 +106,7 @@ public class QueueProcessor : BackgroundService
                 await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
             }
 
-            // Fixed tick of ~1s per loop
-            await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
+            await Task.Delay(TimeSpan.FromSeconds(QueueProcessorConstants.SecondsPerQueueWorkerIteration), stoppingToken);
         }
 
         _logger.LogInformation("QueueProcessorService stopping.");

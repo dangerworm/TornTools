@@ -1,24 +1,24 @@
 ﻿using System.ComponentModel;
 using Hangfire;
 using Microsoft.Extensions.Logging;
-using TornTools.Application.DataTransferObjects;
 using TornTools.Application.Interfaces;
+using TornTools.Core.DataTransferObjects;
 using TornTools.Cron.Interfaces;
 
 namespace TornTools.Cron.Schedulers;
-public class ApiJobScheduler : IApiJobScheduler
+public class ApiJobScheduler(ILogger<ApiJobScheduler> logger, IApiCaller handler) : IApiJobScheduler
 {
-    private readonly ILogger<ApiJobScheduler> _logger;
-    private readonly IApiCallHandler _handler;
-
-    public ApiJobScheduler(ILogger<ApiJobScheduler> logger, IApiCallHandler handler)
-    {
-        _logger = logger;
-        _handler = handler;
-    }
+    private readonly ILogger<ApiJobScheduler> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IApiCaller _handler = handler ?? throw new ArgumentNullException(nameof(handler));
 
     public void RegisterRecurringJobs()
     {
+        RecurringJob.AddOrUpdate(
+            "CallDailyEndpoint",
+            () => RunDailyJob(),
+            "0 0 * * *" // At 00:00.
+        );
+
         RecurringJob.AddOrUpdate(
             "CallHourlyEndpoint",
             () => RunHourlyJob(),
@@ -32,12 +32,25 @@ public class ApiJobScheduler : IApiJobScheduler
         );
     }
 
+    [DisplayName("Daily Item Update")]
+    public async Task RunDailyJob()
+    {
+        _logger.LogInformation("Running daily item update...");
+        await _handler.CallAsync(new QueueItemDto
+        {
+            CallType = "DailyItemUpdate",
+            EndpointUrl = "https://api.example.com/hourly",
+            HttpMethod = "GET"
+        }, CancellationToken.None);
+    }
+
     [DisplayName("Hourly API Call")]
     public async Task RunHourlyJob()
     {
         _logger.LogInformation("Running hourly API job...");
-        await _handler.ProcessAsync(new QueueItemDto
+        await _handler.CallAsync(new QueueItemDto
         {
+            CallType = "HourlyApiCall",
             EndpointUrl = "https://api.example.com/hourly",
             HttpMethod = "GET"
         }, CancellationToken.None);
@@ -47,11 +60,12 @@ public class ApiJobScheduler : IApiJobScheduler
     public async Task Run20MinJob()
     {
         _logger.LogInformation("Running 20-minute API job...");
-        await _handler.ProcessAsync(new QueueItemDto
+        await _handler.CallAsync(new QueueItemDto
         {
+            CallType = "20MinApiCall",
             EndpointUrl = "https://api.example.com/15min",
             HttpMethod = "POST",
-            PayloadJson = "{\"example\":true}"
+            PayloadJson = new Dictionary<string, string> { { "example", "true" } }
         }, CancellationToken.None);
     }
 }
