@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace TornTools.Core.Models;
+namespace TornTools.Core.Models.TornItems;
 public class ItemValueVendor
 {
     [JsonPropertyName("country")]

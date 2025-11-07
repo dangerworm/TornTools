@@ -4,7 +4,9 @@ using TornTools.Persistence.Interfaces;
 
 namespace TornTools.Persistence;
 
-public class TornToolsDbContext(DbContextOptions<TornToolsDbContext> options) : DbContext(options), ITornToolsDbContext
+public class TornToolsDbContext(
+    DbContextOptions<TornToolsDbContext> options
+) : DbContext(options), ITornToolsDbContext
 {
     public DbSet<ItemEntity> Items { get; set; } = null!;
     public DbSet<ListingEntity> Listings { get; set; } = null!;

@@ -1,10 +1,10 @@
 CREATE TABLE public.items (
 	id int4 NOT NULL,
 	"name" text NOT NULL,
-	description text NULL,
+	"description" text NULL,
 	effect text NULL,
 	requirement text NULL,
-	image text NULL,
+	"image" text NULL,
 	"type" text NULL,
 	sub_type text NULL,
 	is_masked bool NOT NULL,
@@ -12,10 +12,10 @@ CREATE TABLE public.items (
 	is_found_in_city bool NOT NULL,
 	value_vendor_country text NULL,
 	value_vendor_name text NULL,
-	value_buy_price int4 NULL,
-	value_sell_price int4 NULL,
-	value_market_price int4 NULL,
-	circulation int4 NULL,
+	value_buy_price int8 NULL,
+	value_sell_price int8 NULL,
+	value_market_price int8 NULL,
+	circulation int8 NULL,
 	details_category text NULL,
 	details_stealth_level numeric NULL,
 	details_base_stats_damage int4 NULL,
@@ -26,5 +26,6 @@ CREATE TABLE public.items (
 	details_ammo_magazine_rounds int4 NULL,
 	details_ammo_rate_of_fire_minimum int4 NULL,
 	details_ammo_rate_of_fire_maximum int4 NULL,
-	CONSTRAINT items_pk PRIMARY KEY (id)
+	
+  CONSTRAINT items_pk PRIMARY KEY (id)
 );

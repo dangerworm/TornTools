@@ -24,6 +24,7 @@ public class QueueProcessor(IServiceScopeFactory scopeFactory, ILogger<QueueProc
                 using var scope = _scopeFactory.CreateScope();
                 var caller = scope.ServiceProvider.GetRequiredService<IApiCaller>();
                 var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
+                
                 var now = DateTimeOffset.UtcNow;
 
                 // Dequeue
@@ -34,28 +35,17 @@ public class QueueProcessor(IServiceScopeFactory scopeFactory, ILogger<QueueProc
                     if (item?.Id is null)
                     {
                         // Queue is empty
-                        await Task.Delay(TimeSpan.FromSeconds(QueueProcessorConstants.SecondsToWaitOnEmptyQueue), stoppingToken);
+                        await databaseService.PopulateQueue(stoppingToken);
                         continue;
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Unhandled exception getting next QueueItem.");
+                    _logger.LogError(ex, "Unhandled exception getting next {QueueItem}.", nameof(QueueItemDto));
                     continue;
                 }
 
                 var itemId = item.Id.Value;
-
-                // Increment attempt count
-                try
-                {
-                    await databaseService.IncrementQueueItemAttempts(itemId);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Unhandled exception incrementing attempts for QueueItem {Id}.", itemId);
-                    continue;
-                }
 
                 // Process
                 var success = false;
@@ -65,7 +55,18 @@ public class QueueProcessor(IServiceScopeFactory scopeFactory, ILogger<QueueProc
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Unhandled exception processing QueueItem {Id}. Marking for retry.", itemId);
+                    _logger.LogError(ex, "Unhandled exception processing {QueueItem} {Id}. Marking for retry.", nameof(QueueItemDto), itemId);
+                }
+
+                // Increment attempt count
+                try
+                {
+                    await databaseService.IncrementQueueItemAttempts(itemId, stoppingToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Unhandled exception incrementing attempts for {QueueItem} {Id}.", nameof(QueueItemDto), itemId);
+                    continue;
                 }
 
                 // Handle failure
@@ -73,13 +74,13 @@ public class QueueProcessor(IServiceScopeFactory scopeFactory, ILogger<QueueProc
                 {
                     if (string.Equals(item.ItemStatus, nameof(QueueStatus.Failed)))
                     {
-                        _logger.LogWarning("QueueItem {Id} failed after {Attempts} attempts.",
-                            item.Id, item.Attempts);
+                        _logger.LogWarning("{QueueItem} {Id} failed after {Attempts} attempts.",
+                            nameof(QueueItemDto), item.Id, item.Attempts);
                     }
                     else
                     {
-                        _logger.LogWarning("QueueItem {Id} failed. Will retry at {NextAttemptAt}.",
-                            item.Id, item.NextAttemptAt);
+                        _logger.LogWarning("{QueueItem} {Id} failed. Will retry at {NextAttemptAt}.",
+                            nameof(QueueItemDto), item.Id, item.NextAttemptAt);
                     }
                     continue;
                 }
@@ -87,12 +88,12 @@ public class QueueProcessor(IServiceScopeFactory scopeFactory, ILogger<QueueProc
                 // Update item status
                 try
                 {
-                    item = await databaseService.SetQueueItemCompleted(itemId);
-                    _logger.LogInformation("QueueItem {Id} completed.", itemId);
+                    item = await databaseService.SetQueueItemCompleted(itemId, stoppingToken);
+                    _logger.LogInformation("{QueueItem} {Id} completed.", nameof(QueueItemDto), itemId);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "QueueItem {Id} completion failed to update.", itemId);
+                    _logger.LogWarning(ex, "{QueueItem} {Id} completion failed to update.", nameof(QueueItemDto), itemId);
                 }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -101,7 +102,7 @@ public class QueueProcessor(IServiceScopeFactory scopeFactory, ILogger<QueueProc
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "QueueProcessorService loop error.");
+                _logger.LogError(ex, "{QueueProcessor} loop error.", nameof(QueueProcessor));
                 // brief pause to avoid tight crash loop
                 await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
             }
@@ -109,7 +110,7 @@ public class QueueProcessor(IServiceScopeFactory scopeFactory, ILogger<QueueProc
             await Task.Delay(TimeSpan.FromSeconds(QueueProcessorConstants.SecondsPerQueueWorkerIteration), stoppingToken);
         }
 
-        _logger.LogInformation("QueueProcessorService stopping.");
+        _logger.LogInformation("{QueueProcessor} stopping.", nameof(QueueProcessor));
     }
 }
 

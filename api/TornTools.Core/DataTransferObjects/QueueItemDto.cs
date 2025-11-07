@@ -1,12 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
-using TornTools.Cron.Enums;
+﻿using TornTools.Cron.Enums;
 
 namespace TornTools.Core.DataTransferObjects;
 public class QueueItemDto
 {
     public Guid? Id { get; set; }
     
-    public required string CallType { get; set; }
+    public required string CallHandler { get; set; }
     public required string EndpointUrl { get; set; } = default!;
 
     public string? HttpMethod { get; set; } = "GET";

@@ -38,7 +38,7 @@ public class ApiJobScheduler(ILogger<ApiJobScheduler> logger, IApiCaller handler
         _logger.LogInformation("Running daily item update...");
         await _handler.CallAsync(new QueueItemDto
         {
-            CallType = "DailyItemUpdate",
+            CallHandler = "DailyItemUpdate",
             EndpointUrl = "https://api.example.com/hourly",
             HttpMethod = "GET"
         }, CancellationToken.None);
@@ -50,7 +50,7 @@ public class ApiJobScheduler(ILogger<ApiJobScheduler> logger, IApiCaller handler
         _logger.LogInformation("Running hourly API job...");
         await _handler.CallAsync(new QueueItemDto
         {
-            CallType = "HourlyApiCall",
+            CallHandler = "HourlyApiCall",
             EndpointUrl = "https://api.example.com/hourly",
             HttpMethod = "GET"
         }, CancellationToken.None);
@@ -62,7 +62,7 @@ public class ApiJobScheduler(ILogger<ApiJobScheduler> logger, IApiCaller handler
         _logger.LogInformation("Running 20-minute API job...");
         await _handler.CallAsync(new QueueItemDto
         {
-            CallType = "20MinApiCall",
+            CallHandler = "20MinApiCall",
             EndpointUrl = "https://api.example.com/15min",
             HttpMethod = "POST",
             PayloadJson = new Dictionary<string, string> { { "example", "true" } }

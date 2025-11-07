@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace TornTools.Core.Models;
+namespace TornTools.Core.Models.TornItems;
 
 public class Item
 {
@@ -44,5 +44,5 @@ public class Item
     public required int Circulation { get; set; }
 
     [JsonPropertyName("details")]
-    public required ItemDetails? Details { get; set; }
+    public ItemDetails? Details { get; set; }
 }

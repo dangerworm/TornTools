@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TornTools.Persistence.Interfaces;
+using TornTools.Persistence.Repositories;
 
 namespace TornTools.Persistence;
 public static class ServiceCollectionExtensions
@@ -10,6 +11,9 @@ public static class ServiceCollectionExtensions
     {
         services.AddDbContext<ITornToolsDbContext, TornToolsDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("AzurePostgres")));
+
+        services.AddScoped<IItemRepository, ItemRepository>();
+        services.AddScoped<IQueueItemRepository, QueueItemRepository>();
 
         return services;
     }

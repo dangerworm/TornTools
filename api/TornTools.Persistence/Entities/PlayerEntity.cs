@@ -8,7 +8,7 @@ public class PlayerEntity
 {
     [Key]
     [Column("id")]
-    public long Id { get; set; } // int8 = long in C#
+    public long Id { get; set; }
 
     [Required]
     [Column("name")]
@@ -16,7 +16,7 @@ public class PlayerEntity
 
     [Required]
     [Column("level")]
-    public int Level { get; set; } // int4 = int
+    public int Level { get; set; }
 
     [Required]
     [Column("gender")]

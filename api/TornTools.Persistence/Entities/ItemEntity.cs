@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using TornTools.Core.DataTransferObjects;
 
 namespace TornTools.Persistence.Entities;
 
@@ -48,16 +49,16 @@ public class ItemEntity
     public string? ValueVendorName { get; set; }
 
     [Column("value_buy_price")]
-    public int? ValueBuyPrice { get; set; }
+    public long? ValueBuyPrice { get; set; }
 
     [Column("value_sell_price")]
-    public int? ValueSellPrice { get; set; }
+    public long? ValueSellPrice { get; set; }
 
     [Column("value_market_price")]
-    public int? ValueMarketPrice { get; set; }
+    public long? ValueMarketPrice { get; set; }
 
     [Column("circulation")]
-    public int? Circulation { get; set; }
+    public long? Circulation { get; set; }
 
     [Column("details_category")]
     public string? DetailsCategory { get; set; }
@@ -88,4 +89,38 @@ public class ItemEntity
 
     [Column("details_ammo_rate_of_fire_maximum")]
     public int? DetailsAmmoRateOfFireMaximum { get; set; }
+
+    public ItemDto AsDto()
+    {
+        return new ItemDto
+        {
+            Id = Id,
+            Name = Name,
+            Description = Description,
+            Effect = Effect,
+            Requirement = Requirement,
+            Image = Image,
+            Type = Type,
+            SubType = SubType,
+            IsMasked = IsMasked,
+            IsTradable = IsTradable,
+            IsFoundInCity = IsFoundInCity,
+            ValueVendorCountry = ValueVendorCountry,
+            ValueVendorName = ValueVendorName,
+            ValueBuyPrice = ValueBuyPrice,
+            ValueSellPrice = ValueSellPrice,
+            ValueMarketPrice = ValueMarketPrice,
+            Circulation = Circulation,
+            DetailsCategory = DetailsCategory,
+            DetailsStealthLevel = DetailsStealthLevel,
+            DetailsBaseStatsDamage = DetailsBaseStatsDamage,
+            DetailsBaseStatsAccuracy = DetailsBaseStatsAccuracy,
+            DetailsBaseStatsArmor = DetailsBaseStatsArmor,
+            DetailsAmmoId = DetailsAmmoId,
+            DetailsAmmoName = DetailsAmmoName,
+            DetailsAmmoMagazineRounds = DetailsAmmoMagazineRounds,
+            DetailsAmmoRateOfFireMinimum = DetailsAmmoRateOfFireMinimum,
+            DetailsAmmoRateOfFireMaximum = DetailsAmmoRateOfFireMaximum,
+        };
+    }
 }
