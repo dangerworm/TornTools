@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
-using TornTools.Application.Callers;
-using TornTools.Application.Handlers;
 using TornTools.Application.Interfaces;
 using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
+using TornTools.Core.Enums;
+using TornTools.Cron.Enums;
 using TornTools.Persistence.Interfaces;
 
 namespace TornTools.Application.Services;
@@ -32,26 +32,45 @@ public class DatabaseService(
 
     public async Task PopulateQueue(CancellationToken stoppingToken)
     {
-        var items = await _itemRepository.GetAllItemsAsync(stoppingToken);
-        foreach (var item in items.Take(3))
+        var allItems = await _itemRepository.GetAllItemsAsync(stoppingToken);
+        var items = allItems.ToList();
+
+        /*=== TORN ITEM MARKET ===*/
+        var itemMarketQueueItems = items.Take(ApiConstants.NumberOfItems).Select(item =>
+            new QueueItemDto
+            {
+                CallType = CallType.TornMarketListings,
+                EndpointUrl = string.Format(TornApiEndpointConstants.ItemListings, item.Id),
+                HttpMethod = "GET",
+                ItemStatus = nameof(QueueStatus.Pending),
+                CreatedAt = DateTime.UtcNow
+            }
+        );
+        await _queueItemRepository.CreateQueueItemsAsync(itemMarketQueueItems, stoppingToken);
+
+        // Group by time window
+
+        for (var i = 0; i < ApiConstants.NumberOfItems; i++)
         {
+            var item = items.Skip(i).Take(1).First();
+
             await _queueItemRepository.CreateQueueItemAsync(
-                callHandler: nameof(TornMarketListingsApiCallHandler),
+                callType: CallType.TornMarketListings,
                 endpointUrl: string.Format(TornApiEndpointConstants.ItemListings, item.Id),
                 stoppingToken: stoppingToken
             );
 
             await _queueItemRepository.CreateQueueItemAsync(
-                callHandler: nameof(Weav3rBazaarListingsApiCallHandler),
+                callType: CallType.Weav3rBazaarListings,
                 endpointUrl: string.Format(Weav3rApiEndpointConstants.BazaarListings, item.Id),
                 stoppingToken: stoppingToken
             );
         }
     }
 
-    public Task<QueueItemDto> CreateQueueItem(string callHandler, string endpointUrl, CancellationToken stoppingToken)
+    public Task<QueueItemDto> CreateQueueItem(CallType callType, string endpointUrl, CancellationToken stoppingToken)
     {
-        return _queueItemRepository.CreateQueueItemAsync(callHandler, endpointUrl, stoppingToken);
+        return _queueItemRepository.CreateQueueItemAsync(callType, endpointUrl, stoppingToken);
     }
 
     public Task<QueueItemDto?> GetNextQueueItem(CancellationToken stoppingToken)

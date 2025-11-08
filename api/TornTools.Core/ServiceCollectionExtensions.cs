@@ -8,15 +8,19 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
-        // Bind the whole section to TornApiCallerConfiguration
         services.Configure<TornApiCallerConfiguration>(
             configuration.GetSection(nameof(TornApiCallerConfiguration)));
 
-        // If you *really* want the POCO directly injectable (not just IOptions<T>):
         services.AddSingleton(sp =>
             sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<TornApiCallerConfiguration>>().Value
         );
 
+        services.Configure<Weav3rApiCallerConfiguration>(
+            configuration.GetSection(nameof(Weav3rApiCallerConfiguration)));
+
+        services.AddSingleton(sp =>
+            sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Weav3rApiCallerConfiguration>>().Value
+        );
         return services;
     }
 }

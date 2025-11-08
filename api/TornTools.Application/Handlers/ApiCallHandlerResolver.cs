@@ -1,20 +1,17 @@
 ﻿using TornTools.Application.Interfaces;
+using TornTools.Core.Enums;
 
 namespace TornTools.Application.Handlers;
 
-public class ApiCallHandlerResolver : IApiCallHandlerResolver
+public class ApiCallHandlerResolver(
+    IEnumerable<IApiCallHandler> handlers
+) : IApiCallHandlerResolver
 {
-    private readonly IReadOnlyDictionary<string, IApiCallHandler> _handlers;
+    private readonly Dictionary<CallType, IApiCallHandler> _handlers = handlers.ToDictionary(
+            h => h.CallType,
+            h => h);
 
-    public ApiCallHandlerResolver(IEnumerable<IApiCallHandler> handlers)
-    {
-        _handlers = handlers.ToDictionary(
-            h => h.CallHandler,
-            h => h,
-            StringComparer.OrdinalIgnoreCase);
-    }
-
-    public IApiCallHandler GetHandler(string callType)
+    public IApiCallHandler GetHandler(CallType callType)
     {
         if (!_handlers.TryGetValue(callType, out var handler))
         {
@@ -24,6 +21,6 @@ public class ApiCallHandlerResolver : IApiCallHandlerResolver
         return handler;
     }
 
-    public bool TryGetHandler(string callType, out IApiCallHandler? handler)
+    public bool TryGetHandler(CallType callType, out IApiCallHandler? handler)
         => _handlers.TryGetValue(callType, out handler);
 }

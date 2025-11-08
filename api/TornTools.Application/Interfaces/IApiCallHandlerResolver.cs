@@ -1,6 +1,8 @@
-﻿namespace TornTools.Application.Interfaces;
+﻿using TornTools.Core.Enums;
+
+namespace TornTools.Application.Interfaces;
 public interface IApiCallHandlerResolver
 {
-    IApiCallHandler GetHandler(string callType);
-    bool TryGetHandler(string callType, out IApiCallHandler? handler);
+    IApiCallHandler GetHandler(CallType callType);
+    bool TryGetHandler(CallType callType, out IApiCallHandler? handler);
 }

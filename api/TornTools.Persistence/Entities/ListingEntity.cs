@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using TornTools.Core.DataTransferObjects;
+using TornTools.Core.Enums;
 
 namespace TornTools.Persistence.Entities;
 
@@ -12,6 +13,7 @@ public class ListingEntity
     public Guid Id { get; set; } = Guid.NewGuid();
 
     [Required]
+    [Column("source")]
     public required string Source { get; set; }
 
     [Required]
@@ -46,7 +48,7 @@ public class ListingEntity
         return new ListingDto
         {
             Id = Id,
-            Source = Source,
+            Source = Enum.Parse<Source>(Source),
             CorrelationId = CorrelationId,
             PlayerId = PlayerId,
             ItemId = ItemId,

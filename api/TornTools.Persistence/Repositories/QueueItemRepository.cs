@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
+using TornTools.Core.Enums;
 using TornTools.Cron.Enums;
 using TornTools.Persistence.Entities;
 using TornTools.Persistence.Interfaces;
@@ -12,11 +13,11 @@ public class QueueItemRepository(
     TornToolsDbContext dbContext
 ) : RepositoryBase<QueueItemRepository>(logger, dbContext), IQueueItemRepository
 {
-    public async Task<QueueItemDto> CreateQueueItemAsync(string callHandler, string endpointUrl, CancellationToken stoppingToken)
+    public async Task<QueueItemDto> CreateQueueItemAsync(CallType callType, string endpointUrl, CancellationToken stoppingToken)
     {
         var queueItem = new QueueItemEntity
         {
-            CallHandler = callHandler,
+            CallType = callType.ToString(),
             EndpointUrl = endpointUrl,
             HttpMethod = "GET",
             ItemStatus = nameof(QueueStatus.Pending),
@@ -26,6 +27,37 @@ public class QueueItemRepository(
         DbContext.QueueItems.Add(queueItem);
         await DbContext.SaveChangesAsync(stoppingToken);
         return queueItem.AsDto();
+    }
+
+    public async Task CreateQueueItemsAsync(IEnumerable<QueueItemDto> itemDtos, CancellationToken stoppingToken)
+    {
+        // Turn off auto-change detection while doing lots of work
+        var wasAutoDetect = DbContext.ChangeTracker.AutoDetectChangesEnabled;
+        DbContext.ChangeTracker.AutoDetectChangesEnabled = false;
+
+        try
+        {
+            var items = itemDtos.ToList();
+
+            for (int i = 0; i < items.Count; i += DatabaseConstants.BulkUpdateSize)
+            {
+                var batch = items.Skip(i).Take(DatabaseConstants.BulkUpdateSize).ToList();
+                var keys = batch.Select(b => b.Id).ToList();
+
+                foreach (var itemDto in batch)
+                {
+                    var newEntity = CreateEntityFromDto(itemDto);
+                    DbContext.QueueItems.Add(newEntity);
+                }
+
+                await DbContext.SaveChangesAsync(stoppingToken);
+                DbContext.ChangeTracker.Clear();
+            }
+        }
+        finally
+        {
+            DbContext.ChangeTracker.AutoDetectChangesEnabled = wasAutoDetect;
+        }
     }
 
     public async Task<QueueItemDto?> GetNextQueueItemAsync(CancellationToken stoppingToken)
@@ -133,6 +165,20 @@ public class QueueItemRepository(
         return queueItem is null
             ? throw new Exception($"{nameof(QueueItemEntity)} with ID {id} not found.")
             : queueItem;
+    }
+
+    private static QueueItemEntity CreateEntityFromDto(QueueItemDto itemDto)
+    {
+        return new QueueItemEntity
+        {
+            Id = Guid.NewGuid(),
+            CallType = itemDto.CallType.ToString(),
+            EndpointUrl = itemDto.EndpointUrl,
+            HttpMethod = itemDto.HttpMethod ?? "GET",
+            ItemStatus = nameof(QueueStatus.Pending),
+            CreatedAt = DateTime.UtcNow,
+            NextAttemptAt = itemDto.NextAttemptAt?.ToUniversalTime()
+        };
     }
 }
 

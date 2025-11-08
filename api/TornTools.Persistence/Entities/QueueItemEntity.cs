@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using TornTools.Core.DataTransferObjects;
+using TornTools.Core.Enums;
 using TornTools.Cron.Enums;
 
 namespace TornTools.Persistence.Entities;
@@ -13,8 +14,8 @@ public class QueueItemEntity
     public Guid? Id { get; set; }
 
     [Required]
-    [Column("call_handler")]
-    public required string CallHandler { get; set; }
+    [Column("call_type")]
+    public required string CallType { get; set; }
 
     [Required]
     [Column("endpoint_url")]
@@ -56,7 +57,7 @@ public class QueueItemEntity
         return new QueueItemDto
         {
             Id = Id,
-            CallHandler = CallHandler,
+            CallType = Enum.Parse<CallType>(CallType),
             EndpointUrl = EndpointUrl,
             HttpMethod = HttpMethod,
             HeadersJson = HeadersJson,

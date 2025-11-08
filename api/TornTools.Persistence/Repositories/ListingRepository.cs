@@ -71,12 +71,12 @@ public class ListingRepository(
         return new ListingEntity
         {
             Id = listingDto.Id ?? Guid.NewGuid(),
-            Source = listingDto.Source,
+            Source = listingDto.Source.ToString(),
             CorrelationId = listingDto.CorrelationId,
-            PlayerId = listingDto.PlayerId == 0 ? null : listingDto.PlayerId,
+            PlayerId = listingDto.PlayerId,
             ItemId = listingDto.ItemId,
             ListingPosition = listingDto.ListingPosition,
-            TimeSeen = listingDto.TimeSeen.UtcDateTime,
+            TimeSeen = listingDto.TimeSeen.ToUniversalTime(),
             Price = listingDto.Price,
             Quantity = listingDto.Quantity
         };

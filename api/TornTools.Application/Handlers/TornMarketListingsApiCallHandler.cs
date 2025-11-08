@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
 using TornTools.Core.DataTransferObjects;
+using TornTools.Core.Enums;
 using TornTools.Core.Models.TornMarketListings;
 
 namespace TornTools.Application.Handlers;
@@ -11,11 +12,10 @@ public class TornMarketListingsApiCallHandler(
     IDatabaseService databaseService
 ) : ApiCallHandler(logger, databaseService)
 {
-    public override string CallHandler => nameof(TornMarketListingsApiCallHandler);
+    public override CallType CallType => CallType.TornMarketListings;
 
-    public override async Task HandleResponseAsync(HttpResponseMessage response, CancellationToken stoppingToken)
+    public override async Task HandleResponseAsync(string content, CancellationToken stoppingToken)
     {
-        var content = await response.Content.ReadAsStringAsync(stoppingToken);
         var payload = JsonSerializer.Deserialize<ItemMarketPayload>(content)
             ?? throw new Exception($"Failed to deserialize {nameof(ItemMarketPayload)} from API response.");
 

@@ -1,6 +1,6 @@
 CREATE TABLE public.queue_items (
 	"id" uuid DEFAULT gen_random_uuid() NOT NULL,
-	call_handler varchar(255) NOT NULL,
+	call_type varchar(255) NOT NULL,
 	"endpoint_url" text NOT NULL,
   http_method varchar(8) NOT NULL,
   headers_json jsonb NULL,

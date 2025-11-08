@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
 using TornTools.Core.DataTransferObjects;
+using TornTools.Core.Enums;
 using TornTools.Core.Models.Weav3rBazaarListings;
 
 namespace TornTools.Application.Handlers;
@@ -11,11 +12,10 @@ public class Weav3rBazaarListingsApiCallHandler(
     IDatabaseService databaseService
 ) : ApiCallHandler(logger, databaseService)
 {
-    public override string CallHandler => nameof(Weav3rBazaarListingsApiCallHandler);
+    public override CallType CallType => CallType.Weav3rBazaarListings;
 
-    public override async Task HandleResponseAsync(HttpResponseMessage response, CancellationToken stoppingToken)
+    public override async Task HandleResponseAsync(string content, CancellationToken stoppingToken)
     {
-        var content = await response.Content.ReadAsStringAsync(stoppingToken);
         var payload = JsonSerializer.Deserialize<BazaarItemPayload>(content)
             ?? throw new Exception($"Failed to deserialize {nameof(BazaarItemPayload)} from API response.");
 

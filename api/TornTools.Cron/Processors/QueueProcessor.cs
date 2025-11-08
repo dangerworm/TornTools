@@ -8,7 +8,10 @@ using TornTools.Cron.Enums;
 
 namespace TornTools.Cron.Processors;
 
-public class QueueProcessor(IServiceScopeFactory scopeFactory, ILogger<QueueProcessor> logger) : BackgroundService
+public class QueueProcessor(
+    IServiceScopeFactory scopeFactory, 
+    ILogger<QueueProcessor> logger
+) : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
     private readonly ILogger<QueueProcessor> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -22,17 +25,17 @@ public class QueueProcessor(IServiceScopeFactory scopeFactory, ILogger<QueueProc
             try
             {
                 using var scope = _scopeFactory.CreateScope();
-                var caller = scope.ServiceProvider.GetRequiredService<IApiCaller>();
+                var callerResolver = scope.ServiceProvider.GetRequiredService<IApiCallerResolver>();
                 var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
                 
-                var now = DateTimeOffset.UtcNow;
+                var now = DateTime.UtcNow;
 
                 // Dequeue
-                QueueItemDto? item = null;
+                QueueItemDto? queueItem = null;
                 try
                 {
-                    item = await databaseService.GetNextQueueItem(stoppingToken);
-                    if (item?.Id is null)
+                    queueItem = await databaseService.GetNextQueueItem(stoppingToken);
+                    if (queueItem?.Id is null)
                     {
                         // Queue is empty
                         await databaseService.PopulateQueue(stoppingToken);
@@ -45,13 +48,14 @@ public class QueueProcessor(IServiceScopeFactory scopeFactory, ILogger<QueueProc
                     continue;
                 }
 
-                var itemId = item.Id.Value;
+                var itemId = queueItem.Id.Value;
 
                 // Process
                 var success = false;
                 try
                 {
-                    success = await caller.CallAsync(item, stoppingToken);
+                    var caller = callerResolver.GetCaller(queueItem.CallType);
+                    success = await caller.CallAsync(queueItem, stoppingToken);
                 }
                 catch (Exception ex)
                 {
@@ -72,15 +76,15 @@ public class QueueProcessor(IServiceScopeFactory scopeFactory, ILogger<QueueProc
                 // Handle failure
                 if (!success)
                 {
-                    if (string.Equals(item.ItemStatus, nameof(QueueStatus.Failed)))
+                    if (string.Equals(queueItem.ItemStatus, nameof(QueueStatus.Failed)))
                     {
                         _logger.LogWarning("{QueueItem} {Id} failed after {Attempts} attempts.",
-                            nameof(QueueItemDto), item.Id, item.Attempts);
+                            nameof(QueueItemDto), queueItem.Id, queueItem.Attempts);
                     }
                     else
                     {
                         _logger.LogWarning("{QueueItem} {Id} failed. Will retry at {NextAttemptAt}.",
-                            nameof(QueueItemDto), item.Id, item.NextAttemptAt);
+                            nameof(QueueItemDto), queueItem.Id, queueItem.NextAttemptAt);
                     }
                     continue;
                 }
@@ -88,7 +92,7 @@ public class QueueProcessor(IServiceScopeFactory scopeFactory, ILogger<QueueProc
                 // Update item status
                 try
                 {
-                    item = await databaseService.SetQueueItemCompleted(itemId, stoppingToken);
+                    queueItem = await databaseService.SetQueueItemCompleted(itemId, stoppingToken);
                     _logger.LogInformation("{QueueItem} {Id} completed.", nameof(QueueItemDto), itemId);
                 }
                 catch (Exception ex)

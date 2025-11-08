@@ -12,7 +12,9 @@ public static class ServiceCollectionExtensions
         services.AddDbContext<ITornToolsDbContext, TornToolsDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("AzurePostgres")));
 
+        services.AddScoped<IItemChangeLogRepository, ItemChangeLogRepository>();
         services.AddScoped<IItemRepository, ItemRepository>();
+        services.AddScoped<IListingRepository, ListingRepository>();
         services.AddScoped<IQueueItemRepository, QueueItemRepository>();
 
         return services;

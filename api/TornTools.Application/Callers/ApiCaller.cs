@@ -1,8 +1,12 @@
-﻿using System.Text;
+﻿using System.Net;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Microsoft.Playwright;
 using TornTools.Application.Interfaces;
 using TornTools.Core.DataTransferObjects;
+using TornTools.Core.Enums;
 
 namespace TornTools.Application.Callers;
 public abstract class ApiCaller<TCaller>(
@@ -15,11 +19,20 @@ public abstract class ApiCaller<TCaller>(
     protected readonly IApiCallHandlerResolver HandlerResolver = handlerResolver ?? throw new ArgumentNullException(nameof(handlerResolver));
     protected readonly IHttpClientFactory HttpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
 
+    public abstract IEnumerable<CallType> CallTypes { get; }
     protected abstract string ClientName { get; }
 
     protected virtual async Task<bool> CallAsync(QueueItemDto queueItem, CancellationToken stoppingToken)
     {
-        var client = HttpClientFactory.CreateClient(ClientName);
+        var httpClientHandler = new HttpClientHandler
+        {
+            AutomaticDecompression = 
+                DecompressionMethods.GZip |
+                DecompressionMethods.Deflate |
+                DecompressionMethods.Brotli
+        };
+
+        using var client = new HttpClient(httpClientHandler);
 
         using var requestMessage = new HttpRequestMessage(
             new HttpMethod(queueItem.HttpMethod ?? "GET"),
@@ -34,18 +47,16 @@ public abstract class ApiCaller<TCaller>(
 
         try
         {
-            var responseMessage = await client.SendAsync(requestMessage, stoppingToken);
-            if (!responseMessage.IsSuccessStatusCode)
+            var content = await Fetch(client, requestMessage, stoppingToken);
+            if (content is null)
             {
-                Logger.LogWarning("API call for {QueueItem} {Id} returned {Status} ({Reason}).",
-                    nameof(QueueItemDto), queueItem.Id, (int)responseMessage.StatusCode, responseMessage.ReasonPhrase);
                 return false;
             }
 
             Logger.LogInformation("API call for {QueueItem} {Id} succeeded.", nameof(QueueItemDto), queueItem.Id);
 
-            var handler = HandlerResolver.GetHandler(queueItem.CallHandler);
-            await handler.HandleResponseAsync(responseMessage, stoppingToken);
+            var handler = HandlerResolver.GetHandler(queueItem.CallType);
+            await handler.HandleResponseAsync(content, stoppingToken);
 
             return true;
         }
@@ -73,7 +84,7 @@ public abstract class ApiCaller<TCaller>(
         }
     }
 
-    private static void AddBody(QueueItemDto queueItem, HttpRequestMessage requestMessage)
+    protected virtual void AddBody(QueueItemDto queueItem, HttpRequestMessage requestMessage)
     {
         var method = (queueItem.HttpMethod ?? "GET").ToUpperInvariant();
         if (method is "POST" or "PUT" or "PATCH")
@@ -88,5 +99,27 @@ public abstract class ApiCaller<TCaller>(
                 requestMessage.Content = new StringContent("{}", Encoding.UTF8, "application/json");
             }
         }
+    }
+
+    protected virtual async Task<string?> Fetch(HttpClient client, HttpRequestMessage requestMessage, CancellationToken stoppingToken)
+    {
+        var responseMessage = await client.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, stoppingToken);
+        var content = await responseMessage.Content.ReadAsStringAsync(stoppingToken);
+
+        if (!responseMessage.IsSuccessStatusCode)
+        {
+            var headers = responseMessage.Headers.ToString() + responseMessage.Content.Headers.ToString();
+
+            Logger.LogWarning("API call to {RequestUri} returned {Status} ({Reason}).\nHeaders:\n{Headers}\nBody:\n{Body}",
+                requestMessage.RequestUri,
+                (int)responseMessage.StatusCode,
+                responseMessage.ReasonPhrase,
+                headers,
+                content);
+        }
+
+        return responseMessage.IsSuccessStatusCode
+            ? content
+            : null;
     }
 }

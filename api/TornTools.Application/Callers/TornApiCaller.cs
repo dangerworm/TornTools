@@ -2,6 +2,7 @@
 using TornTools.Application.Interfaces;
 using TornTools.Core.Configurations;
 using TornTools.Core.DataTransferObjects;
+using TornTools.Core.Enums;
 
 namespace TornTools.Application.Callers;
 public class TornApiCaller(
@@ -12,6 +13,12 @@ public class TornApiCaller(
 ) : ApiCaller<TornApiCaller>(logger, handlerResolver, httpClientFactory), IApiCaller
 {
     private readonly TornApiCallerConfiguration _options = options ?? throw new ArgumentNullException(nameof(options));
+
+    public override IEnumerable<CallType> CallTypes =>
+    [
+        CallType.TornItems,
+        CallType.TornMarketListings
+    ];
 
     protected override string ClientName => "torn-api-caller";
 

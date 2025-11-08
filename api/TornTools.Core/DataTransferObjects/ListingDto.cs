@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using TornTools.Core.Enums;
 
 namespace TornTools.Core.DataTransferObjects;
 
@@ -6,11 +7,11 @@ public class ListingDto
 {
     public Guid? Id { get; set; }
     public required Guid CorrelationId { get; set; }
-    public required string Source { get; set; }
+    public required Source Source { get; set; }
     public long? PlayerId { get; set; }
     public required int ItemId { get; set; }
     public required int ListingPosition { get; set; }
-    public required DateTimeOffset TimeSeen { get; set; }
+    public required DateTime TimeSeen { get; set; }
     public required long Price { get; set; }
     public required int Quantity { get; set; }
 
@@ -21,10 +22,10 @@ public class ListingDto
     {
         Id = null;
         CorrelationId = correlationId;
-        Source = "Torn";
+        Source = Source.Torn;
         ItemId = itemId;
         ListingPosition = listingPosition;
-        TimeSeen = DateTimeOffset.UtcNow;
+        TimeSeen = DateTime.UtcNow;
         Price = listing.Price;
         Quantity = listing.Amount;
     }
@@ -34,11 +35,11 @@ public class ListingDto
     {
         Id = null;
         CorrelationId = correlationId;
-        Source = "Weav3r";
+        Source = Source.Weav3r;
         PlayerId = listing.PlayerId;
         ItemId = listing.ItemId;
         ListingPosition = listingPosition;
-        TimeSeen = DateTimeOffset.FromUnixTimeSeconds(listing.ContentUpdated);
+        TimeSeen = new DateTime(DateTimeOffset.FromUnixTimeSeconds(listing.ContentUpdated).Ticks);
         Price = listing.Price;
         Quantity = listing.Quantity;
     }

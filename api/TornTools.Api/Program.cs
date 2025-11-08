@@ -1,11 +1,7 @@
 using Hangfire;
 using TornTools.Application;
-using TornTools.Application.Callers;
-using TornTools.Application.Handlers;
-using TornTools.Application.Interfaces;
-using TornTools.Application.Services;
+using TornTools.Application.Playwright;
 using TornTools.Core;
-using TornTools.Core.Constants;
 using TornTools.Cron;
 using TornTools.Cron.Interfaces;
 using TornTools.Cron.Processors;
@@ -14,7 +10,8 @@ using TornTools.Persistence;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Explicitly specify the namespace to resolve ambiguity
+builder.Services.AddSingleton<PlaywrightSingleton>();
+
 builder.Services.AddDatabase(builder.Configuration);
 builder.Services.AddHangfire(builder.Configuration);
 builder.Services.AddHostedService<QueueProcessor>();
@@ -38,8 +35,10 @@ if (app.Environment.IsDevelopment())
 
 using (var scope = app.Services.CreateScope())
 {
+    /*
     var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
-    await databaseService.CreateQueueItem(nameof(TornApiCaller), TornApiEndpointConstants.Items, CancellationToken.None);
+    await databaseService.CreateQueueItem(CallType.TornItems, TornApiEndpointConstants.Items, CancellationToken.None);
+    //*/
 
     var jobScheduler = scope.ServiceProvider.GetRequiredService<IApiJobScheduler>();
     jobScheduler.RegisterRecurringJobs();

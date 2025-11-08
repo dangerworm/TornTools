@@ -2,6 +2,7 @@
 using TornTools.Core.Models.TornItems;
 
 namespace TornTools.Core.DataTransferObjects;
+
 public class ItemDto
 {
     public required int Id { get; set; }

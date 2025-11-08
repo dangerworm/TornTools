@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
 using TornTools.Core.DataTransferObjects;
+using TornTools.Core.Enums;
 using TornTools.Core.Models.TornItems;
 
 namespace TornTools.Application.Handlers;
@@ -11,11 +12,10 @@ public class TornItemsApiCallHandler(
     IDatabaseService databaseService
 ) : ApiCallHandler(logger, databaseService)
 {
-    public override string CallHandler => nameof(TornItemsApiCallHandler);
+    public override CallType CallType => CallType.TornItems;
 
-    public override async Task HandleResponseAsync(HttpResponseMessage response, CancellationToken stoppingToken)
+    public override async Task HandleResponseAsync(string content, CancellationToken stoppingToken)
     {
-        var content = await response.Content.ReadAsStringAsync(stoppingToken);
         var payload = JsonSerializer.Deserialize<ItemsPayload>(content)
             ?? throw new Exception($"Failed to deserialize {nameof(ItemsPayload)} from API response.");
         

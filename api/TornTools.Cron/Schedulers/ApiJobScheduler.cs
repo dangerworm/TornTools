@@ -2,27 +2,30 @@
 using Hangfire;
 using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
+using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
 using TornTools.Cron.Interfaces;
 
 namespace TornTools.Cron.Schedulers;
-public class ApiJobScheduler(ILogger<ApiJobScheduler> logger, IApiCaller handler) : IApiJobScheduler
+public class ApiJobScheduler(
+    ILogger<ApiJobScheduler> logger, 
+    IDatabaseService databaseService) : IApiJobScheduler
 {
     private readonly ILogger<ApiJobScheduler> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    private readonly IApiCaller _handler = handler ?? throw new ArgumentNullException(nameof(handler));
+    private readonly IDatabaseService _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
 
     public void RegisterRecurringJobs()
     {
         RecurringJob.AddOrUpdate(
             "CallDailyEndpoint",
             () => RunDailyJob(),
-            "0 0 * * *" // At 00:00.
+            "0 2 * * *" // At 02:00.
         );
 
         RecurringJob.AddOrUpdate(
             "CallHourlyEndpoint",
             () => RunHourlyJob(),
-            "0 6 * * *" // At 06:00.
+            "0 * * * *" // Every hour.
         );
 
         RecurringJob.AddOrUpdate(
@@ -36,36 +39,22 @@ public class ApiJobScheduler(ILogger<ApiJobScheduler> logger, IApiCaller handler
     public async Task RunDailyJob()
     {
         _logger.LogInformation("Running daily item update...");
-        await _handler.CallAsync(new QueueItemDto
-        {
-            CallHandler = "DailyItemUpdate",
-            EndpointUrl = "https://api.example.com/hourly",
-            HttpMethod = "GET"
-        }, CancellationToken.None);
+        await _databaseService.CreateQueueItem(
+            callType: Core.Enums.CallType.TornItems,
+            endpointUrl: TornApiEndpointConstants.Items,
+            stoppingToken: CancellationToken.None
+        );
     }
 
     [DisplayName("Hourly API Call")]
     public async Task RunHourlyJob()
     {
         _logger.LogInformation("Running hourly API job...");
-        await _handler.CallAsync(new QueueItemDto
-        {
-            CallHandler = "HourlyApiCall",
-            EndpointUrl = "https://api.example.com/hourly",
-            HttpMethod = "GET"
-        }, CancellationToken.None);
     }
 
     [DisplayName("20-Minute API Call")]
     public async Task Run20MinJob()
     {
         _logger.LogInformation("Running 20-minute API job...");
-        await _handler.CallAsync(new QueueItemDto
-        {
-            CallHandler = "20MinApiCall",
-            EndpointUrl = "https://api.example.com/15min",
-            HttpMethod = "POST",
-            PayloadJson = new Dictionary<string, string> { { "example", "true" } }
-        }, CancellationToken.None);
     }
 }
