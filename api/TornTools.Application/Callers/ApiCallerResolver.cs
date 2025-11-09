@@ -5,12 +5,12 @@ namespace TornTools.Application.Callers;
 
 public class ApiCallerResolver : IApiCallerResolver
 {
-    private readonly Dictionary<CallType, IApiCaller> _callers;
+    private readonly Dictionary<ApiCallType, IApiCaller> _callers;
 
     public ApiCallerResolver(IEnumerable<IApiCaller> callers)
     {
         _callers = [];
-        foreach (var callType in Enum.GetValues<CallType>())
+        foreach (var callType in Enum.GetValues<ApiCallType>())
         {
             var applicableCallers = callers.Where(callers => callers.CallTypes.Contains(callType));
 
@@ -21,7 +21,7 @@ public class ApiCallerResolver : IApiCallerResolver
         }
     }
 
-    public IApiCaller GetCaller(CallType callType)
+    public IApiCaller GetCaller(ApiCallType callType)
     {
         if (!_callers.TryGetValue(callType, out var caller))
         {
@@ -31,6 +31,6 @@ public class ApiCallerResolver : IApiCallerResolver
         return caller;
     }
 
-    public bool TryGetCaller(CallType callType, out IApiCaller? caller)
+    public bool TryGetCaller(ApiCallType callType, out IApiCaller? caller)
         => _callers.TryGetValue(callType, out caller);
 }

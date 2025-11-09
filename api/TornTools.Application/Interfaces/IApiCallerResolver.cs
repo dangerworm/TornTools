@@ -3,6 +3,6 @@
 namespace TornTools.Application.Interfaces;
 public interface IApiCallerResolver
 {
-    IApiCaller GetCaller(CallType callType);
-    bool TryGetCaller(CallType callType, out IApiCaller? caller);
+    IApiCaller GetCaller(ApiCallType callType);
+    bool TryGetCaller(ApiCallType callType, out IApiCaller? caller);
 }

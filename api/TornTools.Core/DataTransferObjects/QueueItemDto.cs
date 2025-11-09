@@ -7,7 +7,7 @@ public class QueueItemDto
 {
     public Guid? Id { get; set; }
     
-    public required CallType CallType { get; set; }
+    public required ApiCallType CallType { get; set; }
     public required string EndpointUrl { get; set; } = default!;
 
     public string? HttpMethod { get; set; } = "GET";

@@ -13,7 +13,7 @@ public interface IDatabaseService
     Task DeleteListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken);
 
     Task PopulateQueue(CancellationToken stoppingToken);
-    Task<QueueItemDto> CreateQueueItem(CallType callType, string endpointUrl, CancellationToken stoppingToken);
+    Task<QueueItemDto> CreateQueueItem(ApiCallType callType, string endpointUrl, CancellationToken stoppingToken);
     Task<QueueItemDto?> GetNextQueueItem(CancellationToken stoppingToken);
     Task<QueueItemDto> IncrementQueueItemAttempts(Guid id, CancellationToken stoppingToken);
     Task<QueueItemDto> SetQueueItemCompleted(Guid id, CancellationToken stoppingToken);

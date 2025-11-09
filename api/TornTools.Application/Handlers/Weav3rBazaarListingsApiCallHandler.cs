@@ -12,7 +12,7 @@ public class Weav3rBazaarListingsApiCallHandler(
     IDatabaseService databaseService
 ) : ApiCallHandler(logger, databaseService)
 {
-    public override CallType CallType => CallType.Weav3rBazaarListings;
+    public override ApiCallType CallType => ApiCallType.Weav3rBazaarListings;
 
     public override async Task HandleResponseAsync(string content, CancellationToken stoppingToken)
     {

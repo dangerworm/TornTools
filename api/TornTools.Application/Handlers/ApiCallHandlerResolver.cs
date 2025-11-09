@@ -7,11 +7,11 @@ public class ApiCallHandlerResolver(
     IEnumerable<IApiCallHandler> handlers
 ) : IApiCallHandlerResolver
 {
-    private readonly Dictionary<CallType, IApiCallHandler> _handlers = handlers.ToDictionary(
+    private readonly Dictionary<ApiCallType, IApiCallHandler> _handlers = handlers.ToDictionary(
             h => h.CallType,
             h => h);
 
-    public IApiCallHandler GetHandler(CallType callType)
+    public IApiCallHandler GetHandler(ApiCallType callType)
     {
         if (!_handlers.TryGetValue(callType, out var handler))
         {
@@ -21,6 +21,6 @@ public class ApiCallHandlerResolver(
         return handler;
     }
 
-    public bool TryGetHandler(CallType callType, out IApiCallHandler? handler)
+    public bool TryGetHandler(ApiCallType callType, out IApiCallHandler? handler)
         => _handlers.TryGetValue(callType, out handler);
 }

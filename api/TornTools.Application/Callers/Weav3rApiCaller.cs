@@ -17,9 +17,9 @@ public class Weav3rApiCaller(
 {
     private readonly Weav3rApiCallerConfiguration _options = options ?? throw new ArgumentNullException(nameof(options));
 
-    public override IEnumerable<CallType> CallTypes =>
+    public override IEnumerable<ApiCallType> CallTypes =>
     [
-        CallType.Weav3rBazaarListings
+        ApiCallType.Weav3rBazaarListings
     ];
 
     protected override void AddHeaders(HttpRequestMessage requestMessage, QueueItemDto item)

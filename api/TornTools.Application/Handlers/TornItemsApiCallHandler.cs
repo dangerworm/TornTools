@@ -12,7 +12,7 @@ public class TornItemsApiCallHandler(
     IDatabaseService databaseService
 ) : ApiCallHandler(logger, databaseService)
 {
-    public override CallType CallType => CallType.TornItems;
+    public override ApiCallType CallType => ApiCallType.TornItems;
 
     public override async Task HandleResponseAsync(string content, CancellationToken stoppingToken)
     {

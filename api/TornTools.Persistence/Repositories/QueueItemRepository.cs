@@ -13,7 +13,7 @@ public class QueueItemRepository(
     TornToolsDbContext dbContext
 ) : RepositoryBase<QueueItemRepository>(logger, dbContext), IQueueItemRepository
 {
-    public async Task<QueueItemDto> CreateQueueItemAsync(CallType callType, string endpointUrl, CancellationToken stoppingToken)
+    public async Task<QueueItemDto> CreateQueueItemAsync(ApiCallType callType, string endpointUrl, CancellationToken stoppingToken)
     {
         var queueItem = new QueueItemEntity
         {

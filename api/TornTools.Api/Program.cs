@@ -1,7 +1,10 @@
 using Hangfire;
 using TornTools.Application;
+using TornTools.Application.Interfaces;
 using TornTools.Application.Playwright;
 using TornTools.Core;
+using TornTools.Core.Constants;
+using TornTools.Core.Enums;
 using TornTools.Cron;
 using TornTools.Cron.Interfaces;
 using TornTools.Cron.Processors;
@@ -37,7 +40,7 @@ using (var scope = app.Services.CreateScope())
 {
     /*
     var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
-    await databaseService.CreateQueueItem(CallType.TornItems, TornApiEndpointConstants.Items, CancellationToken.None);
+    await databaseService.CreateQueueItem(ApiCallType.TornItems, TornApiEndpointConstants.Items, CancellationToken.None);
     //*/
 
     var jobScheduler = scope.ServiceProvider.GetRequiredService<IApiJobScheduler>();

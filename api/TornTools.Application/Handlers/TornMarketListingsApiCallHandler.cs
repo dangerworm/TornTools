@@ -12,20 +12,23 @@ public class TornMarketListingsApiCallHandler(
     IDatabaseService databaseService
 ) : ApiCallHandler(logger, databaseService)
 {
-    public override CallType CallType => CallType.TornMarketListings;
+    public override ApiCallType CallType => ApiCallType.TornMarketListings;
 
     public override async Task HandleResponseAsync(string content, CancellationToken stoppingToken)
     {
         var payload = JsonSerializer.Deserialize<ItemMarketPayload>(content)
             ?? throw new Exception($"Failed to deserialize {nameof(ItemMarketPayload)} from API response.");
 
-        var previousListings = (
-            await DatabaseService.GetListingsBySourceAndItemIdAsync(
-                Source.Torn,
-                payload.ItemMarket.Item.Id,
-                stoppingToken
+        var previousListings = 
+            (
+                await DatabaseService.GetListingsBySourceAndItemIdAsync(
+                    Source.Torn,
+                    payload.ItemMarket.Item.Id,
+                    stoppingToken
+                )
             )
-        ).ToList();
+            .OrderBy(l => l.ListingPosition)
+            .ToList();
 
         if (previousListings.Count != 0)
         {
@@ -50,6 +53,7 @@ public class TornMarketListingsApiCallHandler(
                         hasMarketChanged = true;
                         break;
                     }
+                    i++;
                 }
             }
 

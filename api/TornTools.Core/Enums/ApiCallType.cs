@@ -1,5 +1,5 @@
 ﻿namespace TornTools.Core.Enums;
-public enum CallType
+public enum ApiCallType
 {
     TornItems,
     TornMarketListings,

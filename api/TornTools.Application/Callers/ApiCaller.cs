@@ -19,7 +19,7 @@ public abstract class ApiCaller<TCaller>(
     protected readonly IApiCallHandlerResolver HandlerResolver = handlerResolver ?? throw new ArgumentNullException(nameof(handlerResolver));
     protected readonly IHttpClientFactory HttpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
 
-    public abstract IEnumerable<CallType> CallTypes { get; }
+    public abstract IEnumerable<ApiCallType> CallTypes { get; }
     protected abstract string ClientName { get; }
 
     protected virtual async Task<bool> CallAsync(QueueItemDto queueItem, CancellationToken stoppingToken)

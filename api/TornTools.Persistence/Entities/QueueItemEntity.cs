@@ -57,7 +57,7 @@ public class QueueItemEntity
         return new QueueItemDto
         {
             Id = Id,
-            CallType = Enum.Parse<CallType>(CallType),
+            CallType = Enum.Parse<ApiCallType>(CallType),
             EndpointUrl = EndpointUrl,
             HttpMethod = HttpMethod,
             HeadersJson = HeadersJson,

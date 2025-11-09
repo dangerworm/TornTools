@@ -14,10 +14,10 @@ public class TornApiCaller(
 {
     private readonly TornApiCallerConfiguration _options = options ?? throw new ArgumentNullException(nameof(options));
 
-    public override IEnumerable<CallType> CallTypes =>
+    public override IEnumerable<ApiCallType> CallTypes =>
     [
-        CallType.TornItems,
-        CallType.TornMarketListings
+        ApiCallType.TornItems,
+        ApiCallType.TornMarketListings
     ];
 
     protected override string ClientName => "torn-api-caller";
