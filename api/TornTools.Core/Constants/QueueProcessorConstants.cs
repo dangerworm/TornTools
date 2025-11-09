@@ -2,6 +2,6 @@
 
 public static class QueueProcessorConstants
 {
-    public const int SecondsPerQueueWorkerIteration = 1;
+    public const double SecondsPerQueueWorkerIteration = 0.75;
     public const int SecondsToWaitOnEmptyQueue = 5;
 }

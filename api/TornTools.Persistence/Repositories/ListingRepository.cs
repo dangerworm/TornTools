@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
+using TornTools.Core.Enums;
 using TornTools.Persistence.Entities;
 using TornTools.Persistence.Interfaces;
 
@@ -64,6 +65,22 @@ public class ListingRepository(
             .ToListAsync(stoppingToken);
 
         return listings.Select(l => l.AsDto());
+    }
+
+    public async Task<IEnumerable<ListingDto>> GetListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken)
+    {
+        var listings = await DbContext.Listings
+            .Where(l => l.Source == source.ToString() && l.ItemId == itemId)
+            .ToListAsync(stoppingToken);
+
+        return listings.Select(l => l.AsDto());
+    }
+
+    public async Task DeleteListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken)
+    {
+        var listings = await DbContext.Listings
+            .Where(l => l.Source == source.ToString() && l.ItemId == itemId)
+            .ExecuteDeleteAsync(stoppingToken);
     }
 
     private static ListingEntity CreateEntityFromDto(ListingDto listingDto)

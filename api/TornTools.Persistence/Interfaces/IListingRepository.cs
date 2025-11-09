@@ -1,4 +1,5 @@
 ﻿using TornTools.Core.DataTransferObjects;
+using TornTools.Core.Enums;
 
 namespace TornTools.Persistence.Interfaces;
 public interface IListingRepository
@@ -7,4 +8,6 @@ public interface IListingRepository
     Task CreateListingsAsync(IEnumerable<ListingDto> listingDtos, CancellationToken stoppingToken);
     Task<IEnumerable<ListingDto>> GetAllListingsAsync(CancellationToken stoppingToken);
     Task<IEnumerable<ListingDto>> GetListingsByItemIdAsync(int itemId, CancellationToken stoppingToken);
+    Task<IEnumerable<ListingDto>> GetListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken);
+    Task DeleteListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken);
 }

@@ -5,4 +5,4 @@ services:
     build:
       context: .docker/flyway
       dockerfile: Dockerfile
-    command: -url=${DATABASE_URL} -user=${DATABASE_USER} -password=${DATABASE_PASSWORD} -outOfOrder=false -validateMigrationNaming=true repair migrate
+    command: -url=${DATABASE_URL} -user=${DATABASE_USER} -password=${DATABASE_PASSWORD} -schemas=public -target=1.5 -outOfOrder=false -validateMigrationNaming=true repair migrate

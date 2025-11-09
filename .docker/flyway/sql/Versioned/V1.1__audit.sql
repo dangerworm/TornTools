@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS public.audit (
+CREATE TABLE public.audit (
   id SERIAL PRIMARY KEY,
   updated_at TIMESTAMP DEFAULT NOW(),
   operation TEXT NOT NULL,

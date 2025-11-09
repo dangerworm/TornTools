@@ -10,15 +10,23 @@ namespace TornTools.Application.Services;
 
 public class DatabaseService(
     ILogger<DatabaseService> logger, 
+    IItemChangeLogRepository itemChangeLogRepository,
     IItemRepository itemRepository,
     IListingRepository listingRepository,
     IQueueItemRepository queueItemRepository
 ) : IDatabaseService
 {
     private readonly ILogger<DatabaseService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IItemChangeLogRepository _itemChangeLogRepository = itemChangeLogRepository ?? throw new ArgumentNullException(nameof(itemChangeLogRepository));
     private readonly IItemRepository _itemRepository = itemRepository ?? throw new ArgumentNullException(nameof(itemRepository));
     private readonly IListingRepository _listingRepository = listingRepository ?? throw new ArgumentNullException(nameof(listingRepository));
     private readonly IQueueItemRepository _queueItemRepository = queueItemRepository ?? throw new ArgumentNullException(nameof(queueItemRepository));
+
+
+    public Task CreateItemChangeLogAsync(ItemChangeLogDto changeLogDto, CancellationToken stoppingToken)
+    {
+        return _itemChangeLogRepository.CreateItemChangeLogAsync(changeLogDto, stoppingToken);
+    }
 
     public Task UpsertItemsAsync(IEnumerable<ItemDto> items, CancellationToken stoppingToken)
     {
@@ -30,42 +38,52 @@ public class DatabaseService(
         return _listingRepository.CreateListingsAsync(listings, stoppingToken);
     }
 
+    public async Task<IEnumerable<ListingDto>> GetListingsByItemIdAsync(int itemId, CancellationToken stoppingToken)
+    {
+        return await _listingRepository.GetListingsByItemIdAsync(itemId, stoppingToken);
+    }
+
+    public async Task<IEnumerable<ListingDto>> GetListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken)
+    {
+        return await _listingRepository.GetListingsBySourceAndItemIdAsync(source, itemId, stoppingToken);
+    }
+
+    public Task DeleteListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken)
+    {
+        return _listingRepository.DeleteListingsBySourceAndItemIdAsync(source, itemId, stoppingToken);
+    }
+
     public async Task PopulateQueue(CancellationToken stoppingToken)
     {
+        // Find how many times each market has changed
+        var changeLogs = await _itemChangeLogRepository.GetRecentItemChangeLogsAsync(TimeConstants.TimeWindowHours, stoppingToken);
+        var groupedChanges = changeLogs
+            .GroupBy(log => log.ItemId)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var maxNumberOfChanges = Math.Floor(groupedChanges.Values.Max() * (double)1 / TimeConstants.TimeWindowHours);
+
+        // Ensure that markets which change regularly are checked most often
+        var queueItems = new List<QueueItemDto>();
+        for (var numberOfChanges = maxNumberOfChanges; numberOfChanges >= 0; numberOfChanges--)
+        {
+            var itemsToProcess = groupedChanges
+                .Where(kv => kv.Value >= numberOfChanges)
+                .Select(kv => kv.Key)
+                .SelectMany(BuildQueueItems);
+
+            queueItems.AddRange(itemsToProcess);
+        }
+
+        // Add all items, including any remaining items which have not changed in the time window
         var allItems = await _itemRepository.GetAllItemsAsync(stoppingToken);
-        var items = allItems.ToList();
-
-        /*=== TORN ITEM MARKET ===*/
-        var itemMarketQueueItems = items.Take(ApiConstants.NumberOfItems).Select(item =>
-            new QueueItemDto
-            {
-                CallType = CallType.TornMarketListings,
-                EndpointUrl = string.Format(TornApiEndpointConstants.ItemListings, item.Id),
-                HttpMethod = "GET",
-                ItemStatus = nameof(QueueStatus.Pending),
-                CreatedAt = DateTime.UtcNow
-            }
-        );
-        await _queueItemRepository.CreateQueueItemsAsync(itemMarketQueueItems, stoppingToken);
-
-        // Group by time window
-
+        var itemIds = allItems.Select(i => i.Id);
         for (var i = 0; i < ApiConstants.NumberOfItems; i++)
         {
-            var item = items.Skip(i).Take(1).First();
-
-            await _queueItemRepository.CreateQueueItemAsync(
-                callType: CallType.TornMarketListings,
-                endpointUrl: string.Format(TornApiEndpointConstants.ItemListings, item.Id),
-                stoppingToken: stoppingToken
-            );
-
-            await _queueItemRepository.CreateQueueItemAsync(
-                callType: CallType.Weav3rBazaarListings,
-                endpointUrl: string.Format(Weav3rApiEndpointConstants.BazaarListings, item.Id),
-                stoppingToken: stoppingToken
-            );
+            queueItems.AddRange(itemIds.Take(ApiConstants.NumberOfItems).SelectMany(BuildQueueItems));
         }
+        
+        await _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken);
     }
 
     public Task<QueueItemDto> CreateQueueItem(CallType callType, string endpointUrl, CancellationToken stoppingToken)
@@ -86,5 +104,33 @@ public class DatabaseService(
     public Task<QueueItemDto> SetQueueItemCompleted(Guid id, CancellationToken stoppingToken)
     {
         return _queueItemRepository.SetQueueItemCompletedAsync(id, stoppingToken);
+    }
+
+    private static List<QueueItemDto> BuildQueueItems(int itemId)
+    {
+        var queueItems = new List<QueueItemDto>();
+
+        var itemMarketQueueItem = new QueueItemDto
+        {
+            CallType = CallType.TornMarketListings,
+            EndpointUrl = string.Format(TornApiEndpointConstants.ItemListings, itemId),
+            HttpMethod = "GET",
+            ItemStatus = nameof(QueueStatus.Pending),
+            CreatedAt = DateTime.UtcNow
+        };
+        queueItems.Add(itemMarketQueueItem);
+
+        var bazaarQueueItem = new QueueItemDto
+        {
+            CallType = CallType.Weav3rBazaarListings,
+            EndpointUrl = string.Format(Weav3rApiEndpointConstants.BazaarListings, itemId),
+            HttpMethod = "GET",
+            ItemStatus = nameof(QueueStatus.Pending),
+            CreatedAt = DateTime.UtcNow,
+            NextAttemptAt = DateTime.UtcNow.AddSeconds(i * 2.5) // Delay to avoid hammering
+        };
+        queueItems.Add(itemMarketQueueItem);
+
+        return queueItems;
     }
 }
