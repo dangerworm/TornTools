@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
-using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Enums;
 using TornTools.Core.Models.Weav3rBazaarListings;
@@ -32,7 +31,6 @@ public class Weav3rBazaarListingsApiCallHandler(
                     index
                 )
             )
-            .Take(ApiConstants.NumberOfListingsToStorePerItem)
             .ToList();
 
         await ProcessListings(itemId, previousListings, newListings, stoppingToken);

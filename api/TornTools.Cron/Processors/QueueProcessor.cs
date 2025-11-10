@@ -94,7 +94,6 @@ public class QueueProcessor(
                 try
                 {
                     queueItem = await databaseService.SetQueueItemCompleted(itemId, stoppingToken);
-                    _logger.LogInformation("{QueueItem} {Id} completed.", nameof(QueueItemDto), itemId);
                 }
                 catch (Exception ex)
                 {

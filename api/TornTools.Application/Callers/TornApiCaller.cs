@@ -8,9 +8,8 @@ namespace TornTools.Application.Callers;
 public class TornApiCaller(
     ILogger<TornApiCaller> logger,
     IApiCallHandlerResolver handlerResolver,
-    IHttpClientFactory httpClientFactory,
     TornApiCallerConfiguration options
-) : ApiCaller<TornApiCaller>(logger, handlerResolver, httpClientFactory), IApiCaller
+) : ApiCaller<TornApiCaller>(logger, handlerResolver), IApiCaller
 {
     private readonly TornApiCallerConfiguration _options = options ?? throw new ArgumentNullException(nameof(options));
 

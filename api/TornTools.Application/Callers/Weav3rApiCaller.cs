@@ -10,10 +10,9 @@ namespace TornTools.Application.Callers;
 public class Weav3rApiCaller(
     ILogger<Weav3rApiCaller> logger,
     IApiCallHandlerResolver handlerResolver,
-    IHttpClientFactory httpClientFactory,
     PlaywrightSingleton playwright,
     Weav3rApiCallerConfiguration options
-) : ApiCaller<Weav3rApiCaller>(logger, handlerResolver, httpClientFactory), IApiCaller
+) : ApiCaller<Weav3rApiCaller>(logger, handlerResolver), IApiCaller
 {
     private readonly Weav3rApiCallerConfiguration _options = options ?? throw new ArgumentNullException(nameof(options));
 

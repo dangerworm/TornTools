@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
+using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Enums;
 
@@ -13,18 +14,13 @@ public abstract class ListingApiCallHandler<TCallHandler>(
 {
     protected async Task<List<ListingDto>> GetPreviousListings(Source source, int itemId, CancellationToken stoppingToken)
     {
-        var previousListings =
-            (
-                await DatabaseService.GetListingsBySourceAndItemIdAsync(
-                    source,
-                    itemId,
-                    stoppingToken
-                )
-            )
-            .OrderBy(l => l.ListingPosition)
-            .ToList();
+        var previousListings = await DatabaseService.GetListingsBySourceAndItemIdAsync(
+            source,
+            itemId,
+            stoppingToken
+        );
 
-        return previousListings;
+        return [.. previousListings];
     }
 
     protected async Task ProcessListings(
@@ -33,18 +29,25 @@ public abstract class ListingApiCallHandler<TCallHandler>(
         List<ListingDto> newListings,
         CancellationToken stoppingToken)
     {
+        newListings = [.. newListings
+            .OrderBy(l => l.Price)
+            .Take(QueryConstants.NumberOfListingsToStorePerItem)];
+
         if (previousListings.Count == 0)
         {
             await DatabaseService.CreateListingsAsync(newListings, stoppingToken);
             return;
         }
 
+        previousListings = [.. previousListings
+            .OrderBy(l => l.Price)
+            .Take(QueryConstants.NumberOfListingsToStorePerItem)];
+
         var previousMinimumPrice = previousListings.Min(l => l.Price);
         var newMinimumPrice = newListings.Min(l => l.Price);
 
         // There are a maximum of 100 items returned.
-        // In most cases this check will be false, but for small markets it's
-        // a little optimisation to avoid iterating all listings unnecessarily.
+        // This is a little optimisation to avoid iterating all listings unnecessarily.
         var hasMarketChanged = previousListings.Count != newListings.Count;
         var hasMinimumPriceChanged = previousMinimumPrice != newMinimumPrice;
 

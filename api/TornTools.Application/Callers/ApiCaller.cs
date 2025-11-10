@@ -1,9 +1,7 @@
 ﻿using System.Net;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using Microsoft.Playwright;
 using TornTools.Application.Interfaces;
 using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Enums;
@@ -11,13 +9,11 @@ using TornTools.Core.Enums;
 namespace TornTools.Application.Callers;
 public abstract class ApiCaller<TCaller>(
     ILogger<TCaller> logger,
-    IApiCallHandlerResolver handlerResolver,
-    IHttpClientFactory httpClientFactory
+    IApiCallHandlerResolver handlerResolver
 )
 {
     protected readonly ILogger<TCaller> Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     protected readonly IApiCallHandlerResolver HandlerResolver = handlerResolver ?? throw new ArgumentNullException(nameof(handlerResolver));
-    protected readonly IHttpClientFactory HttpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
 
     public abstract IEnumerable<ApiCallType> CallTypes { get; }
     protected abstract string ClientName { get; }
@@ -50,10 +46,9 @@ public abstract class ApiCaller<TCaller>(
             var content = await Fetch(client, requestMessage, stoppingToken);
             if (content is null)
             {
+                Logger.LogWarning("API call for {QueueItem} {Id} failed.", nameof(QueueItemDto), queueItem.Id);
                 return false;
             }
-
-            Logger.LogInformation("API call for {QueueItem} {Id} succeeded.", nameof(QueueItemDto), queueItem.Id);
 
             var handler = HandlerResolver.GetHandler(queueItem.CallType);
             await handler.HandleResponseAsync(content, stoppingToken);

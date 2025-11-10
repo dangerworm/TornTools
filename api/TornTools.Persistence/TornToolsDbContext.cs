@@ -22,6 +22,11 @@ public class TornToolsDbContext(
             e.Property(x => x.Source).IsRequired();
             e.Property(x => x.ChangeTime).IsRequired();
             e.Property(x => x.NewPrice).IsRequired();
+
+            e.HasOne<ItemEntity>()
+                .WithMany()
+                .HasForeignKey(x => x.ItemId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<ItemEntity>(e =>

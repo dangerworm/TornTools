@@ -8,5 +8,6 @@ public interface IItemRepository
     Task UpsertItemsAsync(IEnumerable<ItemDto> itemDtos, CancellationToken stoppingToken);
     Task<int> GetNumberOfItemsAsync(CancellationToken stoppingToken);
     Task<IEnumerable<ItemDto>> GetAllItemsAsync(CancellationToken stoppingToken);
+    Task<IEnumerable<ItemDto>> GetResaleItemsAsync(CancellationToken stoppingToken);
     Task<ItemDto> GetItemAsync(int id, CancellationToken stoppingToken);
 }

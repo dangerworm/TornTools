@@ -113,6 +113,15 @@ public class ItemRepository(
         return items.Select(item => item.AsDto());
     }
 
+    public async Task<IEnumerable<ItemDto>> GetResaleItemsAsync(CancellationToken stoppingToken)
+    {
+        var items = await DbContext.Items
+            .Where(i => i.ValueSellPrice != null && i.ValueSellPrice < QueryConstants.MaxSellPrice)
+            .ToListAsync(stoppingToken);
+
+        return items.Select(item => item.AsDto());
+    }
+
     public async Task<ItemDto> GetItemAsync(int id, CancellationToken stoppingToken)
     {
         var item = await GetItemByIdAsync(id, stoppingToken);

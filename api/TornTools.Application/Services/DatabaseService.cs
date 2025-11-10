@@ -84,9 +84,9 @@ public class DatabaseService(
         }
 
         // Add all items, including any remaining items which have not changed in the time window
-        var allItems = await _itemRepository.GetAllItemsAsync(stoppingToken);
+        var allItems = await _itemRepository.GetResaleItemsAsync(stoppingToken);
         var itemIds = allItems.Select(i => i.Id);
-        queueItems.AddRange(itemIds.Take(ApiConstants.MaxNumberOfItemsToProcess).SelectMany(BuildQueueItems));
+        queueItems.AddRange(itemIds.Take(QueryConstants.MaxNumberOfItemsToProcess).SelectMany(BuildQueueItems));
         
         await _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken);
     }
