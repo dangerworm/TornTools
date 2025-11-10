@@ -11,10 +11,13 @@ public class TornToolsDbContext(
     public DbSet<ItemChangeLogEntity> ItemChangeLogs { get; set; } = null!;
     public DbSet<ItemEntity> Items { get; set; } = null!;
     public DbSet<ListingEntity> Listings { get; set; } = null!;
+    public DbSet<ProfitableListingView> ProfitableListings { get; set; } = null!;
     public DbSet<QueueItemEntity> QueueItems { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Entity mapping
+
         modelBuilder.Entity<ItemChangeLogEntity>(e =>
         {
             e.HasKey(x => x.Id);
@@ -62,6 +65,13 @@ public class TornToolsDbContext(
                .ValueGeneratedOnAdd() 
                .UseIdentityAlwaysColumn();
         });
-    }
 
+        // View mapping
+
+        modelBuilder.Entity<ProfitableListingView>(e =>
+        {
+            e.HasNoKey();
+            e.ToView("profitable_listings", "public");
+        });
+    }
 }

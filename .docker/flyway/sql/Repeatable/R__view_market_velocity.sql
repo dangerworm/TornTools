@@ -19,6 +19,7 @@ WITH
       	COUNT(icl.id) DESC
   )
 SELECT
+  cc.item_id,
   cc.name,
   cc.times_changed,
   icl.new_price,

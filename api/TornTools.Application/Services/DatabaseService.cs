@@ -64,29 +64,48 @@ public class DatabaseService(
         var changeLogs = await _itemChangeLogRepository.GetRecentItemChangeLogsAsync(TimeConstants.TimeWindowHours, stoppingToken);
         var groupedChanges = changeLogs
             .GroupBy(log => log.ItemId)
+            .OrderByDescending(group => group.Count())
             .ToDictionary(g => g.Key, g => g.Count());
+
+        // Anything appearing in the profitable listings should also be prioritized
+        var profitableItems = await _itemRepository.GetProfitableItemsAsync(stoppingToken);
+        var profitableItemsToProcess = profitableItems
+            .Select(pi => pi.ItemId)
+            .SelectMany(BuildQueueItems)
+            .ToList();
 
         var queueItems = new List<QueueItemDto>();
         if (groupedChanges.Count > 0)
         {
             var maxNumberOfChanges = groupedChanges.Values.Max();
 
-            // Ensure that markets which change regularly are checked most often
             for (var numberOfChanges = maxNumberOfChanges; numberOfChanges >= 0; numberOfChanges--)
             {
+                // Ensure that markets which change regularly are checked most often
                 var itemsToProcess = groupedChanges
                     .Where(kv => kv.Value >= numberOfChanges)
                     .Select(kv => kv.Key)
                     .SelectMany(BuildQueueItems);
 
                 queueItems.AddRange(itemsToProcess);
+
+                // Include anything appearing in the profitable listings
+                // so we don't leave old entries in the list for too long
+                queueItems.AddRange(profitableItemsToProcess);
             }
         }
 
-        // Add all items, including any remaining items which have not changed in the time window
+        // Anything that doesn't appear is clearly not changing frequently
+        // so add remaining items which have not changed in the time window
         var allItems = await _itemRepository.GetResaleItemsAsync(stoppingToken);
-        var itemIds = allItems.Select(i => i.Id);
-        queueItems.AddRange(itemIds.Take(QueryConstants.MaxNumberOfItemsToProcess).SelectMany(BuildQueueItems));
+        var leftOverItems = allItems
+            .Select(item => item.Id)
+            .Except(groupedChanges.Keys)
+            .Except(profitableItems.Select(pi => pi.ItemId))
+            .SelectMany(BuildQueueItems)
+            .ToList();
+        
+        queueItems.AddRange(leftOverItems.Take(QueryConstants.MaxNumberOfItemsToProcess));
         
         await _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken);
     }

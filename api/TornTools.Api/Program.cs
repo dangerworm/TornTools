@@ -40,7 +40,6 @@ using (var scope = app.Services.CreateScope())
 {
     var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
     var numberOfItems = await databaseService.GetNumberOfItemsAsync(CancellationToken.None);
-
     if (numberOfItems == 0)
     {
         await databaseService.CreateQueueItem(ApiCallType.TornItems, TornApiEndpointConstants.Items, CancellationToken.None);

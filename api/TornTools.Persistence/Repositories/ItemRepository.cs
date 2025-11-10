@@ -102,14 +102,24 @@ public class ItemRepository(
         }
     }
 
+    public async Task<IEnumerable<ItemDto>> GetAllItemsAsync(CancellationToken stoppingToken)
+    {
+        var items = await DbContext.Items.ToListAsync(stoppingToken);
+
+        return items.Select(item => item.AsDto());
+    }
+
     public Task<int> GetNumberOfItemsAsync(CancellationToken stoppingToken)
     {
         return DbContext.Items.CountAsync(stoppingToken);
     }
 
-    public async Task<IEnumerable<ItemDto>> GetAllItemsAsync(CancellationToken stoppingToken)
+    public async Task<IEnumerable<ProfitableListingDto>> GetProfitableItemsAsync(CancellationToken stoppingToken)
     {
-        var items = await DbContext.Items.ToListAsync(stoppingToken);
+        var items = await DbContext.ProfitableListings
+            .OrderByDescending(x => x.Profit)
+            .ToListAsync(stoppingToken);
+
         return items.Select(item => item.AsDto());
     }
 
