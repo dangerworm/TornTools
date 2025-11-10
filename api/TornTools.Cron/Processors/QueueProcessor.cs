@@ -38,6 +38,7 @@ public class QueueProcessor(
                     if (queueItem?.Id is null)
                     {
                         // Queue is empty
+                        await databaseService.RemoveQueueItemsAsync(stoppingToken, QueueStatus.Completed);
                         await databaseService.PopulateQueue(stoppingToken);
                         continue;
                     }

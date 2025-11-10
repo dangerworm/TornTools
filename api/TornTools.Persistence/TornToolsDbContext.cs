@@ -52,6 +52,10 @@ public class TornToolsDbContext(
             e.HasKey(x => x.Id);
 
             e.HasIndex(x => new { x.ItemStatus, x.NextAttemptAt, x.CreatedAt });
+
+            e.Property(x => x.QueueIndex)
+               .ValueGeneratedOnAdd() 
+               .UseIdentityAlwaysColumn();
         });
     }
 

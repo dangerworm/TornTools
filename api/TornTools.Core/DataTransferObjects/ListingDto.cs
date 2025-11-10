@@ -27,7 +27,7 @@ public class ListingDto
         ListingPosition = listingPosition;
         TimeSeen = DateTime.UtcNow;
         Price = listing.Price;
-        Quantity = listing.Amount;
+        Quantity = listing.Quantity;
     }
 
     [SetsRequiredMembers]

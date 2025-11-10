@@ -68,7 +68,7 @@ public class QueueItemRepository(
         var queueItem = await DbContext.QueueItems
             .Where(q => q.ItemStatus == nameof(QueueStatus.Pending) &&
                        (q.NextAttemptAt == null || q.NextAttemptAt <= now))
-            .OrderBy(q => q.CreatedAt)
+            .OrderBy(q => q.QueueIndex)
             .FirstOrDefaultAsync(stoppingToken);
 
         if (queueItem is null)
@@ -129,7 +129,7 @@ public class QueueItemRepository(
         return queueItem.AsDto();
     }
 
-    public async Task RemoveCompletedQueueItemsAsync(CancellationToken stoppingToken)
+    public async Task RemoveQueueItemsAsync(CancellationToken stoppingToken, QueueStatus? statusToRemove = null)
     {
         // Turn off auto-change detection while doing lots of work
         var wasAutoDetect = DbContext.ChangeTracker.AutoDetectChangesEnabled;
@@ -139,8 +139,7 @@ public class QueueItemRepository(
             while (true)
             {
                 var completedItems = await DbContext.QueueItems
-                    .Where(q => q.ItemStatus == nameof(QueueStatus.Completed))
-                    .OrderBy(q => q.ProcessedAt)
+                    .Where(q => statusToRemove == null || q.ItemStatus == nameof(QueueStatus.Completed))
                     .Take(DatabaseConstants.BulkUpdateSize)
                     .ToListAsync(stoppingToken);
 

@@ -8,5 +8,5 @@ public class Listing
     public long Price { get; set; }
 
     [JsonPropertyName("amount")]
-    public int Amount { get; set; }
+    public int Quantity { get; set; }
 }

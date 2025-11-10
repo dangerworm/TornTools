@@ -52,6 +52,10 @@ public class QueueItemEntity
     [Column("processed_at")]
     public DateTime? ProcessedAt { get; set; }
 
+    [Column("queue_index")]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public long QueueIndex { get; set; }
+
     public QueueItemDto AsDto()
     {
         return new QueueItemDto
@@ -67,7 +71,8 @@ public class QueueItemEntity
             CreatedAt = CreatedAt,
             LastAttemptAt = LastAttemptAt,
             NextAttemptAt = NextAttemptAt,
-            ProcessedAt = ProcessedAt
+            ProcessedAt = ProcessedAt,
+            QueueIndex = QueueIndex
         };
     }
 }

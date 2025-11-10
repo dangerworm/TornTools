@@ -102,6 +102,11 @@ public class ItemRepository(
         }
     }
 
+    public Task<int> GetNumberOfItemsAsync(CancellationToken stoppingToken)
+    {
+        return DbContext.Items.CountAsync(stoppingToken);
+    }
+
     public async Task<IEnumerable<ItemDto>> GetAllItemsAsync(CancellationToken stoppingToken)
     {
         var items = await DbContext.Items.ToListAsync(stoppingToken);

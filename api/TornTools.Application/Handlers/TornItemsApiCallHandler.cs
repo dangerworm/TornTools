@@ -10,7 +10,7 @@ namespace TornTools.Application.Handlers;
 public class TornItemsApiCallHandler(
     ILogger<TornItemsApiCallHandler> logger,
     IDatabaseService databaseService
-) : ApiCallHandler(logger, databaseService)
+) : ApiCallHandler<TornItemsApiCallHandler>(logger, databaseService)
 {
     public override ApiCallType CallType => ApiCallType.TornItems;
 

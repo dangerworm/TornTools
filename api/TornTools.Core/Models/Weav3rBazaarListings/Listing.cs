@@ -17,7 +17,7 @@ public class Listing
     public required int Quantity { get; set; }
 
     [JsonPropertyName("price")]
-    public required int Price { get; set; }
+    public required long Price { get; set; }
 
     [JsonPropertyName("content_updated")]
     public required long ContentUpdated { get; set; }

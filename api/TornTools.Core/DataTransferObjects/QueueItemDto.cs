@@ -6,7 +6,7 @@ namespace TornTools.Core.DataTransferObjects;
 public class QueueItemDto
 {
     public Guid? Id { get; set; }
-    
+
     public required ApiCallType CallType { get; set; }
     public required string EndpointUrl { get; set; } = default!;
 
@@ -22,4 +22,5 @@ public class QueueItemDto
     public DateTime? LastAttemptAt { get; set; }
     public DateTime? NextAttemptAt { get; set; }
     public DateTime? ProcessedAt { get; set; }
+    public long QueueIndex { get; set; }
 }

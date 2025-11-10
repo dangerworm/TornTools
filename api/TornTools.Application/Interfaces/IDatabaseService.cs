@@ -1,11 +1,13 @@
 ﻿using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Enums;
+using TornTools.Cron.Enums;
 
 namespace TornTools.Application.Interfaces;
 public interface IDatabaseService
 {
     Task CreateItemChangeLogAsync(ItemChangeLogDto changeLogDto, CancellationToken stoppingToken);
 
+    Task<int> GetNumberOfItemsAsync(CancellationToken stoppingToken);
     Task UpsertItemsAsync(IEnumerable<ItemDto> items, CancellationToken stoppingToken);
     
     Task CreateListingsAsync(IEnumerable<ListingDto> listings, CancellationToken stoppingToken);
@@ -17,4 +19,5 @@ public interface IDatabaseService
     Task<QueueItemDto?> GetNextQueueItem(CancellationToken stoppingToken);
     Task<QueueItemDto> IncrementQueueItemAttempts(Guid id, CancellationToken stoppingToken);
     Task<QueueItemDto> SetQueueItemCompleted(Guid id, CancellationToken stoppingToken);
+    Task RemoveQueueItemsAsync(CancellationToken stoppingToken, QueueStatus? statusToRemove = null);
 }

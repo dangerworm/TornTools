@@ -38,10 +38,13 @@ if (app.Environment.IsDevelopment())
 
 using (var scope = app.Services.CreateScope())
 {
-    /*
     var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
-    await databaseService.CreateQueueItem(ApiCallType.TornItems, TornApiEndpointConstants.Items, CancellationToken.None);
-    //*/
+    var numberOfItems = await databaseService.GetNumberOfItemsAsync(CancellationToken.None);
+
+    if (numberOfItems == 0)
+    {
+        await databaseService.CreateQueueItem(ApiCallType.TornItems, TornApiEndpointConstants.Items, CancellationToken.None);
+    }
 
     var jobScheduler = scope.ServiceProvider.GetRequiredService<IApiJobScheduler>();
     jobScheduler.RegisterRecurringJobs();

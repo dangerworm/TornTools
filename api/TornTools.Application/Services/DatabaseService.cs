@@ -28,6 +28,11 @@ public class DatabaseService(
         return _itemChangeLogRepository.CreateItemChangeLogAsync(changeLogDto, stoppingToken);
     }
 
+    public Task<int> GetNumberOfItemsAsync(CancellationToken stoppingToken)
+    {
+        return _itemRepository.GetNumberOfItemsAsync(stoppingToken);
+    }
+
     public Task UpsertItemsAsync(IEnumerable<ItemDto> items, CancellationToken stoppingToken)
     {
         return _itemRepository.UpsertItemsAsync(items, stoppingToken);
@@ -64,7 +69,7 @@ public class DatabaseService(
         var queueItems = new List<QueueItemDto>();
         if (groupedChanges.Count > 0)
         {
-            var maxNumberOfChanges = Math.Floor(groupedChanges.Values.Max() * (double)1 / TimeConstants.TimeWindowHours);
+            var maxNumberOfChanges = groupedChanges.Values.Max();
 
             // Ensure that markets which change regularly are checked most often
             for (var numberOfChanges = maxNumberOfChanges; numberOfChanges >= 0; numberOfChanges--)
@@ -81,10 +86,7 @@ public class DatabaseService(
         // Add all items, including any remaining items which have not changed in the time window
         var allItems = await _itemRepository.GetAllItemsAsync(stoppingToken);
         var itemIds = allItems.Select(i => i.Id);
-        for (var i = 0; i < ApiConstants.NumberOfItems; i++)
-        {
-            queueItems.AddRange(itemIds.Take(ApiConstants.NumberOfItems).SelectMany(BuildQueueItems));
-        }
+        queueItems.AddRange(itemIds.Take(ApiConstants.MaxNumberOfItemsToProcess).SelectMany(BuildQueueItems));
         
         await _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken);
     }
@@ -107,6 +109,11 @@ public class DatabaseService(
     public Task<QueueItemDto> SetQueueItemCompleted(Guid id, CancellationToken stoppingToken)
     {
         return _queueItemRepository.SetQueueItemCompletedAsync(id, stoppingToken);
+    }
+
+    public Task RemoveQueueItemsAsync(CancellationToken stoppingToken, QueueStatus? statusToRemove = null)
+    {
+        return _queueItemRepository.RemoveQueueItemsAsync(stoppingToken, statusToRemove);
     }
 
     private static List<QueueItemDto> BuildQueueItems(int itemId)

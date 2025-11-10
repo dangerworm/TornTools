@@ -1,7 +1,9 @@
 ﻿using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Enums;
+using TornTools.Cron.Enums;
 
 namespace TornTools.Persistence.Interfaces;
+
 public interface IQueueItemRepository
 {
     Task<QueueItemDto> CreateQueueItemAsync(ApiCallType callType, string endpointUrl, CancellationToken stoppingToken);
@@ -9,5 +11,5 @@ public interface IQueueItemRepository
     Task<QueueItemDto?> GetNextQueueItemAsync(CancellationToken stoppingToken);
     Task<QueueItemDto> IncrementQueueItemAttemptsAsync(Guid id, CancellationToken stoppingToken);
     Task<QueueItemDto> SetQueueItemCompletedAsync(Guid id, CancellationToken stoppingToken);
-    Task RemoveCompletedQueueItemsAsync(CancellationToken stoppingToken);
+    Task RemoveQueueItemsAsync(CancellationToken stoppingToken, QueueStatus? statusToRemove = null);
 }

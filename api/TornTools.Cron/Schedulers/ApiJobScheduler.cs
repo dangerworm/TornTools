@@ -3,7 +3,6 @@ using Hangfire;
 using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
 using TornTools.Core.Constants;
-using TornTools.Core.DataTransferObjects;
 using TornTools.Cron.Interfaces;
 
 namespace TornTools.Cron.Schedulers;
