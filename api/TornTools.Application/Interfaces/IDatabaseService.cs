@@ -14,10 +14,13 @@ public interface IDatabaseService
     Task<IEnumerable<ListingDto>> GetListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken);
     Task DeleteListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken);
 
+    Task<IEnumerable<ProfitableListingDto>> GetProfitableListings(CancellationToken stoppingToken);
+
     Task PopulateQueue(CancellationToken stoppingToken);
     Task<QueueItemDto> CreateQueueItem(ApiCallType callType, string endpointUrl, CancellationToken stoppingToken);
     Task<QueueItemDto?> GetNextQueueItem(CancellationToken stoppingToken);
     Task<QueueItemDto> IncrementQueueItemAttempts(Guid id, CancellationToken stoppingToken);
     Task<QueueItemDto> SetQueueItemCompleted(Guid id, CancellationToken stoppingToken);
     Task RemoveQueueItemsAsync(CancellationToken stoppingToken, QueueStatus? statusToRemove = null);
+    Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken);
 }

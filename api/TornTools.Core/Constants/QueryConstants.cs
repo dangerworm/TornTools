@@ -9,5 +9,6 @@ public class QueryConstants
     // from the 'all items' Torn API.
     public const int MaxNumberOfItemsToProcess = int.MaxValue;
 
-    public const int MaxSellPrice = 900000;
+    public const int MinSellPrice = 449;
+    public const int MaxSellPrice = 900001;
 }

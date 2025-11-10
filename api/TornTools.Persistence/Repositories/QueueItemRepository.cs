@@ -158,6 +158,15 @@ public class QueueItemRepository(
         }
     }
 
+    public async Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken)
+    {
+        var itemToRemove = await DbContext.QueueItems.FindAsync([id, stoppingToken], cancellationToken: stoppingToken) 
+            ?? throw new Exception($"{nameof(QueueItemEntity)} with ID {id} not found.");
+        
+        DbContext.QueueItems.Remove(itemToRemove);
+        await DbContext.SaveChangesAsync(stoppingToken);
+    }
+
     private async Task<QueueItemEntity> GetQueueItemByIdAsync(Guid id, CancellationToken stoppingToken)
     {
         var queueItem = await DbContext.QueueItems.FindAsync([id, stoppingToken], stoppingToken);

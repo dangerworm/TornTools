@@ -18,13 +18,13 @@ SELECT
   i.value_sell_price AS sell_price,
   sum(l.quantity) AS quantity,
   sum((i.value_sell_price - l.price) * l.quantity) AS profit,
-  max(l.last_updated) AS last_updated
+  max(l.time_seen) AS last_updated
 FROM
   public.items i
   JOIN public.listings l ON l.item_id = i.id
 WHERE
-  i.value_vendor_country = 'Torn'
-  AND l.price < i.value_sell_price
+  i.id <> 335
+	AND l.price < i.value_sell_price
 GROUP BY
   l.item_id,
   i.name,

@@ -1,6 +1,6 @@
-@TornTools.Cron_HostAddress = http://localhost:5185
+@TornTools.Api_HostAddress = http://localhost:5185
 
-GET {{TornTools.Cron_HostAddress}}/weatherforecast/
+GET {{TornTools.Api_HostAddress}}/api/
 Accept: application/json
 
 ###

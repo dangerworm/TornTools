@@ -93,21 +93,21 @@ public class QueueProcessor(
                 // Update item status
                 try
                 {
-                    queueItem = await databaseService.SetQueueItemCompleted(itemId, stoppingToken);
+                    await databaseService.RemoveQueueItemAsync(itemId, stoppingToken);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "{QueueItem} {Id} completion failed to update.", nameof(QueueItemDto), itemId);
+                    _logger.LogWarning(ex, "Removal of {QueueItem} {Id} failed.", nameof(QueueItemDto), itemId);
                 }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
-                // graceful shutdown
+                // Graceful shutdown
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "{QueueProcessor} loop error.", nameof(QueueProcessor));
-                // brief pause to avoid tight crash loop
+                // Brief pause to avoid tight crash loop
                 await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
             }
 

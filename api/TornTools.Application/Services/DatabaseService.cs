@@ -58,6 +58,11 @@ public class DatabaseService(
         return _listingRepository.DeleteListingsBySourceAndItemIdAsync(source, itemId, stoppingToken);
     }
 
+    public Task<IEnumerable<ProfitableListingDto>> GetProfitableListings(CancellationToken stoppingToken)
+    {
+        return _itemRepository.GetProfitableItemsAsync(stoppingToken);
+    }
+
     public async Task PopulateQueue(CancellationToken stoppingToken)
     {
         // Find how many times each market has changed
@@ -133,6 +138,11 @@ public class DatabaseService(
     public Task RemoveQueueItemsAsync(CancellationToken stoppingToken, QueueStatus? statusToRemove = null)
     {
         return _queueItemRepository.RemoveQueueItemsAsync(stoppingToken, statusToRemove);
+    }
+
+    public Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken)
+    {
+        return _queueItemRepository.RemoveQueueItemAsync(id, stoppingToken);
     }
 
     private static List<QueueItemDto> BuildQueueItems(int itemId)
