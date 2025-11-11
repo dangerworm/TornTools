@@ -127,8 +127,7 @@ public class ItemRepository(
     {
         var items = await DbContext.Items
             .Where(i => i.ValueSellPrice != null && 
-                        i.ValueSellPrice > QueryConstants.MinSellPrice &&
-                        i.ValueSellPrice < QueryConstants.MaxSellPrice)
+                        i.ValueSellPrice > QueryConstants.MinSellPrice)
             .ToListAsync(stoppingToken);
 
         return items.Select(item => item.AsDto());

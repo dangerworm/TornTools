@@ -37,7 +37,7 @@ public class ApiJobScheduler(
     [DisplayName("Daily Item Update")]
     public async Task RunDailyJob()
     {
-        _logger.LogInformation("Running daily item update...");
+        _logger.LogInformation("Queueing daily item update...");
         await _databaseService.CreateQueueItem(
             callType: Core.Enums.ApiCallType.TornItems,
             endpointUrl: TornApiEndpointConstants.Items,

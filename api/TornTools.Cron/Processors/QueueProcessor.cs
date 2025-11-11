@@ -66,7 +66,7 @@ public class QueueProcessor(
                 // Increment attempt count
                 try
                 {
-                    await databaseService.IncrementQueueItemAttempts(itemId, stoppingToken);
+                    queueItem = await databaseService.IncrementQueueItemAttempts(itemId, stoppingToken);
                 }
                 catch (Exception ex)
                 {
