@@ -1,15 +1,18 @@
 ﻿using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
 using TornTools.Core.Configurations;
+using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Enums;
 
 namespace TornTools.Application.Callers;
+
 public class TornApiCaller(
     ILogger<TornApiCaller> logger,
     IApiCallHandlerResolver handlerResolver,
+    IHttpClientFactory httpClientFactory,
     TornApiCallerConfiguration options
-) : ApiCaller<TornApiCaller>(logger, handlerResolver), IApiCaller
+) : ApiCaller<TornApiCaller>(logger, handlerResolver, httpClientFactory), IApiCaller
 {
     private readonly TornApiCallerConfiguration _options = options ?? throw new ArgumentNullException(nameof(options));
 
@@ -19,7 +22,7 @@ public class TornApiCaller(
         ApiCallType.TornMarketListings
     ];
 
-    protected override string ClientName => "torn-api-caller";
+    protected override string ClientName => TornApiConstants.ClientName;
 
     protected override void AddHeaders(HttpRequestMessage requestMessage, QueueItemDto item)
     {

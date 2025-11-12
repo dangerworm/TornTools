@@ -9,26 +9,20 @@ using TornTools.Core.Enums;
 namespace TornTools.Application.Callers;
 public abstract class ApiCaller<TCaller>(
     ILogger<TCaller> logger,
-    IApiCallHandlerResolver handlerResolver
+    IApiCallHandlerResolver handlerResolver,
+    IHttpClientFactory httpClientFactory
 )
 {
     protected readonly ILogger<TCaller> Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     protected readonly IApiCallHandlerResolver HandlerResolver = handlerResolver ?? throw new ArgumentNullException(nameof(handlerResolver));
+    protected readonly IHttpClientFactory HttpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
 
     public abstract IEnumerable<ApiCallType> CallTypes { get; }
     protected abstract string ClientName { get; }
 
     protected virtual async Task<bool> CallAsync(QueueItemDto queueItem, CancellationToken stoppingToken)
     {
-        var httpClientHandler = new HttpClientHandler
-        {
-            AutomaticDecompression = 
-                DecompressionMethods.GZip |
-                DecompressionMethods.Deflate |
-                DecompressionMethods.Brotli
-        };
-
-        using var client = new HttpClient(httpClientHandler);
+        using var client = HttpClientFactory.CreateClient(ClientName);
 
         using var requestMessage = new HttpRequestMessage(
             new HttpMethod(queueItem.HttpMethod ?? "GET"),

@@ -33,7 +33,12 @@ public class ListingRepository(
 
             for (int i = 0; i < listings.Count; i += DatabaseConstants.BulkUpdateSize)
             {
-                var batch = listings.Skip(i).Take(DatabaseConstants.BulkUpdateSize).ToList();
+                var batch = listings
+                    .OrderBy(l => l.ListingPosition)    
+                    .Skip(i)
+                    .Take(DatabaseConstants.BulkUpdateSize)
+                    .ToList();
+                
                 var keys = batch.Select(b => b.Id).ToList();
 
                 foreach (var itemDto in batch)

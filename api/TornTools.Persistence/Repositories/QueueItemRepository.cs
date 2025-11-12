@@ -41,7 +41,12 @@ public class QueueItemRepository(
 
             for (int i = 0; i < items.Count; i += DatabaseConstants.BulkUpdateSize)
             {
-                var batch = items.Skip(i).Take(DatabaseConstants.BulkUpdateSize).ToList();
+                var batch = items
+                    .OrderBy(i => i.CreatedAt)
+                    .Skip(i)
+                    .Take(DatabaseConstants.BulkUpdateSize)
+                    .ToList();
+
                 var keys = batch.Select(b => b.Id).ToList();
 
                 foreach (var itemDto in batch)
@@ -140,6 +145,8 @@ public class QueueItemRepository(
             {
                 var completedItems = await DbContext.QueueItems
                     .Where(q => statusToRemove == null || q.ItemStatus == nameof(QueueStatus.Completed))
+                    .Where(q => q.ItemStatus != nameof(QueueStatus.Failed))
+                    .OrderBy(q => q.QueueIndex)
                     .Take(DatabaseConstants.BulkUpdateSize)
                     .ToListAsync(stoppingToken);
 

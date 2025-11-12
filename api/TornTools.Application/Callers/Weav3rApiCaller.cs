@@ -3,16 +3,19 @@ using Microsoft.Playwright;
 using TornTools.Application.Interfaces;
 using TornTools.Application.Playwright;
 using TornTools.Core.Configurations;
+using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Enums;
 
 namespace TornTools.Application.Callers;
+
 public class Weav3rApiCaller(
     ILogger<Weav3rApiCaller> logger,
     IApiCallHandlerResolver handlerResolver,
+    IHttpClientFactory httpClientFactory,
     PlaywrightSingleton playwright,
     Weav3rApiCallerConfiguration options
-) : ApiCaller<Weav3rApiCaller>(logger, handlerResolver), IApiCaller
+) : ApiCaller<Weav3rApiCaller>(logger, handlerResolver, httpClientFactory), IApiCaller
 {
     private readonly Weav3rApiCallerConfiguration _options = options ?? throw new ArgumentNullException(nameof(options));
 
@@ -35,7 +38,7 @@ public class Weav3rApiCaller(
         base.AddHeaders(requestMessage, item);
     }
 
-    protected override string ClientName => "weav3r-api-caller";
+    protected override string ClientName => Weav3rApiConstants.ClientName;
 
     protected override async Task<string?> Fetch(
         HttpClient client, 

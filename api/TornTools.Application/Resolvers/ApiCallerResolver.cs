@@ -1,7 +1,7 @@
 ﻿using TornTools.Application.Interfaces;
 using TornTools.Core.Enums;
 
-namespace TornTools.Application.Callers;
+namespace TornTools.Application.Resolvers;
 
 public class ApiCallerResolver : IApiCallerResolver
 {

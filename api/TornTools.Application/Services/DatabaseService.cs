@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Threading;
+using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
 using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
@@ -26,6 +27,11 @@ public class DatabaseService(
     public Task CreateItemChangeLogAsync(ItemChangeLogDto changeLogDto, CancellationToken stoppingToken)
     {
         return _itemChangeLogRepository.CreateItemChangeLogAsync(changeLogDto, stoppingToken);
+    }
+
+    public Task<IEnumerable<ItemDto>> GetAllItemsAsync(CancellationToken stoppingToken)
+    {
+        return _itemRepository.GetAllItemsAsync(stoppingToken);
     }
 
     public Task<int> GetNumberOfItemsAsync(CancellationToken stoppingToken)
@@ -110,7 +116,7 @@ public class DatabaseService(
             .SelectMany(BuildQueueItems)
             .ToList();
         
-        queueItems.AddRange(leftOverItems.Take(QueryConstants.MaxNumberOfItemsToProcess));
+        queueItems.AddRange(leftOverItems);
         
         await _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken);
     }
@@ -152,7 +158,7 @@ public class DatabaseService(
         var itemMarketQueueItem = new QueueItemDto
         {
             CallType = ApiCallType.TornMarketListings,
-            EndpointUrl = string.Format(TornApiEndpointConstants.ItemListings, itemId),
+            EndpointUrl = string.Format(TornApiConstants.ItemListings, itemId),
             HttpMethod = "GET",
             ItemStatus = nameof(QueueStatus.Pending),
             CreatedAt = DateTime.UtcNow

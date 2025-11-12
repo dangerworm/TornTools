@@ -15,8 +15,6 @@ type ItemsState = {
   itemsById: ItemsMap;
   loading: boolean;
   error: string | null;
-  apiKey: string | null;
-  setApiKey: (key: string | null) => void;
   refresh: () => Promise<void>;
 };
 
@@ -24,7 +22,6 @@ const ItemsContext = createContext<ItemsState | null>(null);
 
 const LS_KEY = "torn:items:v2";
 const LS_KEY_TS = "torn:items:v2:ts";
-const LS_KEY_API = "torn:apiKey";
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
 
 function normalizeItems(resp: TornItemsPayload): ItemsMap {
@@ -50,9 +47,6 @@ export const ItemsProvider: React.FC<{
   const [itemsById, setItemsById] = useState<ItemsMap>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [apiKey, setApiKeyState] = useState<string | null>(() =>
-    localStorage.getItem(LS_KEY_API)
-  );
   const abortRef = useRef<AbortController | null>(null);
 
   const items = useMemo(
@@ -61,7 +55,6 @@ export const ItemsProvider: React.FC<{
   );
 
   useEffect(() => {
-    if (!apiKey) return;
     const ts = Number(localStorage.getItem(LS_KEY_TS) ?? 0);
     const age = Date.now() - ts;
 
@@ -70,10 +63,9 @@ export const ItemsProvider: React.FC<{
       setItemsById(JSON.parse(cached));
     }
     void revalidate();
-  }, [apiKey, ttlMs]);
+  }, [ttlMs]);
 
   const revalidate = async () => {
-    if (!apiKey) return;
     setLoading(true);
     setError(null);
 
@@ -81,16 +73,14 @@ export const ItemsProvider: React.FC<{
     abortRef.current = new AbortController();
 
     try {
-      const url = `https://api.torn.com/v2/torn/items?comment=dangerworm%27s%20Torn%20Tools&sort=ASC&key=${encodeURIComponent(
-        apiKey
-      )}`;
+      const url = `https://localhost:7012/api/GetItems`;
       const res = await fetch(url, {
         headers: { accept: "application/json" },
         signal: abortRef.current.signal,
       });
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
 
-      const payload = await fetchItems(apiKey).then(p => p);
+      const payload = await fetchItems().then(p => p);
 
       const map = normalizeItems(payload);
       setItemsById(map);
@@ -109,24 +99,9 @@ export const ItemsProvider: React.FC<{
 
   const refresh = async () => revalidate();
 
-  const setApiKey = (key: string | null) => {
-    const isNewKey = key && key !== apiKey;
-
-    setApiKeyState(key);
-    if (isNewKey) {
-      localStorage.setItem(LS_KEY_API, key);
-      void refresh();
-    } else {
-      localStorage.removeItem(LS_KEY_API);
-      localStorage.removeItem(LS_KEY);
-      localStorage.removeItem(LS_KEY_TS);
-      setItemsById({});
-    }
-  };
-
   return (
     <ItemsContext.Provider
-      value={{ items, itemsById, loading, error, apiKey, setApiKey, refresh }}
+      value={{ items, itemsById, loading, error, refresh }}
     >
       {children}
     </ItemsContext.Provider>

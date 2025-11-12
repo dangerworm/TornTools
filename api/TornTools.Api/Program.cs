@@ -22,7 +22,9 @@ builder.Services.AddHttpClient();
 builder.Services.AddConfiguration(builder.Configuration);
 builder.Services.AddDependencies();
 
+builder.Services.AddAuthentication();
 builder.Services.AddControllers();
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -42,7 +44,7 @@ using (var scope = app.Services.CreateScope())
     var numberOfItems = await databaseService.GetNumberOfItemsAsync(CancellationToken.None);
     if (numberOfItems == 0)
     {
-        await databaseService.CreateQueueItem(ApiCallType.TornItems, TornApiEndpointConstants.Items, CancellationToken.None);
+        await databaseService.CreateQueueItem(ApiCallType.TornItems, TornApiConstants.Items, CancellationToken.None);
     }
 
     var jobScheduler = scope.ServiceProvider.GetRequiredService<IApiJobScheduler>();

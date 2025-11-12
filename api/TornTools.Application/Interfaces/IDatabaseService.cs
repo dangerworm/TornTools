@@ -7,6 +7,7 @@ public interface IDatabaseService
 {
     Task CreateItemChangeLogAsync(ItemChangeLogDto changeLogDto, CancellationToken stoppingToken);
 
+    Task<IEnumerable<ItemDto>> GetAllItemsAsync(CancellationToken stoppingToken);
     Task<int> GetNumberOfItemsAsync(CancellationToken stoppingToken);
     Task UpsertItemsAsync(IEnumerable<ItemDto> items, CancellationToken stoppingToken);
     

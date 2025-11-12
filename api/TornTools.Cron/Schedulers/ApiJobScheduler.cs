@@ -40,7 +40,7 @@ public class ApiJobScheduler(
         _logger.LogInformation("Queueing daily item update...");
         await _databaseService.CreateQueueItem(
             callType: Core.Enums.ApiCallType.TornItems,
-            endpointUrl: TornApiEndpointConstants.Items,
+            endpointUrl: TornApiConstants.Items,
             stoppingToken: CancellationToken.None
         );
     }

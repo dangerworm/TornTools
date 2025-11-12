@@ -37,8 +37,8 @@ public class QueueProcessor(
                     queueItem = await databaseService.GetNextQueueItem(stoppingToken);
                     if (queueItem?.Id is null)
                     {
-                        // Queue is empty
-                        await databaseService.RemoveQueueItemsAsync(stoppingToken, QueueStatus.Completed);
+                        // Queue only has InProgress or Failed items, so repopulate
+                        await databaseService.RemoveQueueItemsAsync(stoppingToken);
                         await databaseService.PopulateQueue(stoppingToken);
                         continue;
                     }

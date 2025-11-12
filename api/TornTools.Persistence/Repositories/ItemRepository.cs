@@ -46,7 +46,12 @@ public class ItemRepository(
 
             for (int i = 0; i < items.Count; i += DatabaseConstants.BulkUpdateSize)
             {
-                var batch = items.Skip(i).Take(DatabaseConstants.BulkUpdateSize).ToList();
+                var batch = items
+                    .OrderByDescending(i => i.ValueSellPrice)
+                    .Skip(i)
+                    .Take(DatabaseConstants.BulkUpdateSize)
+                    .ToList();
+
                 var keys = batch.Select(b => b.Id).ToList();
 
                 // Load existing entities for these keys in one go
