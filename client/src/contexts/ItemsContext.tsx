@@ -1,38 +1,28 @@
-import React, {
-  createContext,
-  useContext,
+import {
   useEffect,
   useMemo,
   useRef,
   useState,
+  type ReactNode,
 } from "react";
 import type { Item, ItemsMap } from "../types/items";
-import type { TornItemsPayload } from "../lib/torn";
-import { fetchItems } from "../lib/torn";
+import { fetchItems } from "../lib/api";
+import { API_BASE_URL } from "../constants/ApiConstants";
+import { ItemsContext } from "../hooks/useItemsContext";
 
-type ItemsState = {
-  items: Item[];
-  itemsById: ItemsMap;
-  loading: boolean;
-  error: string | null;
-  refresh: () => Promise<void>;
-};
-
-const ItemsContext = createContext<ItemsState | null>(null);
-
-const LS_KEY = "torn:items:v2";
-const LS_KEY_TS = "torn:items:v2:ts";
+const LOCAL_STORAGE_KEY_ITEMS = "torntools:items:v1";
+const LOCAL_STORAGE_KEY_ITEMS_TIME_SERVED = "torntools:items:v1:ts";
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
 
-function normalizeItems(resp: TornItemsPayload): ItemsMap {
+const normalizeItems = (resp: Item[]): ItemsMap => {
   const map: ItemsMap = {};
-  if (Array.isArray((resp as TornItemsPayload).items) && (resp as TornItemsPayload).items) {
-    for (const it of (resp as TornItemsPayload).items!) {
-      const id = Number(it.id);
-      if (Number.isFinite(id)) map[id] = { ...it };
+  if (Array.isArray(resp)) {
+    for (const item of resp!) {
+      const id = Number(item.id);
+      if (Number.isFinite(id)) map[id] = { ...item };
     }
   } else {
-    for (const [idStr, it] of Object.entries(resp.items!)) {
+    for (const [idStr, it] of Object.entries(resp)) {
       const id = Number((it as Item).id ?? idStr);
       if (Number.isFinite(id)) map[id] = { ...(it as Item) };
     }
@@ -40,10 +30,15 @@ function normalizeItems(resp: TornItemsPayload): ItemsMap {
   return map;
 }
 
-export const ItemsProvider: React.FC<{
-  children: React.ReactNode;
+type ItemsProviderProps = {
+  children: ReactNode;
   ttlMs?: number;
-}> = ({ children, ttlMs = DEFAULT_TTL_MS }) => {
+};
+
+export const ItemsProvider = ({
+  children,
+  ttlMs = DEFAULT_TTL_MS,
+}: ItemsProviderProps) => {
   const [itemsById, setItemsById] = useState<ItemsMap>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,10 +50,12 @@ export const ItemsProvider: React.FC<{
   );
 
   useEffect(() => {
-    const ts = Number(localStorage.getItem(LS_KEY_TS) ?? 0);
-    const age = Date.now() - ts;
+    const timeServed = Number(
+      localStorage.getItem(LOCAL_STORAGE_KEY_ITEMS_TIME_SERVED) ?? 0
+    );
+    const age = Date.now() - timeServed;
 
-    const cached = localStorage.getItem(LS_KEY);
+    const cached = localStorage.getItem(LOCAL_STORAGE_KEY_ITEMS);
     if (cached && age < ttlMs) {
       setItemsById(JSON.parse(cached));
     }
@@ -73,19 +70,22 @@ export const ItemsProvider: React.FC<{
     abortRef.current = new AbortController();
 
     try {
-      const url = `https://localhost:7012/api/GetItems`;
+      const url = `${API_BASE_URL}/GetItems`;
       const res = await fetch(url, {
         headers: { accept: "application/json" },
         signal: abortRef.current.signal,
       });
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
 
-      const payload = await fetchItems().then(p => p);
+      const payload = await fetchItems().then((p) => p);
 
       const map = normalizeItems(payload);
       setItemsById(map);
-      localStorage.setItem(LS_KEY, JSON.stringify(map));
-      localStorage.setItem(LS_KEY_TS, String(Date.now()));
+      localStorage.setItem(LOCAL_STORAGE_KEY_ITEMS, JSON.stringify(map));
+      localStorage.setItem(
+        LOCAL_STORAGE_KEY_ITEMS_TIME_SERVED,
+        String(Date.now())
+      );
     } catch (e: unknown) {
       if (e instanceof Error) {
         setError(e.message);
@@ -97,19 +97,22 @@ export const ItemsProvider: React.FC<{
     }
   };
 
-  const refresh = async () => revalidate();
+  const refresh = useMemo(() => async () => revalidate(), []);
+
+  const contextValue = useMemo(
+    () => ({
+      items,
+      itemsById,
+      loading,
+      error,
+      refresh,
+    }),
+    [items, itemsById, loading, error, refresh]
+  );
 
   return (
-    <ItemsContext.Provider
-      value={{ items, itemsById, loading, error, refresh }}
-    >
+    <ItemsContext.Provider value={contextValue}>
       {children}
     </ItemsContext.Provider>
   );
 };
-
-export function useItems() {
-  const ctx = useContext(ItemsContext);
-  if (!ctx) throw new Error("useItems must be used inside ItemsProvider");
-  return ctx;
-}

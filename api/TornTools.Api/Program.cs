@@ -1,4 +1,5 @@
 using Hangfire;
+using TornTools.Api;
 using TornTools.Application;
 using TornTools.Application.Interfaces;
 using TornTools.Application.Playwright;
@@ -22,7 +23,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddConfiguration(builder.Configuration);
 builder.Services.AddDependencies();
 
-builder.Services.AddAuthentication();
+builder.Services.AddCorsPolicy();
 builder.Services.AddControllers();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -52,6 +53,10 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseHttpsRedirection();
+
+app.UseRouting();
+
+app.UseCors(ApiConstants.CorsPolicy);
 
 app.UseAuthorization();
 

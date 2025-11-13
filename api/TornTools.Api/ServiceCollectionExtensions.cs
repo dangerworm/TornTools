@@ -1,17 +1,19 @@
-﻿namespace TornTools.Api;
+﻿using TornTools.Core.Constants;
+
+namespace TornTools.Api;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddAuthentication(this IServiceCollection services)
+    public static IServiceCollection AddCorsPolicy(this IServiceCollection services)
     {
         services.AddCors(options =>
         {
-            options.AddPolicy("FrontendOnly", policy =>
+            options.AddPolicy(ApiConstants.CorsPolicy, policy =>
             {
                 policy
                     .WithOrigins(
-                        "https://localhost",
-                        "https://dangerworm.github.io/TornTools/"
+                        "http://localhost:5173",
+                        "https://dangerworm.github.io"
                     )
                     .AllowAnyHeader()
                     .AllowAnyMethod()

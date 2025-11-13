@@ -3,11 +3,10 @@ import MenuIcon from "@mui/icons-material/Menu";
 import "../index.css";
 
 interface TopAppBarProps {
-  apiKey: string | null;
   handleDrawerToggle: () => void;
 }
 
-function TopAppBar({ apiKey, handleDrawerToggle }: TopAppBarProps) {
+function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
   return (
     <AppBar
       position="fixed"
@@ -28,18 +27,6 @@ function TopAppBar({ apiKey, handleDrawerToggle }: TopAppBarProps) {
         <Typography variant="h6" noWrap component="div" className="geo">
           dangerworm's Torn Tools
         </Typography>
-
-        {apiKey && (
-          <Typography
-            variant="h6"
-            noWrap
-            component="div"
-            color={"rgb(127,192,255)"}
-            sx={{ fontSize: "1.04rem", ml: 4 }}
-          >
-            API key: {apiKey}
-          </Typography>
-        )}
       </Toolbar>
     </AppBar>
   );

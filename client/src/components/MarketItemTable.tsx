@@ -2,12 +2,10 @@ import { useState } from "react";
 import {
   Alert,
   Box,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  LinearProgress,
   Link,
   Paper,
   Table,
@@ -21,31 +19,14 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import IconButton from "@mui/material/IconButton";
 import CopyWithSuccess from "./CopyWithSuccess";
-import type { ScanRow } from "../hooks/useResaleScan";
-
-function StatusChip({ s }: { s: import("../hooks/useResaleScan").RowStatus }) {
-  const map: Record<
-    string,
-    {
-      label: string;
-      color: "default" | "info" | "warning" | "success" | "error";
-    }
-  > = {
-    queued: { label: "Queued", color: "default" },
-    fetching: { label: "Fetching", color: "info" },
-    cached: { label: "Cached", color: "warning" },
-    done: { label: "Done", color: "success" },
-    error: { label: "Error", color: "error" },
-  };
-  const { label, color } = map[s];
-  return <Chip size="small" color={color} label={label} />;
-}
+import type { ProfitableListing } from "../types/profitableListings";
 
 type RowClickAction = "none" | "generate-autobuy-script" | "visit-market-page";
 
 interface MarketItemsTableProps {
-  rows: import("../hooks/useResaleScan").ScanRow[];
-  status: "idle" | "running" | "done" | "error";
+  rows: ProfitableListing[];
+  minProfit?: number;
+  maxBuyPrice?: number;
   error: string | null;
   sellPriceColumnNameOverride?: string;
   rowClickAction?: RowClickAction;
@@ -53,42 +34,36 @@ interface MarketItemsTableProps {
 
 export default function MarketItemsTable({
   rows,
-  status,
+  minProfit = 0,
+  maxBuyPrice = Number.MAX_SAFE_INTEGER,
   error,
   sellPriceColumnNameOverride = "Sell Price",
   rowClickAction = "none",
 }: MarketItemsTableProps) {
   const [autoBuyScript, setAutoBuyScript] = useState<string | null>(null);
-  const [lastClickedRow, setLastClickedRow] = useState<
-    import("../hooks/useResaleScan").ScanRow | null
-  >(null);
+  const [lastClickedRow, setLastClickedRow] =
+    useState<ProfitableListing | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const onRowClick = (row: ScanRow) => {
+  const onRowClick = (row: ProfitableListing) => {
     if (rowClickAction === "generate-autobuy-script") {
       return generateAutoBuyScript(row);
     }
 
     if (rowClickAction === "visit-market-page") {
       window.open(
-        `https://www.torn.com/page.php?sid=ItemMarket#/market/view=search&itemID=${row.id}&sortField=price&sortOrder=ASC`,
+        `https://www.torn.com/page.php?sid=ItemMarket#/market/view=search&itemID=${row.itemId}&sortField=price&sortOrder=ASC`,
         "_blank"
       );
     }
   };
 
-  const generateAutoBuyScript = (
-    row: ScanRow
-  ) => {
-    if (
-      row.status !== "done" ||
-      !row.best_price ||
-      rowClickAction !== "generate-autobuy-script"
-    ) {
+  const generateAutoBuyScript = (row: ProfitableListing) => {
+    if (rowClickAction !== "generate-autobuy-script") {
       return;
     }
 
-    const lowestPrice = Math.max(Math.floor(row.best_price * 0.6), row.sell_price);
+    const lowestPrice = Math.max(Math.floor(row.minPrice * 0.6), row.sellPrice);
 
     const script = `let lastText = "";
 const checkInterval = 200; // ms
@@ -135,54 +110,28 @@ const intervalId = setInterval(async () => {
   return (
     <>
       <Box>
-        {status === "running" && (
-          <Box sx={{ my: 2 }}>
-            <LinearProgress />
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              Scanning items by sale price… this may take a minute or two.
-            </Typography>
-            <Typography variant="body1" sx={{ mt: 2 }}>
-              Any items which can be sold for profit will be moved
-              to the top of the list automatically.
-            </Typography>
-          </Box>
-        )}
-
         <TableContainer component={Paper} sx={{ mt: 2 }}>
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell sx={{ minWidth: 100 }}>Status</TableCell>
                 <TableCell>Item</TableCell>
-                <TableCell align="right">Best Buy</TableCell>
+                <TableCell align="right">Current Lowest Price</TableCell>
+                <TableCell align="left">Max Under Sell Price</TableCell>
                 <TableCell align="right">
                   {sellPriceColumnNameOverride}
                 </TableCell>
-                <TableCell align="right">Profit Each</TableCell>
-                <TableCell align="right">Amount</TableCell>
+                <TableCell align="right">Available</TableCell>
+                <TableCell align="right">Profit</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.map((r) => (
-                <TableRow
-                  key={r.id}
-                  hover
-                  selected={r.interesting}
-                  onClick={() => onRowClick(r)}
-                >
-                  <TableCell>
-                    <StatusChip s={r.status} />
-                    {r.status === "error" && r.error && (
-                      <Typography variant="caption" color="error">
-                        {r.error}
-                      </Typography>
-                    )}
-                  </TableCell>
+              {rows.filter(r => r.profit >= minProfit && r.maxPrice <= maxBuyPrice).map((r) => (
+                <TableRow key={r.itemId} hover onClick={() => onRowClick(r)}>
                   <TableCell>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <img
                         alt=""
-                        src={`https://www.torn.com/images/items/${r.id}/small.png`}
+                        src={`https://www.torn.com/images/items/${r.itemId}/small.png`}
                         width={24}
                         height={24}
                         style={{ borderRadius: 4 }}
@@ -195,23 +144,20 @@ const intervalId = setInterval(async () => {
                     </Box>
                   </TableCell>
                   <TableCell align="right">
-                    {r.best_price?.toLocaleString() ?? "—"}
+                    ${r.minPrice?.toLocaleString()}
+                  </TableCell>
+                  <TableCell align="left">
+                    ${r.maxPrice?.toLocaleString()}
                   </TableCell>
                   <TableCell align="right">
-                    {r.sell_price.toLocaleString()}
+                    ${r.sellPrice.toLocaleString()}
                   </TableCell>
                   <TableCell align="right">
-                    {r.interesting ? (
-                      <Chip
-                        label={r.profit_each!.toLocaleString()}
-                        color="success"
-                        size="small"
-                      />
-                    ) : (
-                      "—"
-                    )}
+                    {r.quantity.toLocaleString()}
                   </TableCell>
-                  <TableCell align="right">{r.best_amount ?? "—"}</TableCell>
+                  <TableCell align="right">
+                    ${r.profit.toLocaleString()}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -251,7 +197,7 @@ const intervalId = setInterval(async () => {
               <li>
                 Open{" "}
                 <Link
-                  href={`https://www.torn.com/page.php?sid=ItemMarket#/market/view=search&itemID=${lastClickedRow?.id}`}
+                  href={`https://www.torn.com/page.php?sid=ItemMarket#/market/view=search&itemID=${lastClickedRow?.itemId}`}
                   target="_blank"
                   rel="noopener"
                 >

@@ -1,21 +1,32 @@
-export interface Vendor { country: string; name: string }
-
-export interface Value { vendor: Vendor; buy_price: number; sell_price: number; market_price: number }
 
 export interface Item {
-  id: number
-  name: string
-  description: string | null
-  effect: string | null
-  requirement: string | null
-  image: string | null
-  type: string | null
-  sub_type?: string | null
-  is_masked?: boolean
-  is_tradable?: boolean
-  is_found_in_city?: boolean
-  value?: Value | null
-  circulation?: number
+  id: number;
+  name: string;
+  description?: string;
+  effect?: string;
+  requirement?: string;
+  image?: string;
+  type?: string;  
+  subType?: string;
+  isMasked: boolean;
+  isTradable: boolean;
+  isFoundInCity: boolean;
+  valueVendorCountry?: string;
+  valueVendorName?: string;
+  valueBuyPrice?: number;
+  valueSellPrice?: number;
+  valueMarketPrice?: number;
+  circulation?: number;
+  detailsCategory?: string;
+  detailsStealthLevel?: number;
+  detailsBaseStatsDamage?: number;
+  detailsBaseStatsAccuracy?: number;
+  detailsBaseStatsArmor?: number;
+  detailsAmmoId?: number;
+  detailsAmmoName?: string;
+  detailsAmmoMagazineRounds?: number;
+  detailsAmmoRateOfFireMinimum?: number;
+  detailsAmmoRateOfFireMaximum?: number;
 }
 
 export type ItemsMap = Record<number, Item>;

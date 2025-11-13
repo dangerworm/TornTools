@@ -1,7 +1,6 @@
 import * as React from "react";
 import { Outlet, NavLink, useLocation } from "react-router-dom";
 import {
-  Alert,
   Box,
   Divider,
   Drawer,
@@ -18,17 +17,16 @@ import TopAppBar from "./TopAppBar";
 import Footer from "./Footer";
 import { DRAWER_WIDTH } from "../constants";
 import "../index.css";
-import { useItems } from "../contexts/ItemsContext";
+import { useItems } from "../hooks/useItemsContext";
 
 const menu = [
   { label: "Home", to: "/", icon: <HomeIcon />, requiresItems: false },
   { label: "Resale", to: "/resale", icon: <InfoIcon />, requiresItems: true },
-  { label: "Trades", to: "/trades", icon: <InfoIcon />, requiresItems: true },
+  // { label: "Trades", to: "/trades", icon: <InfoIcon />, requiresItems: true },
 ];
 
 export default function Layout() {
-  const { apiKey, items } = useItems();
-
+  const { items } = useItems();
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const location = useLocation();
 
@@ -64,17 +62,6 @@ export default function Layout() {
             </ListItemButton>
           );
         })}
-
-        {!apiKey && (
-          <Alert severity="info" sx={{ m: 2 }}>
-            There are additional features available if you
-            {" "}
-            <NavLink to="/">
-             add an API key
-            </NavLink>
-            .
-          </Alert>
-        )}
       </List>
     </div>
   );
@@ -82,7 +69,7 @@ export default function Layout() {
   return (
     <Box sx={{ display: "flex" }}>
       {/* Top AppBar */}
-      <TopAppBar handleDrawerToggle={handleDrawerToggle} apiKey={apiKey} />
+      <TopAppBar handleDrawerToggle={handleDrawerToggle} />
 
       {/* Left drawer area (responsive) */}
       <Box
