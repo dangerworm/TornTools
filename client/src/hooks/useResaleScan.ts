@@ -7,9 +7,6 @@ import type { ProfitableListing } from "../types/profitableListings";
 export type RowStatus = "queued" | "fetching" | "cached" | "done" | "error";
 
 interface Options {
-  minProfit?: number;
-  maxBuyPrice?: number;
-  margin?: number;
   intervalMs?: number; // one call per interval (keeps us <100/min by default)
 }
 
@@ -20,9 +17,6 @@ export function useResaleScan(
   opts?: Options
 ) {
   const {
-    minProfit = 1000,
-    maxBuyPrice = 50000,
-    margin = Number(import.meta.env.VITE_TORN_MARGIN ?? 500),
     intervalMs = 1000,
   } = opts || {};
 
@@ -53,7 +47,7 @@ export function useResaleScan(
       void tick(); // kick immediately so first task doesn't wait
     }
 
-  }, [items, minProfit, maxBuyPrice, margin, intervalMs]);
+  }, [items, intervalMs]);
 
   return { rows, error };
 }
