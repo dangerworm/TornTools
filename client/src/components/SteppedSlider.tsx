@@ -30,7 +30,7 @@ export default function SteppedSlider({
   return (
     <>
       <Typography gutterBottom>
-        {label}: {prefixUnit}{sliderValues[sliderValueIndex].toLocaleString()}{suffixUnit}
+        <strong>{label}:</strong> {prefixUnit}{sliderValues[sliderValueIndex].toLocaleString()}{suffixUnit}
       </Typography>
       <Slider
         value={sliderValueIndex}

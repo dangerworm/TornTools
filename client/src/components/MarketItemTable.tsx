@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Alert,
   Box,
@@ -22,14 +23,14 @@ import IconButton from "@mui/material/IconButton";
 import CopyWithSuccess from "./CopyWithSuccess";
 import type { ProfitableListing } from "../types/profitableListings";
 
-const getMinutesSinceLastUpdate = (lastUpdated: Date): number => {
+const getSecondsSinceLastUpdate = (lastUpdated: Date): number => {
   const d = new Date(lastUpdated);
-  return (Date.now() - d.getTime()) / (1000 * 60);
-}
+  return (Date.now() - d.getTime()) / 1000;
+};
 
 const rowColor = (lastUpdated: Date): string => {
-  const diffMinutes = getMinutesSinceLastUpdate(lastUpdated);
-  const colorValue = Math.min(Math.max(Math.floor(diffMinutes * 10), 0), 167);
+  const diffSeconds = getSecondsSinceLastUpdate(lastUpdated);
+  const colorValue = Math.min(Math.max(Math.floor(diffSeconds / 6), 0), 171);
   return `rgba(${colorValue}, ${colorValue}, ${colorValue}, 0.87)`; // default color
 };
 
@@ -50,16 +51,26 @@ const timeAgo = (date: string | Date): string => {
   const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 
   for (const [unit, secondsInUnit] of units) {
+    if (unit === "second" && Math.abs(diff) < 5) {
+      return "just now";
+    }
+
+    if (unit === "second" && Math.abs(diff) < 60) {
+      return "< 1 minute ago";
+    }
+
     const value = diff / secondsInUnit;
     if (Math.abs(value) >= 1) {
       return rtf.format(Math.round(value), unit);
     }
   }
 
-  return "just now";
+  return "";
 };
 
 type RowClickAction = "none" | "generate-autobuy-script" | "visit-market-page";
+
+const MotionTableRow = motion(TableRow);
 
 interface MarketItemsTableProps {
   rows: ProfitableListing[];
@@ -80,6 +91,8 @@ export default function MarketItemsTable({
   sellPriceColumnNameOverride = "Sell Price",
   rowClickAction = "none",
 }: MarketItemsTableProps) {
+  const seenIdsRef = useRef<Set<number | string>>(new Set());
+
   const [autoBuyScript, setAutoBuyScript] = useState<string | null>(null);
   const [lastClickedRow, setLastClickedRow] =
     useState<ProfitableListing | null>(null);
@@ -150,7 +163,7 @@ const intervalId = setInterval(async () => {
   return (
     <>
       <Box>
-        <TableContainer component={Paper} sx={{ mt: 2 }}>
+        <TableContainer component={Paper} sx={{ mt: 2, width: "95%" }}>
           <Table size="small">
             <TableHead>
               <TableRow>
@@ -166,76 +179,104 @@ const intervalId = setInterval(async () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows
-                .filter(r => 
-                  r.profit >= minProfit && 
-                  r.maxPrice <= maxBuyPrice && 
-                  getMinutesSinceLastUpdate(r.lastUpdated) <= maxTimeSinceLastUpdate
-                )
-                .map((r) => (
-                  <TableRow key={r.itemId} hover onClick={() => onRowClick(r)}>
-                    <TableCell>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+              <AnimatePresence initial={false}>
+                {rows
+                  .filter(
+                    (r) =>
+                      r.profit >= minProfit &&
+                      r.maxPrice <= maxBuyPrice &&
+                      getSecondsSinceLastUpdate(r.lastUpdated) <= maxTimeSinceLastUpdate * 60
+                  )
+                  .map((r) => {
+                    const seenIds = seenIdsRef.current;
+                    const isNew = !seenIds.has(r.itemId);
+                    if (isNew) {
+                      seenIds.add(r.itemId);
+                    }
+
+                    return (
+                      <MotionTableRow
+                        key={r.itemId}
+                        hover
+                        onClick={() => onRowClick(r)}
+                        // Only animate in for brand-new rows
+                        initial={
+                          isNew ? false : { height: 0, opacity: 0, y: -12 } // don't replay enter animation
+                        }
+                        animate={{ height: "2.3em", opacity: 1, y: 0 }}
+                        exit={{ height: 0, opacity: 0, y: -12 }} // fade/slide out on removal
+                        transition={{ duration: 0.5 }}
                       >
-                        <img
-                          alt=""
-                          src={`https://www.torn.com/images/items/${r.itemId}/small.png`}
-                          width={24}
-                          height={24}
-                          style={{ borderRadius: 4 }}
-                          onError={(e) => {
-                            (
-                              e.currentTarget as HTMLImageElement
-                            ).style.display = "none";
-                          }}
-                        />
-                        <Typography
-                          variant="body2"
+                        <TableCell>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                            }}
+                          >
+                            <img
+                              alt=""
+                              src={`https://www.torn.com/images/items/${r.itemId}/small.png`}
+                              width={24}
+                              height={24}
+                              style={{ borderRadius: 4 }}
+                              onError={(e) => {
+                                (
+                                  e.currentTarget as HTMLImageElement
+                                ).style.display = "none";
+                              }}
+                            />
+                            <Typography
+                              variant="body2"
+                              style={{
+                                color: rgbToHex(rowColor(r.lastUpdated)),
+                              }}
+                            >
+                              {r.name}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell
+                          align="right"
                           style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
                         >
-                          {r.name}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
-                    >
-                      ${r.minPrice?.toLocaleString()}
-                    </TableCell>
-                    <TableCell
-                      align="left"
-                      style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
-                    >
-                      ${r.maxPrice?.toLocaleString()}
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
-                    >
-                      ${r.sellPrice.toLocaleString()}
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
-                    >
-                      {r.quantity.toLocaleString()}
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
-                    >
-                      ${r.profit.toLocaleString()}
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
-                    >
-                      {timeAgo(r.lastUpdated)}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          ${r.minPrice?.toLocaleString()}
+                        </TableCell>
+                        <TableCell
+                          align="left"
+                          style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
+                        >
+                          ${r.maxPrice?.toLocaleString()}
+                        </TableCell>
+                        <TableCell
+                          align="right"
+                          style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
+                        >
+                          ${r.sellPrice.toLocaleString()}
+                        </TableCell>
+                        <TableCell
+                          align="right"
+                          style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
+                        >
+                          {r.quantity.toLocaleString()}
+                        </TableCell>
+                        <TableCell
+                          align="right"
+                          style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
+                        >
+                          ${r.profit.toLocaleString()}
+                        </TableCell>
+                        <TableCell
+                          align="right"
+                          style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
+                        >
+                          {timeAgo(r.lastUpdated)}
+                        </TableCell>
+                      </MotionTableRow>
+                    );
+                  })}
+              </AnimatePresence>
             </TableBody>
           </Table>
         </TableContainer>

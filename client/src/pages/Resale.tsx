@@ -18,9 +18,9 @@ export default function Resale() {
     5000000, 10000000, 50000000, 100000000, 500000000, 1000000000,
   ];
 
-  const initialMinProfitIndex = 4; // 500
-  const initialMaxBuyPriceIndex = 12; // 500000
-  const initialMaxTimeSinceLastUpdateIndex = 3; // 5 minutes
+  const initialMinProfitIndex = 3; // 100
+  const initialMaxBuyPriceIndex = 17; // 1,000,000,000
+  const initialMaxTimeSinceLastUpdateIndex = 4; // 10 minutes
 
   const [minProfit, setMinProfit] = useState(priceRangeValues[initialMinProfitIndex]);
   const [maxBuyPrice, setMaxBuyPrice] = useState(priceRangeValues[initialMaxBuyPriceIndex]);
@@ -59,7 +59,7 @@ export default function Resale() {
       </Typography>
 
       <Grid container spacing={2} alignItems="center">
-        <Grid size={{ xs: 12, sm: 4 }} alignItems="center">
+        <Grid size={{ xs: 12, sm: 6, md: 4 }} alignItems="center">
           <SteppedSlider
             label="Minimum Profit"
             prefixUnit="$"
@@ -69,9 +69,9 @@ export default function Resale() {
             onValueChange={handleMinProfitSliderValueChange}
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 4 }} alignItems="center">
+        <Grid size={{ xs: 12, sm: 6, md: 4 }} alignItems="center">
           <SteppedSlider
-            label="Maximum Buy Price"
+            label="Max Buy Price"
             prefixUnit="$"
             suffixUnit=""
             sliderValues={priceRangeValues}
@@ -79,7 +79,7 @@ export default function Resale() {
             onValueChange={handleMaxBuyPriceSliderValueChange}
           />
         </Grid>
-         <Grid size={{ xs: 12, sm: 4 }} alignItems="center">
+         <Grid size={{ xs: 12, sm: 6, md: 4 }} alignItems="center">
           <SteppedSlider
             label="Max Time Since Last Update"
             prefixUnit=""
