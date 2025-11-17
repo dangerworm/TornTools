@@ -30,16 +30,6 @@ variable "github_actions_tenant_id" {
   type        = string
 }
 
-variable "google_client_id" {
-  description = "Google client ID for Torn Tools"
-  type = string
-}
-
-variable "jwt_secret_key" {
-  description = "JWT secret key for Torn Tools"
-  type = string
-}
-
 variable "local_user_object_id" {
   description = "Object ID of the local developer's Azure AD identity"
   type        = string
@@ -60,7 +50,7 @@ variable "location" {
 variable "sku_app_service" {
   description = "SKU for App Service Plan (e.g., B1, S1)"
   type        = string
-  default     = "B1"
+  default     = "F1"
 }
 
 variable "sku_postgres" {
@@ -80,6 +70,6 @@ variable "tfstate_storage_account_name" {
 }
 
 locals {
-  api_url = "${var.app_name}-${var.environment}-backend-api.azurewebsites.net"
+  api_url             = "${var.app_name}-${var.environment}-backend-api.azurewebsites.net"
   resource_group_name = "${var.app_name}-webapp-${var.environment}-rg"
 }

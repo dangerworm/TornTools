@@ -19,7 +19,7 @@ createRoot(document.getElementById("root")!).render(
       <UserProvider>
       <ItemsProvider>
         <CssBaseline />
-        <BrowserRouter basename="/TornTools">
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
           <App />
         </BrowserRouter>
       </ItemsProvider>
