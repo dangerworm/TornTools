@@ -42,6 +42,9 @@ if (app.Environment.IsDevelopment())
 using (var scope = app.Services.CreateScope())
 {
     var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
+
+    await databaseService.RemoveQueueItemsAsync(CancellationToken.None);
+
     var numberOfItems = await databaseService.GetNumberOfItemsAsync(CancellationToken.None);
     if (numberOfItems == 0)
     {

@@ -1,6 +1,6 @@
 import { Box, Button, TextField, Typography } from "@mui/material";
 import Loading from "../components/Loading";
-import { useItems } from "../hooks/useItemsContext";
+import { useItems } from "../hooks/useItems";
 import { useState } from "react";
 
 export default function Trading() {

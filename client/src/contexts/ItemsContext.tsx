@@ -6,9 +6,9 @@ import {
   type ReactNode,
 } from "react";
 import type { Item, ItemsMap } from "../types/items";
-import { fetchItems } from "../lib/api";
+import { fetchItems } from "../lib/dotnetapi";
 import { API_BASE_URL } from "../constants/ApiConstants";
-import { ItemsContext } from "../hooks/useItemsContext";
+import { ItemsContext } from "../hooks/useItems";
 
 const LOCAL_STORAGE_KEY_ITEMS = "torntools:items:v1";
 const LOCAL_STORAGE_KEY_ITEMS_TIME_SERVED = "torntools:items:v1:ts";

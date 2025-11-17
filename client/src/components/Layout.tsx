@@ -17,7 +17,7 @@ import TopAppBar from "./TopAppBar";
 import Footer from "./Footer";
 import { DRAWER_WIDTH } from "../constants";
 import "../index.css";
-import { useItems } from "../hooks/useItemsContext";
+import { useItems } from "../hooks/useItems";
 
 const menu = [
   { label: "Home", to: "/", icon: <HomeIcon />, requiresItems: false },

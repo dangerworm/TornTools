@@ -75,12 +75,13 @@ public class DatabaseService(
         var changeLogs = await _itemChangeLogRepository.GetRecentItemChangeLogsAsync(TimeConstants.TimeWindowHours, stoppingToken);
         var groupedChanges = changeLogs
             .GroupBy(log => log.ItemId)
-            .OrderByDescending(group => group.Count())
-            .ToDictionary(g => g.Key, g => g.Count());
+            .OrderByDescending(group => (int)Math.Floor(group.Count() / 5.0))
+            .ToDictionary(g => g.Key, g => (int)Math.Floor(g.Count() / 5.0));
 
         // Anything appearing in the profitable listings should also be prioritized
         var profitableItems = await _itemRepository.GetProfitableItemsAsync(stoppingToken);
         var profitableItemsToProcess = profitableItems
+            .Where(pi => pi.Profit >= 1000)
             .Select(pi => pi.ItemId)
             .SelectMany(BuildQueueItems)
             .ToList();

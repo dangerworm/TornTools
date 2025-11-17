@@ -7,7 +7,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Link } from "react-router";
-import { useItems } from "../hooks/useItemsContext";
+import { useItems } from "../hooks/useItems";
 import Loading from "../components/Loading";
 
 function Home() {

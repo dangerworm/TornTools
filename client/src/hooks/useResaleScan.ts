@@ -1,7 +1,7 @@
 // src/hooks/useMarketScan.ts
 import { useEffect, useState } from "react";
 import type { Item } from "../types/items";
-import { fetchProfitableListings } from "../lib/api";
+import { fetchProfitableListings } from "../lib/dotnetapi";
 import type { ProfitableListing } from "../types/profitableListings";
 
 export type RowStatus = "queued" | "fetching" | "cached" | "done" | "error";

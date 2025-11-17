@@ -1,7 +1,7 @@
 import { Box, Grid, Typography } from "@mui/material";
 import Loading from "../components/Loading";
 import { useResaleScan } from "../hooks/useResaleScan";
-import { useItems } from "../hooks/useItemsContext";
+import { useItems } from "../hooks/useItems";
 import MarketItemsTable from "../components/MarketItemTable";
 import { useState } from "react";
 import SteppedSlider from "../components/SteppedSlider";

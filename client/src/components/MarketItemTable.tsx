@@ -30,7 +30,7 @@ const getSecondsSinceLastUpdate = (lastUpdated: Date): number => {
 
 const rowColor = (lastUpdated: Date): string => {
   const diffSeconds = getSecondsSinceLastUpdate(lastUpdated);
-  const colorValue = Math.min(Math.max(Math.floor(diffSeconds / 6), 0), 171);
+  const colorValue = Math.min(Math.max(Math.floor(diffSeconds / 3), 0), 171);
   return `rgba(${colorValue}, ${colorValue}, ${colorValue}, 0.87)`; // default color
 };
 
