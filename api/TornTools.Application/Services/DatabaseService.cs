@@ -14,7 +14,8 @@ public class DatabaseService(
     IItemChangeLogRepository itemChangeLogRepository,
     IItemRepository itemRepository,
     IListingRepository listingRepository,
-    IQueueItemRepository queueItemRepository
+    IQueueItemRepository queueItemRepository,
+    IUserRepository userRepository
 ) : IDatabaseService
 {
     private readonly ILogger<DatabaseService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -22,7 +23,7 @@ public class DatabaseService(
     private readonly IItemRepository _itemRepository = itemRepository ?? throw new ArgumentNullException(nameof(itemRepository));
     private readonly IListingRepository _listingRepository = listingRepository ?? throw new ArgumentNullException(nameof(listingRepository));
     private readonly IQueueItemRepository _queueItemRepository = queueItemRepository ?? throw new ArgumentNullException(nameof(queueItemRepository));
-
+    private readonly IUserRepository _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
 
     public Task CreateItemChangeLogAsync(ItemChangeLogDto changeLogDto, CancellationToken stoppingToken)
     {
@@ -83,6 +84,9 @@ public class DatabaseService(
         var profitableItemsToProcess = profitableItems
             .Where(pi => pi.Profit >= 1000)
             .Select(pi => pi.ItemId)
+            .ToList();
+
+        var profitableQueueItems = profitableItemsToProcess
             .SelectMany(BuildQueueItems)
             .ToList();
 
@@ -103,7 +107,7 @@ public class DatabaseService(
 
                 // Include anything appearing in the profitable listings
                 // so we don't leave old entries in the list for too long
-                queueItems.AddRange(profitableItemsToProcess);
+                queueItems.AddRange(profitableQueueItems);
             }
         }
 
@@ -113,7 +117,7 @@ public class DatabaseService(
         var leftOverItems = allItems
             .Select(item => item.Id)
             .Except(groupedChanges.Keys)
-            .Except(profitableItems.Select(pi => pi.ItemId))
+            .Except(profitableItemsToProcess)
             .SelectMany(BuildQueueItems)
             .ToList();
         
@@ -150,6 +154,16 @@ public class DatabaseService(
     public Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken)
     {
         return _queueItemRepository.RemoveQueueItemAsync(id, stoppingToken);
+    }
+
+    public Task<int> GetApiKeyCountAsync(CancellationToken stoppingToken)
+    {
+        return _userRepository.GetApiKeyCountAsync(stoppingToken);
+    }
+
+    public Task<string> GetNextApiKeyAsync(CancellationToken stoppingToken)
+    {
+        return _userRepository.GetNextApiKeyAsync(stoppingToken);
     }
 
     private static List<QueueItemDto> BuildQueueItems(int itemId)

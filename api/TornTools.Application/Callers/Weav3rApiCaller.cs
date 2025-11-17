@@ -11,11 +11,12 @@ namespace TornTools.Application.Callers;
 
 public class Weav3rApiCaller(
     ILogger<Weav3rApiCaller> logger,
-    IApiCallHandlerResolver handlerResolver,
+    IApiCallHandlerResolver callHandlerResolver,
+    IDatabaseService databaseService,
     IHttpClientFactory httpClientFactory,
     PlaywrightSingleton playwright,
     Weav3rApiCallerConfiguration options
-) : ApiCaller<Weav3rApiCaller>(logger, handlerResolver, httpClientFactory), IApiCaller
+) : ApiCaller<Weav3rApiCaller>(logger, callHandlerResolver, databaseService, httpClientFactory), IApiCaller
 {
     private readonly Weav3rApiCallerConfiguration _options = options ?? throw new ArgumentNullException(nameof(options));
 
@@ -24,7 +25,7 @@ public class Weav3rApiCaller(
         ApiCallType.Weav3rBazaarListings
     ];
 
-    protected override void AddHeaders(HttpRequestMessage requestMessage, QueueItemDto item)
+    protected override async Task AddHeaders(HttpRequestMessage requestMessage, QueueItemDto item, CancellationToken stoppingToken)
     {
         requestMessage.Headers.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue
         {
@@ -35,7 +36,7 @@ public class Weav3rApiCaller(
         requestMessage.Headers.AcceptEncoding.ParseAdd("gzip,deflate,br");
         requestMessage.Headers.Connection.Add("keep-alive");
         requestMessage.Headers.UserAgent.ParseAdd("dotnet/dangerworm");
-        base.AddHeaders(requestMessage, item);
+        await base.AddHeaders(requestMessage, item, stoppingToken);
     }
 
     protected override string ClientName => Weav3rApiConstants.ClientName;

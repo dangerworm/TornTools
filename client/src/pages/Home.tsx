@@ -31,11 +31,11 @@ function Home() {
         developers. Use at your own risk.
       </Typography>
 
-      <Divider sx={{ my: 4 }} />
+      <Divider sx={{ my: 2 }} />
       {loading ? (
         <Loading message="Loading items..." />
       ) : (
-        <Alert severity="success" sx={{ mt: 2 }}>
+        <Alert severity="success">
           Items loaded. You can now use the tools listed below. These can also
           be accessed from the navigation menu.
         </Alert>

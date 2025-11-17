@@ -1,5 +1,4 @@
-﻿using System.Net;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
@@ -9,12 +8,14 @@ using TornTools.Core.Enums;
 namespace TornTools.Application.Callers;
 public abstract class ApiCaller<TCaller>(
     ILogger<TCaller> logger,
-    IApiCallHandlerResolver handlerResolver,
+    IApiCallHandlerResolver callHandlerResolver,
+    IDatabaseService databaseService,
     IHttpClientFactory httpClientFactory
 )
 {
     protected readonly ILogger<TCaller> Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    protected readonly IApiCallHandlerResolver HandlerResolver = handlerResolver ?? throw new ArgumentNullException(nameof(handlerResolver));
+    protected readonly IApiCallHandlerResolver CallHandlerResolver = callHandlerResolver ?? throw new ArgumentNullException(nameof(callHandlerResolver));
+    protected readonly IDatabaseService DatabaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
     protected readonly IHttpClientFactory HttpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
 
     public abstract IEnumerable<ApiCallType> CallTypes { get; }
@@ -30,7 +31,7 @@ public abstract class ApiCaller<TCaller>(
         );
 
         // Headers (optional)
-        AddHeaders(requestMessage, queueItem);
+        await AddHeaders(requestMessage, queueItem, stoppingToken);
 
         // Body for non-GET/HEAD
         AddBody(queueItem, requestMessage);
@@ -44,7 +45,7 @@ public abstract class ApiCaller<TCaller>(
                 return false;
             }
 
-            var handler = HandlerResolver.GetHandler(queueItem.CallType);
+            var handler = CallHandlerResolver.GetHandler(queueItem.CallType);
             await handler.HandleResponseAsync(content, stoppingToken);
 
             return true;
@@ -61,7 +62,7 @@ public abstract class ApiCaller<TCaller>(
         }
     }
 
-    protected virtual void AddHeaders(HttpRequestMessage requestMessage, QueueItemDto queueItem)
+    protected virtual async Task AddHeaders(HttpRequestMessage requestMessage, QueueItemDto queueItem, CancellationToken stoppingToken)
     {
         if (queueItem.HeadersJson is not null)
         {

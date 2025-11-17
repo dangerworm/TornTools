@@ -13,6 +13,7 @@ public class TornToolsDbContext(
     public DbSet<ListingEntity> Listings { get; set; } = null!;
     public DbSet<ProfitableListingView> ProfitableListings { get; set; } = null!;
     public DbSet<QueueItemEntity> QueueItems { get; set; } = null!;
+    public DbSet<UserEntity> Users { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -64,6 +65,14 @@ public class TornToolsDbContext(
             e.Property(x => x.QueueIndex)
                .ValueGeneratedOnAdd() 
                .UseIdentityAlwaysColumn();
+        });
+
+        modelBuilder.Entity<UserEntity>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.ApiKey).IsRequired();
+            e.Property(x => x.Name).IsRequired();
+            e.Property(x => x.Gender).IsRequired();
         });
 
         // View mapping

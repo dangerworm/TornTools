@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
+using TornTools.Core.Configurations;
 using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
 using TornTools.Cron.Enums;
@@ -20,14 +21,15 @@ public class QueueProcessor(
     {
         _logger.LogInformation("QueueProcessorService starting.");
 
+        using var scope = _scopeFactory.CreateScope();
+        var callerResolver = scope.ServiceProvider.GetRequiredService<IApiCallerResolver>();
+        var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
+        var tornApiCallerOptions = scope.ServiceProvider.GetRequiredService<TornApiCallerConfiguration>();
+
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                using var scope = _scopeFactory.CreateScope();
-                var callerResolver = scope.ServiceProvider.GetRequiredService<IApiCallerResolver>();
-                var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
-                
                 var now = DateTime.UtcNow;
 
                 // Dequeue
@@ -111,10 +113,26 @@ public class QueueProcessor(
                 await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(QueueProcessorConstants.SecondsPerQueueWorkerIteration), stoppingToken);
+            var apiKeyCount = await databaseService.GetApiKeyCountAsync(stoppingToken);
+            var delayMilliseconds = CalculateDelayBetweenCallsMilliseconds(tornApiCallerOptions, apiKeyCount);
+
+            await Task.Delay(TimeSpan.FromMilliseconds(delayMilliseconds), stoppingToken);
         }
 
         _logger.LogInformation("{QueueProcessor} stopping.", nameof(QueueProcessor));
+    }
+
+    private static int CalculateDelayBetweenCallsMilliseconds(TornApiCallerConfiguration tornApiCallerOptions, int apiKeyCount)
+    {
+        if (apiKeyCount < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(apiKeyCount), "API key count must be greater than zero.");
+        }
+
+        var maxCallsPerMinuteReduced = (int)Math.Floor(tornApiCallerOptions.MaxCallsPerMinute * 0.8);
+        var callsPerMinute = maxCallsPerMinuteReduced * apiKeyCount;
+        var delayInMilliseconds = 60000.0 / callsPerMinute;
+        return (int)Math.Ceiling(delayInMilliseconds);
     }
 }
 

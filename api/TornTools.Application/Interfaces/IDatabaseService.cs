@@ -24,4 +24,7 @@ public interface IDatabaseService
     Task<QueueItemDto> SetQueueItemCompleted(Guid id, CancellationToken stoppingToken);
     Task RemoveQueueItemsAsync(CancellationToken stoppingToken, QueueStatus? statusToRemove = null);
     Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken);
+    
+    Task<int> GetApiKeyCountAsync(CancellationToken stoppingToken);
+    Task<string> GetNextApiKeyAsync(CancellationToken stoppingToken);
 }
