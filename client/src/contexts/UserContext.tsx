@@ -8,6 +8,7 @@ import {
 } from "react";
 import { UserContext } from "../hooks/useUser";
 import { fetchUserDetails, type TornUserProfile } from "../lib/tornapi";
+import { postUserDetails, type DotNetUserDetails } from "../lib/dotnetapi";
 
 const LOCAL_STORAGE_KEY_USER_API_KEY = "torntools:user:apiKey:v1";
 const LOCAL_STORAGE_KEY_USER_DETAILS = "torntools:user:details:v1";
@@ -28,7 +29,12 @@ export const UserProvider = ({
   const [apiKey, setApiKeyState] = useState<string | null>(() =>
     localStorage.getItem(LOCAL_STORAGE_KEY_USER_API_KEY)
   );
-  const [userDetails, setUserDetails] = useState<TornUserProfile | null>(null);
+  const [dotNetUserDetails, setDotNetUserDetails] = useState<DotNetUserDetails | null>(
+    null
+  );
+  const [tornUserProfile, setTornUserProfile] = useState<TornUserProfile | null>(
+    null
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,11 +49,45 @@ export const UserProvider = ({
 
     const cached = localStorage.getItem(LOCAL_STORAGE_KEY_USER_DETAILS);
     if (cached && age < ttlMs) {
-      setUserDetails(JSON.parse(cached));
+      setDotNetUserDetails(JSON.parse(cached));
     }
 
     void revalidate();
   }, [apiKey, ttlMs]);
+
+  useEffect(() => {
+    async function postData() {
+      if (!apiKey || !tornUserProfile) return;
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const userData = await postUserDetails(apiKey, tornUserProfile);
+
+        localStorage.setItem(
+          LOCAL_STORAGE_KEY_USER_DETAILS,
+          JSON.stringify(userData ?? null)
+        );
+        localStorage.setItem(
+          LOCAL_STORAGE_KEY_USER_DETAILS_TIME_SERVED,
+          Date.now().toString()
+        );
+
+        setDotNetUserDetails(userData ?? null);
+      } catch (e: unknown) {
+        if (e instanceof Error) {
+          setError(e.message);
+        } else {
+          setError("Unknown error");
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    postData();
+  }, [apiKey, tornUserProfile]);
 
   const revalidate = useCallback(async () => {
     if (!apiKey) return;
@@ -73,7 +113,7 @@ export const UserProvider = ({
         Date.now().toString()
       );
 
-      setUserDetails(userDetails.profile ?? null);
+      setTornUserProfile(userDetails.profile ?? null);
     } catch (e: unknown) {
       // If the request was deliberately cancelled, don't show an error
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -102,7 +142,7 @@ export const UserProvider = ({
         void refresh();
       } else {
         localStorage.removeItem(LOCAL_STORAGE_KEY_USER_API_KEY);
-        setUserDetails(null);
+        setTornUserProfile(null);
       }
     },
     [apiKey, refresh]
@@ -111,13 +151,13 @@ export const UserProvider = ({
   const contextValue = useMemo(
     () => ({
       apiKey,
-      userDetails,
+      dotNetUserDetails,
       loading,
       error,
       refresh,
       setApiKey,
     }),
-    [apiKey, userDetails, loading, error, refresh, setApiKey]
+    [apiKey, dotNetUserDetails, loading, error, refresh, setApiKey]
   );
 
   return (

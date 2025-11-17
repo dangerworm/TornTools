@@ -15,7 +15,7 @@ interface TopAppBarProps {
 }
 
 function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
-  const { userDetails } = useUser();
+  const { dotNetUserDetails } = useUser();
   return (
     <AppBar
       position="fixed"
@@ -45,9 +45,9 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
               to="/signin"
               style={{ color: "inherit", textDecoration: "none" }}
             >
-            {userDetails ? (
+            {dotNetUserDetails ? (
               <>
-                {userDetails.name} [{userDetails.id}]
+                {dotNetUserDetails.name} [{dotNetUserDetails.id}]
               </>
             ) : (
               <span>Sign in</span>

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using TornTools.Application.Interfaces;
+using TornTools.Core.Models.InputModels;
 
 namespace TornTools.Api.Controllers;
 
@@ -63,6 +63,27 @@ public class ApiController(
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
                 message = string.Format(ErrorMessage, "listings"),
+                details = ex.Message
+            });
+        }
+    }
+
+    [HttpPost(Name = "PostUserDetails")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> PostUserDetails([FromBody] UserDetailsInputModel userDetails)
+    {
+        try
+        {
+            var user = await _databaseService.UpsertUserDetailsAsync(userDetails, CancellationToken.None);
+            return Ok(user);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while processing user details.");
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                message = "An error occurred while processing user details.",
                 details = ex.Message
             });
         }

@@ -16,7 +16,7 @@ import Loading from "../components/Loading";
 import { useUser } from "../hooks/useUser";
 
 export default function SignIn() {
-  const { apiKey, userDetails, setApiKey, loading, error } = useUser();
+  const { apiKey, dotNetUserDetails, setApiKey, loading, error } = useUser();
 
   return (
     <>
@@ -81,7 +81,7 @@ export default function SignIn() {
                     </Alert>
                   )}
 
-                  {!error && userDetails && (
+                  {!error && dotNetUserDetails && (
                     <Alert severity="success" sx={{ mt: 2, width: "90%" }}>
                       Profile loaded. You can now use the tools in the
                       navigation menu.
@@ -90,21 +90,11 @@ export default function SignIn() {
                         sx={{ p: 2, mt: 2, mb: 1, width: "fit-content" }}
                       >
                         <Typography variant="body1" gutterBottom>
-                          {userDetails.name} [{userDetails.id}]{" "}
+                          {dotNetUserDetails.name} [{dotNetUserDetails.id}]{" "}
                         </Typography>
                         <Typography variant="body2" gutterBottom>
-                          {userDetails.gender}, level {userDetails.level}
-                        </Typography>
-                        <Typography
-                          variant="body1"
-                          gutterBottom
-                          sx={{ mt: 2 }}
-                        ></Typography>
-                        <Typography variant="body1" gutterBottom sx={{ mt: 2 }}>
-                          Status: {userDetails.status.description}{" "}
-                          {userDetails.status.state === "Traveling" &&
-                            `(via ${userDetails.status.travel_type})`}{" "}
-                          <br />
+                          {dotNetUserDetails.gender}, level{" "}
+                          {dotNetUserDetails.level}
                         </Typography>
                       </Paper>
                     </Alert>

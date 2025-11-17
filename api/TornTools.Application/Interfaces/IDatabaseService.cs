@@ -1,5 +1,6 @@
 ﻿using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Enums;
+using TornTools.Core.Models.InputModels;
 using TornTools.Cron.Enums;
 
 namespace TornTools.Application.Interfaces;
@@ -27,4 +28,5 @@ public interface IDatabaseService
     
     Task<int> GetApiKeyCountAsync(CancellationToken stoppingToken);
     Task<string> GetNextApiKeyAsync(CancellationToken stoppingToken);
+    Task<UserDto> UpsertUserDetailsAsync(UserDetailsInputModel userDetails, CancellationToken stoppingToken);
 }

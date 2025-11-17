@@ -1,4 +1,4 @@
-const fallbackApiUrl = `${window.location.protocol}//${window.location.hostname}:5185/api`;
+const fallbackApiUrl = `https://localhost:7012/api`;
 
 const configuredApiUrl =
   import.meta.env.VITE_API_BASE_URL &&

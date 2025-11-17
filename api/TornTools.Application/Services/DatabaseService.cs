@@ -4,6 +4,7 @@ using TornTools.Application.Interfaces;
 using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Enums;
+using TornTools.Core.Models.InputModels;
 using TornTools.Cron.Enums;
 using TornTools.Persistence.Interfaces;
 
@@ -164,6 +165,19 @@ public class DatabaseService(
     public Task<string> GetNextApiKeyAsync(CancellationToken stoppingToken)
     {
         return _userRepository.GetNextApiKeyAsync(stoppingToken);
+    }
+
+    public Task<UserDto> UpsertUserDetailsAsync(UserDetailsInputModel userDetails, CancellationToken stoppingToken)
+    {
+        var userDto = new UserDto {
+            ApiKey = userDetails.ApiKey,
+            Id = userDetails.UserProfile.Id,
+            Name = userDetails.UserProfile.Name,
+            Level = userDetails.UserProfile.Level,
+            Gender = userDetails.UserProfile.Gender
+        };
+
+        return _userRepository.UpsertUserDetailsAsync(userDto, stoppingToken);
     }
 
     private static List<QueueItemDto> BuildQueueItems(int itemId)

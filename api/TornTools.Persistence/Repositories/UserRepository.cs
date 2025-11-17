@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using TornTools.Core.DataTransferObjects;
+using TornTools.Persistence.Entities;
 using TornTools.Persistence.Interfaces;
 
 namespace TornTools.Persistence.Repositories;
@@ -25,6 +27,42 @@ public class UserRepository(
         await DbContext.SaveChangesAsync(stoppingToken);
 
         return user.ApiKey;
+    }
+
+    public async Task<UserDto> UpsertUserDetailsAsync(UserDto userDto, CancellationToken stoppingToken)
+    {
+        var userEntity = await DbContext.Users
+            .FirstOrDefaultAsync(u => u.Id == userDto.Id, stoppingToken);
+
+        if (userEntity == null)
+        {
+            userEntity = new UserEntity
+            {
+                Id = userDto.Id,
+                ApiKey = userDto.ApiKey,
+                ApiKeyLastUsed = null,
+                Name = userDto.Name,
+                Gender = userDto.Gender,
+                Level = userDto.Level
+            };
+
+            DbContext.Users.Add(userEntity);
+        }
+        else
+        {
+            userEntity.Name = userDto.Name;
+            userEntity.Gender = userDto.Gender;
+
+            if (!string.Equals(userEntity.ApiKey, userDto.ApiKey, StringComparison.Ordinal))
+            {
+                userEntity.ApiKey = userDto.ApiKey;
+                userEntity.ApiKeyLastUsed = null;
+            }
+        }
+
+        await DbContext.SaveChangesAsync(stoppingToken);
+
+        return userEntity.AsDto();
     }
 
     //private static QueueItemEntity CreateEntityFromDto(QueueItemDto itemDto)

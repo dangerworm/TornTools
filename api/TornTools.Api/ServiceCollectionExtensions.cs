@@ -13,7 +13,7 @@ public static class ServiceCollectionExtensions
                 policy
                     .WithOrigins(
                         "http://localhost:5173",
-                        "https://localhost:7185",
+                        "https://localhost:7012",
                         "https://dangerworm.github.io"
                     )
                     .AllowAnyHeader()

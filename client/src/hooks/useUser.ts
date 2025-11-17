@@ -1,9 +1,9 @@
 import { createContext, useContext } from "react";
-import type { TornUserProfile } from "../lib/tornapi";
+import type { DotNetUserDetails } from "../lib/dotnetapi";
 
 interface UserContextModel {
   apiKey: string | null;
-  userDetails: TornUserProfile | null;
+  dotNetUserDetails: DotNetUserDetails | null;
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;

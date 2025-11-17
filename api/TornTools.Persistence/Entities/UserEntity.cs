@@ -1,8 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using TornTools.Core.DataTransferObjects;
-using TornTools.Core.Enums;
-using TornTools.Cron.Enums;
 
 namespace TornTools.Persistence.Entities;
 
@@ -28,6 +26,10 @@ public class UserEntity
     [Column("gender")]
     public required string Gender { get; set; }
 
+    [Required]
+    [Column("level")]
+    public required int Level { get; set; }
+
     public UserDto AsDto()
     {
         return new UserDto
@@ -36,7 +38,8 @@ public class UserEntity
             ApiKey = ApiKey,
             ApiKeyLastUsed = ApiKeyLastUsed,
             Name = Name,
-            Gender = Gender
+            Gender = Gender,
+            Level = Level
         };
     }
 }
