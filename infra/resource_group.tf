@@ -3,7 +3,7 @@ resource "azurerm_resource_group" "torntools_webapp_rg" {
   location = "UK South"
   
   tags = {
-    environment = "dev"
+    environment = "${var.environment}"
     project     = "${var.app_name}"
   }
 }

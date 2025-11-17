@@ -40,7 +40,7 @@ resource "azurerm_key_vault" "torntools_keyvault" {
 
   tags = {
     environment = var.environment
-    project     = "torntools"
+    project     = "${var.app_name}"
   }
 }
 
@@ -58,28 +58,6 @@ resource "azurerm_key_vault_secret" "api_base_url" {
 resource "azurerm_key_vault_secret" "db_password" {
   name         = "db-admin-password"
   value        = var.db_admin_password
-  key_vault_id = azurerm_key_vault.torntools_keyvault.id
-
-  depends_on = [
-    azurerm_key_vault_access_policy.github_actions_user,
-    azurerm_key_vault_access_policy.local_user
-  ]
-}
-
-resource "azurerm_key_vault_secret" "google_client_id" {
-  name         = "react-app-${var.app_name}-google-client-id"
-  value        = var.google_client_id
-  key_vault_id = azurerm_key_vault.torntools_keyvault.id
-
-  depends_on = [
-    azurerm_key_vault_access_policy.github_actions_user,
-    azurerm_key_vault_access_policy.local_user
-  ]
-}
-
-resource "azurerm_key_vault_secret" "jwt_secret_key" {
-  name         = "${var.app_name}-jwt-secret-key"
-  value        = var.jwt_secret_key
   key_vault_id = azurerm_key_vault.torntools_keyvault.id
 
   depends_on = [
