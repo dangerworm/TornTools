@@ -2,7 +2,6 @@ using Hangfire;
 using TornTools.Api;
 using TornTools.Application;
 using TornTools.Application.Interfaces;
-using TornTools.Application.Playwright;
 using TornTools.Core;
 using TornTools.Core.Constants;
 using TornTools.Core.Enums;
@@ -13,8 +12,7 @@ using TornTools.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddSingleton<PlaywrightSingleton>();
+builder.Services.AddCorsPolicy();
 
 builder.Services.AddDatabase(builder.Configuration);
 builder.Services.AddHangfire(builder.Configuration);
@@ -23,7 +21,6 @@ builder.Services.AddHttpClient();
 builder.Services.AddConfiguration(builder.Configuration);
 builder.Services.AddDependencies();
 
-builder.Services.AddCorsPolicy();
 builder.Services.AddControllers();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

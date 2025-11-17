@@ -22,23 +22,11 @@ public static class ServiceCollectionExtensions
                     System.Net.DecompressionMethods.Brotli
             });
 
-        services
-            .AddHttpClient(Weav3rApiConstants.ClientName)
-            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-            {
-                AutomaticDecompression =
-                    System.Net.DecompressionMethods.GZip |
-                    System.Net.DecompressionMethods.Deflate |
-                    System.Net.DecompressionMethods.Brotli
-            });
-
         services.AddScoped<IApiCaller, TornApiCaller>();
-        services.AddScoped<IApiCaller, Weav3rApiCaller>();
         services.AddScoped<IApiCallerResolver, ApiCallerResolver>();
 
         services.AddScoped<IApiCallHandler, TornItemsApiCallHandler>();
         services.AddScoped<IApiCallHandler, TornMarketListingsApiCallHandler>();
-        services.AddScoped<IApiCallHandler, Weav3rBazaarListingsApiCallHandler>();
         services.AddScoped<IApiCallHandlerResolver, ApiCallHandlerResolver>();
         
         services.AddScoped<IDatabaseService, DatabaseService>();

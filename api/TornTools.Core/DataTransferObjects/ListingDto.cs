@@ -29,18 +29,4 @@ public class ListingDto
         Price = listing.Price;
         Quantity = listing.Quantity;
     }
-
-    [SetsRequiredMembers]
-    public ListingDto(Models.Weav3rBazaarListings.Listing listing, Guid correlationId, int listingPosition) 
-    {
-        Id = null;
-        CorrelationId = correlationId;
-        Source = Source.Weav3r;
-        PlayerId = listing.PlayerId;
-        ItemId = listing.ItemId;
-        ListingPosition = listingPosition;
-        TimeSeen = new DateTime(DateTimeOffset.FromUnixTimeSeconds(listing.ContentUpdated).Ticks);
-        Price = listing.Price;
-        Quantity = listing.Quantity;
-    }
 }

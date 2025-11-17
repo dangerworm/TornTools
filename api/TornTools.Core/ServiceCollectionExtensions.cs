@@ -15,12 +15,6 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<TornApiCallerConfiguration>>().Value
         );
 
-        services.Configure<Weav3rApiCallerConfiguration>(
-            configuration.GetSection(nameof(Weav3rApiCallerConfiguration)));
-
-        services.AddSingleton(sp =>
-            sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Weav3rApiCallerConfiguration>>().Value
-        );
         return services;
     }
 }

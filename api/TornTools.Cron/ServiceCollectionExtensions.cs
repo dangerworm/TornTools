@@ -5,6 +5,7 @@ using Hangfire;
 using Hangfire.PostgreSql;
 using TornTools.Cron.Interfaces;
 using TornTools.Cron.Schedulers;
+using TornTools.Core.Constants;
 
 namespace TornTools.Cron;
 
@@ -20,7 +21,7 @@ public static class ServiceCollectionExtensions
              .UseRecommendedSerializerSettings()
              .UsePostgreSqlStorage(bootstrapperOptions =>
              {
-                 bootstrapperOptions.UseNpgsqlConnection(configuration.GetConnectionString("AzurePostgres"));
+                 bootstrapperOptions.UseNpgsqlConnection(configuration.GetConnectionString(DatabaseConstants.ConnectionString));
              },
              new PostgreSqlStorageOptions
              {

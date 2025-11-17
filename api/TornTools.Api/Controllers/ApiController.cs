@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using TornTools.Application.Interfaces;
 
 namespace TornTools.Api.Controllers;
@@ -12,6 +13,8 @@ public class ApiController(
 {
     private readonly ILogger<ApiController> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly IDatabaseService _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
+
+    private const string ErrorMessage = "An error occurred while retrieving {0}.";
 
     [HttpGet(Name = "GetItems")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -29,13 +32,11 @@ public class ApiController(
         }
         catch (Exception ex)
         {
-            var message = "An error occurred while retrieving items.";
-
-            _logger.LogError(ex, message);
+            _logger.LogError(ex, "An error occurred while retrieving {EntityType}.", "items");
 
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
-                message,
+                message = string.Format(ErrorMessage, "items"),
                 details = ex.Message
             });
         }
@@ -51,19 +52,17 @@ public class ApiController(
             var listings = await _databaseService.GetProfitableListings(CancellationToken.None);
 
             if (listings == null || !listings.Any())
-                return NotFound("No items found.");
+                return NotFound("No listings found.");
 
             return Ok(listings);
         }
         catch (Exception ex)
         {
-            var message = "An error occurred while retrieving listings.";
-
-            _logger.LogError(ex, message);
+            _logger.LogError(ex, "An error occurred while retrieving {EntityType}.", "listings");
             
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
-                message,
+                message = string.Format(ErrorMessage, "listings"),
                 details = ex.Message
             });
         }
