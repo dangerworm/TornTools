@@ -14,7 +14,7 @@ public static class ServiceCollectionExtensions
                     .WithOrigins(
                         "http://localhost:5173",
                         "https://localhost:7012",
-                        "https://dangerworm.github.io"
+                        "https://torntoolsdevfrontendsa.z33.web.core.windows.net"
                     )
                     .AllowAnyHeader()
                     .AllowAnyMethod()
