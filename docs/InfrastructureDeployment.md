@@ -1,6 +1,6 @@
-# OpenResearchShop Infrastructure
+# Torn Tools Infrastructure
 
-Welcome! This guide will help you set up and manage the cloud infrastructure for OpenResearchShop using Terraform and Azure. It is designed for users with little or no DevOps experience. Follow each section in order, and you'll have your infrastructure running smoothly.
+Welcome! This guide will help you set up and manage the cloud infrastructure for Torn Tools using Terraform and Azure. It is designed for users with little or no DevOps experience. Follow each section in order, and you'll have your infrastructure running smoothly.
 
 ---
 
@@ -330,13 +330,9 @@ Most of the values are available in the `terraform.<Environment>.tfvars` files b
   - AZURE_SUBSCRIPTION_ID
   - AZURE_TENANT_ID
   - DB_USER
-  - TORNTOOLS_JWT_SECRET_KEY
-  - REACT_APP_TORNTOOLS_GOOGLE_CLIENT_ID
   - TF_VAR_DB_ADMIN_PASSWORD
 - Populate the AZURE_... secrets with the corresponding values from the `github_sp_credentials.json` file you created in step 4.
 - Populate DB_USER with `pgadmin`
-- Populate TORNTOOLS_JWT_SECRET_KEY with a long string of random numbers and letters. There's a tool available for this at https://jwtsecrets.com/
-- Populate REACT_APP_TORNTOOLS_GOOGLE_CLIENT_ID with the Google tracking ID you're using
 - Populate TF_VAR_DB_ADMIN_PASSWORD with the password you chose earlier
 - Run the 'Deploy Full Stack' pipeline
 

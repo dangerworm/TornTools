@@ -61,7 +61,7 @@ jobs:
           echo "tf_env_name=$TF_ENV_NAME" >> $GITHUB_OUTPUT
           echo "TF_ENV_NAME=$TF_ENV_NAME" >> $GITHUB_ENV
 
-          echo "Environment set to: $GITHUB_ENV_NAME (deploying as ors-$TF_ENV_NAME-*)"
+          echo "Environment set to: $GITHUB_ENV_NAME (deploying as torntools-$TF_ENV_NAME-*)"
 
   infra:
     name: Deploy Infrastructure
@@ -139,7 +139,7 @@ jobs:
           TF_VAR_github_actions_object_id: ${{ secrets.TF_VAR_GITHUB_ACTIONS_OBJECT_ID }}
           TF_VAR_github_actions_tenant_id: ${{ secrets.TF_VAR_GITHUB_ACTIONS_TENANT_ID }}
           TF_VAR_subscription_id: ${{ secrets.TF_VAR_SUBSCRIPTION_ID }}
-          TF_VAR_tfstate_storage_account_name: 'orsstatetfstate'
+          TF_VAR_tfstate_storage_account_name: 'torntoolsstoretfstate'
 
       - name: Terraform Apply
         if: steps.plan.outputs.has_changes == 'true'
@@ -156,7 +156,7 @@ jobs:
           TF_VAR_github_actions_object_id: ${{ secrets.TF_VAR_GITHUB_ACTIONS_OBJECT_ID }}
           TF_VAR_github_actions_tenant_id: ${{ secrets.TF_VAR_GITHUB_ACTIONS_TENANT_ID }}
           TF_VAR_subscription_id: ${{ secrets.TF_VAR_SUBSCRIPTION_ID }}
-          TF_VAR_tfstate_storage_account_name: 'orsstatetfstate'
+          TF_VAR_tfstate_storage_account_name: 'torntoolsstoretfstate'
 
       - name: Get Terraform Outputs
         id: get_terraform_outputs
@@ -254,8 +254,7 @@ jobs:
       
       - name: Install dependencies and build
         env:
-          REACT_APP_API_BASE_URL: ${{ needs.infra.outputs.api_url }}
-          REACT_APP_ORS_GOOGLE_CLIENT_ID: ${{ secrets.REACT_APP_ORS_GOOGLE_CLIENT_ID }}
+          VITE_API_BASE_URL: ${{ needs.infra.outputs.api_url }}
         run: |
           cd client
           npm ci
@@ -269,7 +268,7 @@ jobs:
       - name: Get storage account key
         id: get_storage_key
         run: |
-          KEY=$(az storage account keys list --account-name ors${{ env.ENV_DISPLAY_NAME }}frontendsa --query '[0].value' -o tsv)
+          KEY=$(az storage account keys list --account-name torntools${{ env.ENV_DISPLAY_NAME }}frontendsa --query '[0].value' -o tsv)
           if [ -z "$KEY" ]; then
             echo "❌ Failed to fetch storage account key"
             exit 1
