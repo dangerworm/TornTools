@@ -143,7 +143,6 @@ api/*/Properties/launchSettings.json
 
 # Terraform config files
 infra/**/.terraform
-infra/*.config
 infra/github_sp_credentials.json
 infra/*.tfstate
 infra/*.tfstate.backup
