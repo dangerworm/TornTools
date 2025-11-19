@@ -72,7 +72,7 @@ export default function SignIn() {
           {!error && apiKey && (
             <>
               {loading ? (
-                <Loading message="Loading items..." />
+                <Loading message="Loading profile..." />
               ) : (
                 <>
                   {error && (

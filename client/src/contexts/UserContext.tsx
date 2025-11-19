@@ -134,15 +134,15 @@ export const UserProvider = ({
 
   const setApiKey = useCallback(
     (key: string | null) => {
-      const isNewKey = key && key !== apiKey;
-
-      setApiKeyState(key);
-      if (isNewKey) {
+      setApiKeyState(null);
+      setTornUserProfile(null);
+      
+      if (key && key !== apiKey) {
+        setApiKeyState(key);
         localStorage.setItem(LOCAL_STORAGE_KEY_USER_API_KEY, key);
         void refresh();
-      } else {
+      } else if (!key) {
         localStorage.removeItem(LOCAL_STORAGE_KEY_USER_API_KEY);
-        setTornUserProfile(null);
       }
     },
     [apiKey, refresh]

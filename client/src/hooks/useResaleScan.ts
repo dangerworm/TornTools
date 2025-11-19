@@ -1,5 +1,5 @@
 // src/hooks/useMarketScan.ts
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Item } from "../types/items";
 import { fetchProfitableListings } from "../lib/dotnetapi";
 import type { ProfitableListing } from "../types/profitableListings";
@@ -10,29 +10,18 @@ interface Options {
   intervalMs?: number; // one call per interval (keeps us <100/min by default)
 }
 
-let timer: number | null = null;
-
 export function useResaleScan(
   items: Item[] | null,
   opts?: Options
 ) {
-  const {
-    intervalMs = 1000,
-  } = opts || {};
+  const { intervalMs = 1000 } = opts || {};
 
   const [rows, setRows] = useState<ProfitableListing[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const tick = async () => {
-    fetchProfitableListings()
-      .then(data => {
-        setRows(data)
-      })
-      .catch(err => {
-        setError(err.message);
-        setRows([]);
-      });
-  };
+  const timerRef = useRef<number | null>(null);
+
+
 
   useEffect(() => {
     setError(null);
@@ -42,10 +31,28 @@ export function useResaleScan(
       return;
     }
 
-    if (timer === null) {
-      timer = window.setInterval(tick, intervalMs);
-      void tick(); // kick immediately so first task doesn't wait
-    }
+    const tick = async () => {
+      fetchProfitableListings()
+        .then(data => {
+          setRows(data)
+        })
+        .catch(err => {
+          setError(err.message);
+          setRows([]);
+        });
+    };
+
+    // Start interval
+    timerRef.current = window.setInterval(tick, intervalMs);
+    void tick();
+
+    // Cleanup on unmount or when deps change
+    return () => {
+      if (timerRef.current !== null) {
+        window.clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
 
   }, [items, intervalMs]);
 
