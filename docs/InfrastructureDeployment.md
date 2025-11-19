@@ -331,9 +331,13 @@ Most of the values are available in the `terraform.<Environment>.tfvars` files b
   - AZURE_TENANT_ID
   - DB_USER
   - TF_VAR_DB_ADMIN_PASSWORD
+  - TF_VAR_GITHUB_ACTIONS_OBJECT_ID
+  - TF_VAR_GITHUB_ACTIONS_TENANT_ID
 - Populate the AZURE_... secrets with the corresponding values from the `github_sp_credentials.json` file you created in step 4.
 - Populate DB_USER with `pgadmin`
 - Populate TF_VAR_DB_ADMIN_PASSWORD with the password you chose earlier
+- Populate TF_VAR_GITHUB_ACTIONS_OBJECT_ID with the value from `terraform.<env>.tfvars`
+- Populate TF_VAR_GITHUB_ACTIONS_TENANT_ID with the value from `terraform.<env>.tfvars`
 - Run the 'Deploy Full Stack' pipeline
 
 ### b. Configure the GitHub Workflow
