@@ -90,7 +90,7 @@ az ad sp show --id <clientId> --query id -o tsv
 
 Terraform needs a place to store its state (a record of your infrastructure).
 
-A single shared Azure storage account (`torntoolsstatetfstate`) holds the Terraform state,
+A single shared Azure storage account (`torntoolsstoretfstate`) holds the Terraform state,
 with one blob container per environment (e.g., `tfstate-dev`, `tfstate-staging`,
 `tfstate-prod`).
 
@@ -156,15 +156,15 @@ This will create the resource group (if needed), the shared storage account (if 
 
 You need to tell Terraform about your environment. Edit the file `infra/terraform.<Environment>.tfvars` and fill in the required values for your environment. Here's a sample:
 ```hcl
+add_name                     = "app-name"
 db_admin_password            = "<choose-a-strong-password>"
 enable_local_user_access     = true
 environment                  = "dev"  # or test, staging, prod, etc.
 github_actions_object_id     = "<the-object-id-from-step-2c>"
 github_actions_tenant_id     = "<the-tenant-id-from-github_sp_credentials.json>"
-google_client_id             = "<your-google-client-id>"
-jwt_secret_key               = "<any-long-random-string>"
 local_user_object_id         = "<your-user-object-id-in-azure>"
 local_user_tenant_id         = "<the-tenant-id-from-github_sp_credentials.json>"
+location                     = "uksouth"
 subscription_id              = "<your-subscription-id>"
 tfstate_storage_account_name = "torntoolsstoretfstate"  # shared for all environments
 ```

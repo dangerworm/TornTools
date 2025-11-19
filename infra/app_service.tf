@@ -13,6 +13,7 @@ resource "azurerm_linux_web_app" "backend_api" {
   service_plan_id     = azurerm_service_plan.backend_plan.id
 
   site_config {
+    always_on = false
     application_stack {
       dotnet_version = "9.0"
     }

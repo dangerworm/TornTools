@@ -141,7 +141,7 @@ if (-not [string]::IsNullOrWhiteSpace($principalObjectId)) {
 }
 
 # --- Resource names ---
-$StorageAccount = "torntoolsstatetfstate"   # 3–24 chars, lowercase/numbers, globally unique
+$StorageAccount = "torntoolsstoretfstate"   # 3–24 chars, lowercase/numbers, globally unique
 $Container      = "tfstate-$Environment"
 $ResourceGroup  = "torntools-state-rg"
 

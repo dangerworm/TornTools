@@ -1,0 +1,290 @@
+name: Deploy Full Stack
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy (Dev, Staging, Prod)'
+        required: true
+        default: 'Dev'
+  push:
+    branches:
+      - main
+      - development
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  setup:
+    name: Store Environment Name Variables
+    runs-on: ubuntu-latest
+    outputs:
+      github_env_name: ${{ steps.setenv.outputs.github_env_name }}
+      tf_env_name: ${{ steps.setenv.outputs.tf_env_name }}
+    steps:
+      - name: Determine deployment environment
+        id: setenv
+        run: |
+          echo "🔍 Ref name: ${{ github.ref_name }}"
+          echo "🔍 Event input: ${{ github.event.inputs.environment }}"
+
+          GITHUB_ENV_NAME="${{ github.event.inputs.environment }}"
+
+          if [ -z "$GITHUB_ENV_NAME" ]; then
+            case "${{ github.ref_name }}" in
+              main)
+                GITHUB_ENV_NAME="Dev" # Change to 'Prod' for main branch when ready to go live
+                ;;
+              staging)
+                GITHUB_ENV_NAME="Staging"
+                ;;
+              test)
+                GITHUB_ENV_NAME="Test"
+                ;;
+              development)
+                GITHUB_ENV_NAME="Dev"
+                ;;
+              *)
+                echo "⚠️ Unknown branch — defaulting to 'Dev'"
+                GITHUB_ENV_NAME="Dev"
+                ;;
+            esac
+          fi
+
+          TF_ENV_NAME=$(echo "$GITHUB_ENV_NAME" | tr '[:upper:]' '[:lower:]')
+
+          echo "github_env_name=$GITHUB_ENV_NAME" >> $GITHUB_OUTPUT
+          echo "GITHUB_ENV_NAME=$GITHUB_ENV_NAME" >> $GITHUB_ENV
+
+          echo "tf_env_name=$TF_ENV_NAME" >> $GITHUB_OUTPUT
+          echo "TF_ENV_NAME=$TF_ENV_NAME" >> $GITHUB_ENV
+
+          echo "Environment set to: $GITHUB_ENV_NAME (deploying as ors-$TF_ENV_NAME-*)"
+
+  infra:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    needs: setup
+    environment: ${{ needs.setup.outputs.github_env_name }}
+    env:
+      ENV_DISPLAY_NAME: ${{ needs.setup.outputs.tf_env_name }}
+    outputs:
+      postgres_connection_string: ${{ steps.get_terraform_outputs.outputs.postgres_connection_string }}
+      api_url: ${{ steps.get_terraform_outputs.outputs.api_url }}
+      react_static_site_url: ${{ steps.get_terraform_outputs.outputs.react_static_site_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Terraform Init
+        run: terraform init -backend-config=backend.${{ env.ENV_DISPLAY_NAME }}.config
+        working-directory: infra
+
+      - name: Terraform Plan (with lock retry)
+        id: plan
+        run: |
+          echo "📐 Running terraform plan..."
+          set +e
+          terraform plan -no-color -out=tfplan 2>&1 | tee plan_output.txt
+          exit_code=$?
+          set -e
+
+          if grep -q "Error acquiring the state lock" plan_output.txt; then
+            echo "🔒 State lock detected. Attempting to force unlock..."
+            LOCK_ID=$(grep -A1 "Lock Info:" plan_output.txt | grep "ID:" | awk '{print $2}')
+            if [ -z "$LOCK_ID" ]; then
+              echo "❌ Could not determine lock ID. Aborting unlock."
+              cat plan_output.txt
+              exit 1
+            fi
+            echo "🔓 Lock ID: $LOCK_ID. Unlocking..."
+            terraform force-unlock -force "$LOCK_ID"
+
+            echo "🔁 Retrying terraform plan..."
+            terraform plan -no-color -out=tfplan 2>&1 | tee plan_output.txt
+            exit_code=$?
+          fi
+
+          if [ "$exit_code" -ne 0 ]; then
+            echo "❌ Terraform plan failed:"
+            cat plan_output.txt
+            exit $exit_code
+          fi
+
+          if grep -q 'No changes. Your infrastructure matches the configuration.' plan_output.txt; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "✅ No changes detected in infrastructure."
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "🚧 Changes detected — proceeding with apply."
+          fi
+        working-directory: infra
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          TF_VAR_db_admin_password: ${{ secrets.TF_VAR_DB_ADMIN_PASSWORD }}
+          TF_VAR_enable_local_user_access: false
+          TF_VAR_environment: ${{ env.ENV_DISPLAY_NAME }}
+          TF_VAR_github_actions_object_id: ${{ secrets.TF_VAR_GITHUB_ACTIONS_OBJECT_ID }}
+          TF_VAR_github_actions_tenant_id: ${{ secrets.TF_VAR_GITHUB_ACTIONS_TENANT_ID }}
+          TF_VAR_subscription_id: ${{ secrets.TF_VAR_SUBSCRIPTION_ID }}
+          TF_VAR_tfstate_storage_account_name: 'orsstatetfstate'
+
+      - name: Terraform Apply
+        if: steps.plan.outputs.has_changes == 'true'
+        run: terraform apply -auto-approve tfplan
+        working-directory: infra
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          TF_VAR_db_admin_password: ${{ secrets.TF_VAR_DB_ADMIN_PASSWORD }}
+          TF_VAR_enable_local_user_access: false
+          TF_VAR_environment: ${{ env.ENV_DISPLAY_NAME }}
+          TF_VAR_github_actions_object_id: ${{ secrets.TF_VAR_GITHUB_ACTIONS_OBJECT_ID }}
+          TF_VAR_github_actions_tenant_id: ${{ secrets.TF_VAR_GITHUB_ACTIONS_TENANT_ID }}
+          TF_VAR_subscription_id: ${{ secrets.TF_VAR_SUBSCRIPTION_ID }}
+          TF_VAR_tfstate_storage_account_name: 'orsstatetfstate'
+
+      - name: Get Terraform Outputs
+        id: get_terraform_outputs
+        if: always()
+        env:
+          TF_VAR_DB_ADMIN_PASSWORD: ${{ secrets.TF_VAR_DB_ADMIN_PASSWORD }}
+        run: |
+          set -e
+
+          echo "🔍 Fetching terraform outputs..."
+
+          POSTGRES_CONNECTION_STRING="$(terraform output -raw postgres_connection_string 2>/dev/null)"
+          API_URL="$(terraform output -raw api_url 2>/dev/null)"
+          REACT_STATIC_SITE_URL="$(terraform output -raw react_static_site_url 2>/dev/null)"
+
+          echo "postgres_connection_string=$POSTGRES_CONNECTION_STRING" >> $GITHUB_OUTPUT
+          echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+          echo "react_static_site_url=$REACT_STATIC_SITE_URL" >> $GITHUB_OUTPUT
+          
+          echo "🔎 Postgres connection string: ${POSTGRES_CONNECTION_STRING}"
+          echo "🔎 API URL: $API_URL"
+          echo "🔎 React static site URL: $REACT_STATIC_SITE_URL"
+        working-directory: infra
+
+  db:
+    name: Run Flyway Migrations
+    runs-on: ubuntu-latest
+    needs: [setup, infra]
+    environment: ${{ needs.setup.outputs.github_env_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Flyway Migrations
+        env:
+          FLYWAY_URL: ${{ needs.infra.outputs.postgres_connection_string }}
+          FLYWAY_USER: ${{ secrets.DB_USER }}
+          FLYWAY_PASSWORD: ${{ secrets.TF_VAR_DB_ADMIN_PASSWORD }}
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}/.docker/flyway/sql:/flyway/sql \
+            flyway/flyway \
+            -url="$FLYWAY_URL" \
+            -user="$FLYWAY_USER" \
+            -password="$FLYWAY_PASSWORD" \
+            -outOfOrder=false \
+            -validateMigrationNaming=true \
+            repair \
+            migrate
+
+  api:
+    name: Deploy API
+    runs-on: ubuntu-latest
+    needs: [setup, db] 
+    environment: ${{ needs.setup.outputs.github_env_name }}
+    env:
+      ENV_DISPLAY_NAME: ${{ needs.setup.outputs.tf_env_name }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      
+      - name: Publish API
+        run: |
+          cd api/TornTools.Api
+          dotnet publish -c Release -o publish
+      
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: torntools-${{ env.ENV_DISPLAY_NAME }}-back-end-api
+          package: api/TornTools.Api/publish
+
+  client:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    needs: [setup, infra, api]
+    environment: ${{ needs.setup.outputs.github_env_name }}
+    env:
+      ENV_DISPLAY_NAME: ${{ needs.setup.outputs.tf_env_name }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies and build
+        env:
+          REACT_APP_API_BASE_URL: ${{ needs.infra.outputs.api_url }}
+          REACT_APP_ORS_GOOGLE_CLIENT_ID: ${{ secrets.REACT_APP_ORS_GOOGLE_CLIENT_ID }}
+        run: |
+          cd client
+          npm ci
+          npm run build
+      
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Get storage account key
+        id: get_storage_key
+        run: |
+          KEY=$(az storage account keys list --account-name ors${{ env.ENV_DISPLAY_NAME }}frontendsa --query '[0].value' -o tsv)
+          if [ -z "$KEY" ]; then
+            echo "❌ Failed to fetch storage account key"
+            exit 1
+          fi
+          echo "::add-mask::$KEY"
+          echo "STORAGE_KEY=$KEY" >> $GITHUB_ENV
+
+      - name: Upload static files to Azure
+        uses: azure/CLI@v2
+        with:
+          azcliversion: 2.53.0
+          inlineScript: |
+            az storage blob upload-batch \
+              --account-name torntools${{ env.ENV_DISPLAY_NAME }}frontendsa \
+              --destination \$web \
+              --source client/dist \
+              --account-key "$STORAGE_KEY" \
+              --overwrite true

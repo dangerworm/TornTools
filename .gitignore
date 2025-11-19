@@ -156,3 +156,4 @@ infra/tfplan
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 client/package-lock.json
+infra/.terraform.lock.hcl
