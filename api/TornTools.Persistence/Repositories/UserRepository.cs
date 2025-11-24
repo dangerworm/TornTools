@@ -65,6 +65,32 @@ public class UserRepository(
         return userEntity.AsDto();
     }
 
+    public async Task<UserDto?> ToggleUserFavourite(long userId, int itemId, bool add, CancellationToken stoppingToken)
+    {
+        var userFavouriteEntity = await DbContext.UserFavourites
+            .FirstOrDefaultAsync(uf => uf.UserId == userId && uf.ItemId == itemId, stoppingToken);
+
+        if (userFavouriteEntity == null && add)
+        {
+            userFavouriteEntity = new UserFavouriteItemEntity
+            {
+                UserId = userId,
+                ItemId = itemId
+            };
+
+            DbContext.UserFavourites.Add(userFavouriteEntity);
+        }
+        else if (userFavouriteEntity != null && !add)
+        {
+            DbContext.UserFavourites.Remove(userFavouriteEntity);
+        }
+
+        await DbContext.SaveChangesAsync(stoppingToken);
+
+        var userEntity = await DbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, stoppingToken);
+        return userEntity?.AsDto();
+    }
+
     //private static QueueItemEntity CreateEntityFromDto(QueueItemDto itemDto)
     //{
     //    return new QueueItemEntity

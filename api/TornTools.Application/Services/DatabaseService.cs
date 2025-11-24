@@ -1,5 +1,4 @@
-﻿using System.Threading;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
 using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
@@ -178,6 +177,11 @@ public class DatabaseService(
         };
 
         return _userRepository.UpsertUserDetailsAsync(userDto, stoppingToken);
+    }
+
+    public Task<UserDto?> ToggleUserFavourite(UserFavouriteInputModel model, CancellationToken stoppingToken)
+    {
+        return _userRepository.ToggleUserFavourite(model.UserId, model.ItemId, model.Add, stoppingToken);
     }
 
     private static List<QueueItemDto> BuildQueueItems(int itemId)

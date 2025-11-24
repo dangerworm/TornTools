@@ -1,6 +1,6 @@
 // In-memory TTL cache (per item_id)
 type Entry<T> = { at: number; data: T };
-export function createTtlCache<T>(ttlMs: number) {
+export const createTtlCache = <T>(ttlMs: number) => {
   const map = new Map<number, Entry<T>>();
   return {
     get(id: number): T | null {

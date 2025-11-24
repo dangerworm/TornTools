@@ -25,7 +25,7 @@ export interface TornUserBasicPayload {
 
 const BASE = "https://api.torn.com/v2/user/basic";
 
-export async function fetchUserDetails(
+export async function fetchTornUserDetails(
   apiKey: string,
   signal?: AbortSignal
 ): Promise<TornUserBasicPayload> {

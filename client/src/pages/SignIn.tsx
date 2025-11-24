@@ -11,30 +11,38 @@ import {
   TextField,
   Typography,
   Grid,
+  Button,
 } from "@mui/material";
 import Loading from "../components/Loading";
 import { useUser } from "../hooks/useUser";
 
 export default function SignIn() {
-  const { apiKey, dotNetUserDetails, setApiKey, loading, error } = useUser();
+  const {
+    apiKey,
+    setApiKey,
+    tornUserProfile,
+    loadingTornUserProfile,
+    errorTornUserProfile,
+    updateUserDetailsAsync,
+  } = useUser();
 
   return (
     <>
-      <Typography variant="body1" gutterBottom>
-        This website hosts a collection of tools for the game{" "}
-        <a
-          href="https://www.torn.com/index.php"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Torn
-        </a>
-        .
+      <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
+        Account Sign-In
       </Typography>
 
       <Typography variant="body1" gutterBottom>
-        This is a personal project and not affiliated with Torn or its
-        developers. Use at your own risk.
+        Adding your API key helps to make the system faster as your API key will
+        be used to fetch data from Torn. This means that market scans will be
+        quicker.
+      </Typography>
+
+      <Typography variant="body1" gutterBottom>
+        Your API key will also be used to generate a user account for you on
+        this website. This will allow you to access additional features that are
+        not available to anonymous users. For example, you will be able to
+        'favourite' markets and save your preferences.
       </Typography>
 
       <Divider sx={{ my: 2 }} />
@@ -45,7 +53,7 @@ export default function SignIn() {
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <Typography variant="body1" gutterBottom sx={{ mt: 2 }}>
+          <Typography variant="body1" gutterBottom>
             Enter your Torn API key here.
           </Typography>
 
@@ -69,33 +77,35 @@ export default function SignIn() {
           </Typography>
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
-          {!error && apiKey && (
+          {!errorTornUserProfile && apiKey && (
             <>
-              {loading ? (
+              {loadingTornUserProfile ? (
                 <Loading message="Loading profile..." />
               ) : (
                 <>
-                  {error && (
+                  {errorTornUserProfile && (
                     <Alert severity="error" sx={{ mt: 2, width: "95%" }}>
-                      {error}
+                      {errorTornUserProfile}
                     </Alert>
                   )}
 
-                  {!error && dotNetUserDetails && (
-                    <Alert severity="success" sx={{ mt: 2, width: "90%" }}>
-                      Profile loaded. You can now use the tools in the
-                      navigation menu.
+                  {!errorTornUserProfile && tornUserProfile && (
+                    <Alert severity="success" sx={{ width: "90%" }}>
+                      Profile loaded successfully.
                       <Paper
                         elevation={3}
                         sx={{ p: 2, mt: 2, mb: 1, width: "fit-content" }}
                       >
                         <Typography variant="body1" gutterBottom>
-                          {dotNetUserDetails.name} [{dotNetUserDetails.id}]{" "}
+                          {tornUserProfile.name} [{tornUserProfile.id}]{" "}
                         </Typography>
                         <Typography variant="body2" gutterBottom>
-                          {dotNetUserDetails.gender}, level{" "}
-                          {dotNetUserDetails.level}
+                          {tornUserProfile.gender}, level{" "}
+                          {tornUserProfile.level}
                         </Typography>
+                        <Button variant="contained" sx={{ mt: 1 }} onClick={() => updateUserDetailsAsync()}>
+                          Add API key and sign in
+                        </Button>
                       </Paper>
                     </Alert>
                   )}

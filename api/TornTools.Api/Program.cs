@@ -16,7 +16,7 @@ builder.Services.AddCorsPolicy();
 
 builder.Services.AddDatabase(builder.Configuration);
 builder.Services.AddHangfire(builder.Configuration);
-builder.Services.AddHostedService<QueueProcessor>();
+//builder.Services.AddHostedService<QueueProcessor>();
 builder.Services.AddHttpClient();
 builder.Services.AddConfiguration(builder.Configuration);
 builder.Services.AddDependencies();
@@ -38,18 +38,18 @@ if (app.Environment.IsDevelopment())
 
 using (var scope = app.Services.CreateScope())
 {
-    var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
+    //var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
 
-    await databaseService.RemoveQueueItemsAsync(CancellationToken.None);
+    //await databaseService.RemoveQueueItemsAsync(CancellationToken.None);
 
-    var numberOfItems = await databaseService.GetNumberOfItemsAsync(CancellationToken.None);
-    if (numberOfItems == 0)
-    {
-        await databaseService.CreateQueueItem(ApiCallType.TornItems, TornApiConstants.Items, CancellationToken.None);
-    }
+    //var numberOfItems = await databaseService.GetNumberOfItemsAsync(CancellationToken.None);
+    //if (numberOfItems == 0)
+    //{
+    //    await databaseService.CreateQueueItem(ApiCallType.TornItems, TornApiConstants.Items, CancellationToken.None);
+    //}
 
-    var jobScheduler = scope.ServiceProvider.GetRequiredService<IApiJobScheduler>();
-    jobScheduler.RegisterRecurringJobs();
+    //var jobScheduler = scope.ServiceProvider.GetRequiredService<IApiJobScheduler>();
+    //jobScheduler.RegisterRecurringJobs();
 }
 
 app.UseHttpsRedirection();

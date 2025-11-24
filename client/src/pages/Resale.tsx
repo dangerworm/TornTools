@@ -97,7 +97,6 @@ export default function Resale() {
         maxBuyPrice={maxBuyPrice}
         maxTimeSinceLastUpdate={maxTimeSinceLastUpdate}
         error={error}
-        rowClickAction={"visit-market-page"}
       />
     </Box>
   );

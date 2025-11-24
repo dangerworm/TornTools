@@ -30,6 +30,8 @@ public class UserEntity
     [Column("level")]
     public required int Level { get; set; }
 
+    public IEnumerable<UserFavouriteItemEntity> FavouriteItems { get; set; } = [];
+
     public UserDto AsDto()
     {
         return new UserDto
@@ -39,7 +41,8 @@ public class UserEntity
             ApiKeyLastUsed = ApiKeyLastUsed,
             Name = Name,
             Gender = Gender,
-            Level = Level
+            Level = Level,
+            FavouriteItems = FavouriteItems.Select(f => f.ItemId)
         };
     }
 }

@@ -29,4 +29,5 @@ public interface IDatabaseService
     Task<int> GetApiKeyCountAsync(CancellationToken stoppingToken);
     Task<string> GetNextApiKeyAsync(CancellationToken stoppingToken);
     Task<UserDto> UpsertUserDetailsAsync(UserDetailsInputModel userDetails, CancellationToken stoppingToken);
+    Task<UserDto?> ToggleUserFavourite(UserFavouriteInputModel userFavouriteModel, CancellationToken stoppingToken);
 }

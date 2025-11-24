@@ -14,6 +14,7 @@ public class TornToolsDbContext(
     public DbSet<ProfitableListingView> ProfitableListings { get; set; } = null!;
     public DbSet<QueueItemEntity> QueueItems { get; set; } = null!;
     public DbSet<UserEntity> Users { get; set; } = null!;
+    public DbSet<UserFavouriteItemEntity> UserFavourites { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -73,6 +74,14 @@ public class TornToolsDbContext(
             e.Property(x => x.ApiKey).IsRequired();
             e.Property(x => x.Name).IsRequired();
             e.Property(x => x.Gender).IsRequired();
+            e.HasMany<UserFavouriteItemEntity>()
+                .WithOne()
+                .HasForeignKey(uf => uf.UserId);
+        });
+
+        modelBuilder.Entity<UserFavouriteItemEntity>(e =>
+        {
+            e.HasKey(x => new { x.UserId, x.ItemId });
         });
 
         // View mapping

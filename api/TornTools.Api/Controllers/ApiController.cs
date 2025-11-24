@@ -88,4 +88,25 @@ public class ApiController(
             });
         }
     }
+
+    [HttpPost(Name = "PostAddUserFavourite")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> PostAddUserFavourite([FromBody] UserFavouriteInputModel userFavouriteModel)
+    {
+        try
+        {
+            var user = await _databaseService.ToggleUserFavourite(userFavouriteModel, CancellationToken.None);
+            return Ok(user);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while processing user details.");
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                message = "An error occurred while processing user details.",
+                details = ex.Message
+            });
+        }
+    }
 }

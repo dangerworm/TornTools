@@ -10,19 +10,13 @@ export interface DotNetUserDetails {
   name: string;
   level: number;
   gender: string;
-  status: {
-    description: string;
-    details: string | null;
-    state: string;
-    color: string;
-    until: string | null;
-    travel_type: string;
-    plane_image_type: string;
-  };
+  favourites: Set<number>;
 }
 
 const URL_ITEMS = `${API_BASE_URL}/GetItems`;
 const URL_PROFITABLE_LISTINGS = `${API_BASE_URL}/GetProfitableListings`;
+const URL_POST_ADD_USER_FAVOURITE = `${API_BASE_URL}/PostAddUserFavourite`;
+const URL_POST_REMOVE_USER_FAVOURITE = `${API_BASE_URL}/PostRemoveUserFavourite`;
 const URL_POST_USER_DETAILS = `${API_BASE_URL}/PostUserDetails`;
 
 export async function fetchItems(): Promise<Item[]> {
@@ -47,6 +41,54 @@ export async function fetchProfitableListings(): Promise<ProfitableListing[]> {
   };
   const res = await fetch(url, { headers });
   let data: ProfitableListing[] = [];
+  try {
+    data = await res.json();
+  } catch {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  }
+  return data;
+}
+
+export async function postAddUserFavourite(
+  userId: number,
+  itemId: number
+): Promise<DotNetUserDetails | null> {
+  const url = URL_POST_ADD_USER_FAVOURITE;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  const content = {
+    userId,
+    itemId,
+    add: true
+  };
+  const body = JSON.stringify(content);
+  const res = await fetch(url, { method: "POST", headers, body });
+  let data: DotNetUserDetails | null = null;
+  try {
+    data = await res.json();
+  } catch {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  }
+  return data;
+}
+
+export async function postRemoveUserFavourite(
+  userId: number,
+  itemId: number
+): Promise<DotNetUserDetails | null> {
+  const url = URL_POST_REMOVE_USER_FAVOURITE;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  const content = {
+    userId,
+    itemId,
+    add: false
+  };
+  const body = JSON.stringify(content);
+  const res = await fetch(url, { method: "POST", headers, body });
+  let data: DotNetUserDetails | null = null;
   try {
     data = await res.json();
   } catch {

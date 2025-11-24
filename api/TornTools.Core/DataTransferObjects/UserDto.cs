@@ -2,10 +2,11 @@
 
 public class UserDto
 {
-    public long? Id { get; set; }
     public required string ApiKey { get; set; }
     public DateTime? ApiKeyLastUsed { get; set; }
+    public long? Id { get; set; }
     public required string Name { get; set; }
     public required int Level { get; set; }
     public required string Gender { get; set; }
+    public IEnumerable<int> FavouriteItems { get; set; } = [];
 }

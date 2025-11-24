@@ -25,9 +25,6 @@ export default function Footer() {
         .
       </Typography>
       <Typography variant="body2" gutterBottom color="text.secondary">
-        All tools run locally in the browser and no data/api keys are collected.
-      </Typography>
-      <Typography variant="body2" gutterBottom color="text.secondary">
         You can find this project's source code on{" "}
         <a
           href="https://github.com/dangerworm/TornTools"
