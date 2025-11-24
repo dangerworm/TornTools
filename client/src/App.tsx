@@ -1,8 +1,9 @@
 import { Routes, Route } from "react-router";
 import Layout from "./components/Layout";
+import SignIn from "./pages/SignIn";
 import Home from "./pages/Home";
 import Resale from "./pages/Resale";
-import SignIn from "./pages/SignIn";
+import Market from "./pages/Market";
 // import Trading from "./pages/Trading";
 
 function App() {
@@ -12,12 +13,8 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/resale" element={<Resale />} />
         <Route path="/signin" element={<SignIn />} />
-        {/* <Route path="/trades" element={<Trading />} /> */}
-        {/* <Route path="/other">
-          <Route index element={<OtherIndex />} />
-          <Route path="settings" element={<OtherSettings />} />
-        </Route> */}
-        {/* 404 / catch-all */}
+        <Route path="/market/:itemId" element={<Market />} />
+
         <Route path="*" element={<h1>Not Found</h1>} />
       </Route>
     </Routes>

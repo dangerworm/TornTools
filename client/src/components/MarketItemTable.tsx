@@ -208,19 +208,12 @@ export default function MarketItemsTable({
                           {r.quantity.toLocaleString()}
                         </TableCell>
 
-                        {/* This should navigate to /market/{itemId} when clicked, not use onRowClick */}
                         <TableCell
                           align="right"
                           onClick={() => navigate(`/market/${r.itemId}`)}
                           style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
                         >
                           ${r.profit.toLocaleString()}
-                        </TableCell>
-                        <TableCell
-                          align="right"
-                          style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
-                        >
-                          {timeAgo(r.lastUpdated)}
                         </TableCell>
                         <TableCell
                           align="right"
