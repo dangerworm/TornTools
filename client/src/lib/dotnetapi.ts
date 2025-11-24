@@ -10,7 +10,7 @@ export interface DotNetUserDetails {
   name: string;
   level: number;
   gender: string;
-  favourites: Set<number>;
+  favouriteItems: number[];
 }
 
 const URL_ITEMS = `${API_BASE_URL}/GetItems`;
@@ -41,6 +41,29 @@ export async function fetchProfitableListings(): Promise<ProfitableListing[]> {
   };
   const res = await fetch(url, { headers });
   let data: ProfitableListing[] = [];
+  try {
+    data = await res.json();
+  } catch {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  }
+  return data;
+}
+
+export async function postUserDetails(
+  apiKey: string,
+  userProfile: TornUserProfile
+): Promise<DotNetUserDetails | null> {
+  const url = URL_POST_USER_DETAILS;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  const content = {
+    apiKey,
+    userProfile,
+  };
+  const body = JSON.stringify(content);
+  const res = await fetch(url, { method: "POST", headers, body });
+  let data: DotNetUserDetails | null = null;
   try {
     data = await res.json();
   } catch {
@@ -85,29 +108,6 @@ export async function postRemoveUserFavourite(
     userId,
     itemId,
     add: false
-  };
-  const body = JSON.stringify(content);
-  const res = await fetch(url, { method: "POST", headers, body });
-  let data: DotNetUserDetails | null = null;
-  try {
-    data = await res.json();
-  } catch {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  }
-  return data;
-}
-
-export async function postUserDetails(
-  apiKey: string,
-  userProfile: TornUserProfile
-): Promise<DotNetUserDetails | null> {
-  const url = URL_POST_USER_DETAILS;
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-  const content = {
-    apiKey,
-    userProfile,
   };
   const body = JSON.stringify(content);
   const res = await fetch(url, { method: "POST", headers, body });

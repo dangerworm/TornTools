@@ -74,14 +74,24 @@ public class TornToolsDbContext(
             e.Property(x => x.ApiKey).IsRequired();
             e.Property(x => x.Name).IsRequired();
             e.Property(x => x.Gender).IsRequired();
-            e.HasMany<UserFavouriteItemEntity>()
-                .WithOne()
-                .HasForeignKey(uf => uf.UserId);
+
+            e.HasMany(u => u.FavouriteItems)
+                .WithOne(uf => uf.User)
+                .HasForeignKey(uf => uf.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<UserFavouriteItemEntity>(e =>
         {
             e.HasKey(x => new { x.UserId, x.ItemId });
+
+            e.Property(x => x.UserId)
+                .HasColumnName("user_id")
+                .IsRequired();
+
+            e.Property(x => x.ItemId)
+                .HasColumnName("item_id")
+                .IsRequired();
         });
 
         // View mapping

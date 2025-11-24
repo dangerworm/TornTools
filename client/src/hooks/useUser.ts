@@ -11,8 +11,9 @@ interface UserContextModel {
   loadingDotNetUserDetails: boolean;
   errorDotNetUserDetails: string | null;
   setApiKey: (key: string | null) => void;
-  updateUserDetailsAsync: () => Promise<void>;
+  confirmApiKeyAsync: () => Promise<void>;
   toggleFavouriteItemAsync: (itemId: number) => Promise<void>;
+  clearAllUserData: () => void;
 }
 
 export const UserContext = createContext<UserContextModel | null>(null);

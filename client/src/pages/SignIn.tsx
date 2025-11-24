@@ -23,7 +23,7 @@ export default function SignIn() {
     tornUserProfile,
     loadingTornUserProfile,
     errorTornUserProfile,
-    updateUserDetailsAsync,
+    confirmApiKeyAsync,
   } = useUser();
 
   return (
@@ -103,7 +103,7 @@ export default function SignIn() {
                           {tornUserProfile.gender}, level{" "}
                           {tornUserProfile.level}
                         </Typography>
-                        <Button variant="contained" sx={{ mt: 1 }} onClick={() => updateUserDetailsAsync()}>
+                        <Button variant="contained" sx={{ mt: 1 }} onClick={() => confirmApiKeyAsync()}>
                           Add API key and sign in
                         </Button>
                       </Paper>

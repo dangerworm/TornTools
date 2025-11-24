@@ -30,7 +30,7 @@ public class UserEntity
     [Column("level")]
     public required int Level { get; set; }
 
-    public IEnumerable<UserFavouriteItemEntity> FavouriteItems { get; set; } = [];
+    public ICollection<UserFavouriteItemEntity> FavouriteItems { get; set; } = [];
 
     public UserDto AsDto()
     {

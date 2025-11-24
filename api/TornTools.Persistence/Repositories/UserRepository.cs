@@ -32,6 +32,7 @@ public class UserRepository(
     public async Task<UserDto> UpsertUserDetailsAsync(UserDto userDto, CancellationToken stoppingToken)
     {
         var userEntity = await DbContext.Users
+            .Include(u => u.FavouriteItems)
             .FirstOrDefaultAsync(u => u.Id == userDto.Id, stoppingToken);
 
         if (userEntity == null)
@@ -78,7 +79,7 @@ public class UserRepository(
                 ItemId = itemId
             };
 
-            DbContext.UserFavourites.Add(userFavouriteEntity);
+            await DbContext.UserFavourites.AddAsync(userFavouriteEntity, stoppingToken);
         }
         else if (userFavouriteEntity != null && !add)
         {
@@ -87,22 +88,11 @@ public class UserRepository(
 
         await DbContext.SaveChangesAsync(stoppingToken);
 
-        var userEntity = await DbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, stoppingToken);
+        var userEntity = await DbContext.Users
+            .Include(u => u.FavouriteItems)
+            .FirstOrDefaultAsync(u => u.Id == userId, stoppingToken);
+        
         return userEntity?.AsDto();
     }
-
-    //private static QueueItemEntity CreateEntityFromDto(QueueItemDto itemDto)
-    //{
-    //    return new QueueItemEntity
-    //    {
-    //        Id = Guid.NewGuid(),
-    //        CallType = itemDto.CallType.ToString(),
-    //        EndpointUrl = itemDto.EndpointUrl,
-    //        HttpMethod = itemDto.HttpMethod ?? "GET",
-    //        ItemStatus = nameof(QueueStatus.Pending),
-    //        CreatedAt = DateTime.UtcNow,
-    //        NextAttemptAt = itemDto.NextAttemptAt?.ToUniversalTime()
-    //    };
-    //}
 }
 

@@ -146,11 +146,10 @@ export default function MarketItemsTable({
                       >
                         {dotNetUserDetails && (
                           <TableCell align="left" onClick={() => toggleFavouriteItemAsync(r.itemId)}>
-                            {dotNetUserDetails.favourites?.has(r.itemId) ? (
-                              <Favorite sx={{ cursor: "pointer" }}
-                              />
+                            {dotNetUserDetails.favouriteItems?.includes(r.itemId) ? (
+                              <Favorite sx={{ cursor: "pointer", color: "#1976d2" }} />
                             ) : (
-                              <FavoriteBorder sx={{ cursor: "pointer" }} />
+                              <FavoriteBorder sx={{ cursor: "pointer", color: "gray" }} />
                             )}
                           </TableCell>
                         )}
