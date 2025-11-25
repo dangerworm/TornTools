@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Alert,
   Box,
+  Chip,
   Paper,
   rgbToHex,
   Table,
@@ -214,7 +215,11 @@ export default function MarketItemsTable({
                           onClick={() => openTornMarketPage(r.itemId)}
                           style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
                         >
-                          ${r.profit.toLocaleString()}
+                          <Chip
+                            label={`$${r.profit.toLocaleString()}`}
+                            color={"success"}
+                            size="small"
+                          />
                         </TableCell>
                         <TableCell
                           align="right"
