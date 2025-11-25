@@ -9,7 +9,6 @@ public interface IItemRepository
     Task<IEnumerable<ItemDto>> GetAllItemsAsync(CancellationToken stoppingToken);
     Task<int> GetNumberOfItemsAsync(CancellationToken stoppingToken);
     Task<IEnumerable<ProfitableListingDto>> GetProfitableItemsAsync(CancellationToken stoppingToken);
-    Task<IEnumerable<ItemDto>> GetNonResaleItemsAsync(CancellationToken stoppingToken);
     Task<IEnumerable<ItemDto>> GetMarketItemsAsync(CancellationToken stoppingToken);
     Task<ItemDto> GetItemAsync(int id, CancellationToken stoppingToken);
 }
