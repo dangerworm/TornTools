@@ -45,7 +45,24 @@ const Home = () => {
         Tools
       </Typography>
       <Grid container spacing={4} sx={{ mt: 2 }}>
-        <Grid size={{ xs: 12, sm: 6 }}>
+        <Grid size={{ xs: 12, sm: 4 }}>
+          <Card variant="outlined" sx={{ height: "100%" }}>
+            <CardContent>
+              <Typography variant="h5" gutterBottom>
+                <Link to="/markets" className="no-underline">
+                  Markets
+                </Link>
+              </Typography>
+              <Typography variant="body1">
+                View markets organised by country.
+                In future iterations this will be expanded to include filters
+                and additional information.
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 4 }}>
           <Card variant="outlined" sx={{ height: "100%" }}>
             <CardContent>
               <Typography variant="h5" gutterBottom>
@@ -56,44 +73,25 @@ const Home = () => {
               <Typography variant="body1">
                 Checks the market for profitable resale listings.
               </Typography>
-              <ul>
-                <li>
-                  <Typography variant="body2">Go to the resale page</Typography>
-                </li>
-                <li>
-                  <Typography variant="body2">
-                    Wait for the page to scan the market. Profitable listings
-                    will be moved to the top of the list as they are found
-                  </Typography>
-                </li>
-                <li>
-                  <Typography variant="body2">
-                    Buy what you can afford and resell in the city for a profit
-                  </Typography>
-                </li>
-              </ul>
             </CardContent>
           </Card>
         </Grid>
-        {/* <Grid size={{ xs: 2, sm: 6 }}>
-          <Card variant="outlined" sx={{ height: '100%' }}>
+
+        <Grid size={{ xs: 12, sm: 4 }}>
+          <Card variant="outlined" sx={{ height: "100%" }}>
             <CardContent>
               <Typography variant="h5" gutterBottom>
-                Features
+                <Link to="/time" className="no-underline">
+                  Time Conversion
+                </Link>
               </Typography>
               <Typography variant="body1">
-                - Market Price Checker
-              </Typography>
-              <Typography variant="body1">
-                - Item Price History
-              </Typography>
-              <Typography variant="h6">Feature 1</Typography>
-              <Typography variant="body1">
-                Description of feature 1.
+                Convert between your local time and Torn City time (TCT).
               </Typography>
             </CardContent>
           </Card>
-        </Grid> */}
+        </Grid>
+        
       </Grid>
     </>
   );
