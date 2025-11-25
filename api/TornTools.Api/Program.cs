@@ -1,8 +1,10 @@
 using Hangfire;
+using Microsoft.Extensions.Configuration;
 using TornTools.Api;
 using TornTools.Application;
 using TornTools.Application.Interfaces;
 using TornTools.Core;
+using TornTools.Core.Configurations;
 using TornTools.Core.Constants;
 using TornTools.Core.Enums;
 using TornTools.Cron;
@@ -14,9 +16,16 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCorsPolicy();
 
+var localConfig = builder.Configuration.GetSection(nameof(LocalConfiguration)).Get<LocalConfiguration>();
+
 builder.Services.AddDatabase(builder.Configuration);
 builder.Services.AddHangfire(builder.Configuration);
-builder.Services.AddHostedService<QueueProcessor>();
+
+if (localConfig is null || !localConfig.RunningLocally)
+{
+    builder.Services.AddHostedService<QueueProcessor>();
+}
+
 builder.Services.AddHttpClient();
 builder.Services.AddConfiguration(builder.Configuration);
 builder.Services.AddDependencies();
@@ -36,8 +45,9 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-using (var scope = app.Services.CreateScope())
+if (localConfig is null || !localConfig.RunningLocally)
 {
+    using var scope = app.Services.CreateScope();
     var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
 
     await databaseService.RemoveQueueItemsAsync(CancellationToken.None);

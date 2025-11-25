@@ -2,7 +2,7 @@
   "name": "dangerworm-torn-tools",
   "private": true,
   "version": "0.0.0",
-   "browserslist": {
+  "browserslist": {
     "production": [
       ">0.2%",
       "not dead",
@@ -19,6 +19,8 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.3",
     "@mui/material": "^7.3.3",
+    "@mui/x-date-pickers": "^8.19.0",
+    "dayjs": "^1.11.19",
     "framer-motion": "^12.23.24",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

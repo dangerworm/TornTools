@@ -12,7 +12,8 @@ import {
   Typography,
 } from "@mui/material";
 import HomeIcon from "@mui/icons-material/Home";
-import InfoIcon from "@mui/icons-material/Info";
+import Sell from "@mui/icons-material/Sell";
+import AccessTimeFilled from "@mui/icons-material/AccessTimeFilled";
 import TopAppBar from "./TopAppBar";
 import Footer from "./Footer";
 import { DRAWER_WIDTH } from "../constants";
@@ -21,8 +22,8 @@ import { useItems } from "../hooks/useItems";
 
 const menu = [
   { label: "Home", to: "/", icon: <HomeIcon />, requiresItems: false },
-  { label: "Resale", to: "/resale", icon: <InfoIcon />, requiresItems: true },
-  // { label: "Trades", to: "/trades", icon: <InfoIcon />, requiresItems: true },
+  { label: "Resale", to: "/resale", icon: <Sell />, requiresItems: true },
+  { label: "Time", to: "/time", icon: <AccessTimeFilled />, requiresItems: false },
 ];
 
 export default function Layout() {

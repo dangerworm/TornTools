@@ -75,7 +75,7 @@ export default function MarketItemsTable({
   maxBuyPrice = 500000,
   maxTimeSinceLastUpdate = 5,
   error,
-  sellPriceColumnNameOverride = "Sell Price",
+  sellPriceColumnNameOverride = "Sell",
 }: MarketItemsTableProps) {
   const navigate = useNavigate();
   const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser();
@@ -104,15 +104,16 @@ export default function MarketItemsTable({
           <Table size="small">
             <TableHead>
               <TableRow>
-                {dotNetUserDetails && <TableCell>Favourite</TableCell>}
+                {dotNetUserDetails && <TableCell>Fav</TableCell>}
                 <TableCell>Item</TableCell>
-                <TableCell align="right">Buy Price/Range</TableCell>
+                <TableCell align="right">Buy</TableCell>
                 <TableCell align="right">
                   {sellPriceColumnNameOverride}
                 </TableCell>
-                <TableCell align="right">Available</TableCell>
-                <TableCell align="right">Total Profit</TableCell>
-                <TableCell align="right">Last Updated</TableCell>
+                <TableCell align="right">Qty</TableCell>
+                <TableCell align="right">Profit</TableCell>
+                <TableCell align="right">Updated</TableCell>
+                <TableCell align="right">Market</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -154,7 +155,7 @@ export default function MarketItemsTable({
                           </TableCell>
                         )}
 
-                        <TableCell onClick={() => navigate(`/market/${r.itemId}`)}>
+                        <TableCell onClick={() => openTornMarketPage(r.itemId)}>
                           <Box
                             sx={{
                               display: "flex",
@@ -186,7 +187,7 @@ export default function MarketItemsTable({
                         </TableCell>
                         <TableCell
                           align="right"
-                          onClick={() => navigate(`/market/${r.itemId}`)}
+                          onClick={() => openTornMarketPage(r.itemId)}
                           style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
                         >
                           {r.minPrice === r.maxPrice
@@ -195,7 +196,7 @@ export default function MarketItemsTable({
                         </TableCell>
                         <TableCell
                           align="right"
-                          onClick={() => navigate(`/market/${r.itemId}`)}
+                          onClick={() => openTornMarketPage(r.itemId)}
                           style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
                         >
                           ${r.sellPrice.toLocaleString()}
@@ -210,7 +211,7 @@ export default function MarketItemsTable({
 
                         <TableCell
                           align="right"
-                          onClick={() => navigate(`/market/${r.itemId}`)}
+                          onClick={() => openTornMarketPage(r.itemId)}
                           style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
                         >
                           ${r.profit.toLocaleString()}
@@ -223,7 +224,7 @@ export default function MarketItemsTable({
                         </TableCell>
                         <TableCell
                           align="right"
-                          onClick={() => openTornMarketPage(r.itemId)}
+                          onClick={() => navigate(`/market/${r.itemId}`)}
                         >
                           <OpenInNew />
                         </TableCell>

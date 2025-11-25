@@ -5,7 +5,7 @@ import Loading from "../components/Loading";
 import { useItems } from "../hooks/useItems";
 import type { Item } from "../types/items";
 
-export default function Market() {
+const Market =() => {
   const { itemId } = useParams<{ itemId: string }>();
   const { itemsById } = useItems();
 
@@ -15,12 +15,12 @@ export default function Market() {
     setItem(itemsById[Number(itemId)] || null);
   }, [itemId, itemsById]);
 
-  if (!itemsById) return <Loading message="Loading items..." />;
+  if (!itemsById || !item) return <Loading message="Loading items..." />;
 
   return (
     <Box>
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid size={{ xs: 1 }}>
+        <Grid sx={{ width: 80}}>
           <img
             alt=""
             src={`https://www.torn.com/images/items/${item!.id}/large.png`}
@@ -30,7 +30,7 @@ export default function Market() {
             }}
           />
         </Grid>
-        <Grid size={{ xs: 11 }}>
+        <Grid>
           <Typography variant="h4" sx={{ ml: 2, mt: 0.6 }} gutterBottom>
             {item?.name || "Market Item"}
           </Typography>
@@ -44,3 +44,5 @@ export default function Market() {
     </Box>
   );
 }
+
+export default Market;

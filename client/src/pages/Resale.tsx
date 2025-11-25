@@ -6,7 +6,7 @@ import MarketItemsTable from "../components/MarketItemTable";
 import { useState } from "react";
 import SteppedSlider from "../components/SteppedSlider";
 
-export default function Resale() {
+const Resale = () => {
   const { items } = useItems();
 
   const minuteRangeValues = [
@@ -101,3 +101,5 @@ export default function Resale() {
     </Box>
   );
 }
+
+export default Resale;

@@ -16,7 +16,7 @@ import {
 import Loading from "../components/Loading";
 import { useUser } from "../hooks/useUser";
 
-export default function SignIn() {
+const SignIn = () => {
   const {
     apiKey,
     setApiKey,
@@ -160,3 +160,5 @@ export default function SignIn() {
     </>
   );
 }
+
+export default SignIn;

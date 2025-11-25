@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using TornTools.Core.Configurations;
 
 namespace TornTools.Core;
@@ -12,7 +13,7 @@ public static class ServiceCollectionExtensions
             configuration.GetSection(nameof(TornApiCallerConfiguration)));
 
         services.AddSingleton(sp =>
-            sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<TornApiCallerConfiguration>>().Value
+            sp.GetRequiredService<IOptions<TornApiCallerConfiguration>>().Value
         );
 
         return services;
