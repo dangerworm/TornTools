@@ -89,10 +89,10 @@ public class ApiController(
         }
     }
 
-    [HttpPost(Name = "PostAddUserFavourite")]
+    [HttpPost(Name = "PostToggleUserFavourite")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> PostAddUserFavourite([FromBody] UserFavouriteInputModel userFavouriteModel)
+    public async Task<IActionResult> PostToggleUserFavourite([FromBody] UserFavouriteInputModel userFavouriteModel)
     {
         try
         {

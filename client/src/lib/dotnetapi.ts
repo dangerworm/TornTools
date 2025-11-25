@@ -15,8 +15,7 @@ export interface DotNetUserDetails {
 
 const URL_ITEMS = `${API_BASE_URL}/GetItems`;
 const URL_PROFITABLE_LISTINGS = `${API_BASE_URL}/GetProfitableListings`;
-const URL_POST_ADD_USER_FAVOURITE = `${API_BASE_URL}/PostAddUserFavourite`;
-const URL_POST_REMOVE_USER_FAVOURITE = `${API_BASE_URL}/PostRemoveUserFavourite`;
+const URL_POST_TOGGLE_USER_FAVOURITE = `${API_BASE_URL}/PostToggleUserFavourite`;
 const URL_POST_USER_DETAILS = `${API_BASE_URL}/PostUserDetails`;
 
 export async function fetchItems(): Promise<Item[]> {
@@ -76,14 +75,29 @@ export async function postAddUserFavourite(
   userId: number,
   itemId: number
 ): Promise<DotNetUserDetails | null> {
-  const url = URL_POST_ADD_USER_FAVOURITE;
+  return await postToggleUserFavourite(userId, itemId, true);
+}
+
+export async function postRemoveUserFavourite(
+  userId: number,
+  itemId: number
+): Promise<DotNetUserDetails | null> {
+  return await postToggleUserFavourite(userId, itemId, false);
+}
+
+async function postToggleUserFavourite(
+  userId: number,
+  itemId: number,
+  add: boolean
+): Promise<DotNetUserDetails | null> {
+  const url = URL_POST_TOGGLE_USER_FAVOURITE;
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
   const content = {
     userId,
     itemId,
-    add: true
+    add
   };
   const body = JSON.stringify(content);
   const res = await fetch(url, { method: "POST", headers, body });
@@ -96,26 +110,3 @@ export async function postAddUserFavourite(
   return data;
 }
 
-export async function postRemoveUserFavourite(
-  userId: number,
-  itemId: number
-): Promise<DotNetUserDetails | null> {
-  const url = URL_POST_REMOVE_USER_FAVOURITE;
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-  const content = {
-    userId,
-    itemId,
-    add: false
-  };
-  const body = JSON.stringify(content);
-  const res = await fetch(url, { method: "POST", headers, body });
-  let data: DotNetUserDetails | null = null;
-  try {
-    data = await res.json();
-  } catch {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  }
-  return data;
-}
