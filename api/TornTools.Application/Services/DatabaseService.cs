@@ -3,6 +3,7 @@ using TornTools.Application.Interfaces;
 using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Enums;
+using TornTools.Core.Helpers;
 using TornTools.Core.Models.InputModels;
 using TornTools.Cron.Enums;
 using TornTools.Persistence.Interfaces;
@@ -70,23 +71,28 @@ public class DatabaseService(
         return _itemRepository.GetProfitableItemsAsync(stoppingToken);
     }
 
-    public async Task PopulateQueue(CancellationToken stoppingToken)
+    public async Task PopulateMarketQueue(CancellationToken stoppingToken)
     {
-        // Find how many times each market has changed
-        var changeLogs = await _itemChangeLogRepository.GetRecentItemChangeLogsAsync(TimeConstants.TimeWindowHours, stoppingToken);
-        var groupedChanges = changeLogs
-            .GroupBy(log => log.ItemId)
-            .OrderByDescending(group => (int)Math.Floor(group.Count() / 5.0))
-            .ToDictionary(g => g.Key, g => (int)Math.Floor(g.Count() / 5.0));
-
-        // Anything appearing in the profitable listings should also be prioritized
+        // Anything appearing in the profitable listings should be prioritized
         var profitableItems = await _itemRepository.GetProfitableItemsAsync(stoppingToken);
-        var profitableItemsToProcess = profitableItems
-            .Where(pi => pi.Profit >= 1000)
+        var profitableItemIds = profitableItems
+            .Where(pi => pi.Profit >= QueueProcessorConstants.MinProfitToPrioritise)
             .Select(pi => pi.ItemId)
             .ToList();
 
-        var profitableQueueItems = profitableItemsToProcess
+        // Find how many times each market has changed and group by times changed.
+        // Don't add anything appearing in profitableItemIds as these get added each
+        // time we process a group anyway
+        var changeLogs = await _itemChangeLogRepository.GetRecentItemChangeLogsAsync(TimeConstants.TimeWindowHours, stoppingToken);
+        var groupedChanges = changeLogs
+            .Where(log => !profitableItemIds.Contains(log.ItemId))
+            .GroupBy(log => log.ItemId)
+            .OrderByDescending(group => (int)Math.Floor(group.Count() / QueueProcessorConstants.GroupDivisor))
+            .ToDictionary(g => g.Key, g => (int)Math.Floor(g.Count() / QueueProcessorConstants.GroupDivisor))
+            .Where(dict => dict.Value > 1)
+            .ToDictionary();
+
+       var profitableQueueItems = profitableItemIds
             .SelectMany(BuildQueueItems)
             .ToList();
 
@@ -111,17 +117,21 @@ public class DatabaseService(
             }
         }
 
-        // Anything that doesn't appear is clearly not changing frequently
+        // Anything that doesn't appear above is clearly not changing frequently
         // so add remaining items which have not changed in the time window
-        var allItems = await _itemRepository.GetResaleItemsAsync(stoppingToken);
-        var leftOverItems = allItems
+        var marketItems = await _itemRepository.GetMarketItemsAsync(stoppingToken);
+        var leftOverItems = marketItems
             .Select(item => item.Id)
             .Except(groupedChanges.Keys)
-            .Except(profitableItemsToProcess)
+            .Except(profitableItemIds)
             .SelectMany(BuildQueueItems)
             .ToList();
         
         queueItems.AddRange(leftOverItems);
+
+        // We don't want a huge glut of non-moving items at the end of the queue
+        // so shuffle the entire list
+        queueItems.Shuffle();
         
         await _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken);
     }

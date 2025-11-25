@@ -1,5 +1,4 @@
 using Hangfire;
-using Microsoft.Extensions.Configuration;
 using TornTools.Api;
 using TornTools.Application;
 using TornTools.Application.Interfaces;
@@ -15,17 +14,8 @@ using TornTools.Persistence;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCorsPolicy();
-
-var localConfig = builder.Configuration.GetSection(nameof(LocalConfiguration)).Get<LocalConfiguration>();
-
 builder.Services.AddDatabase(builder.Configuration);
 builder.Services.AddHangfire(builder.Configuration);
-
-if (localConfig is null || !localConfig.RunningLocally)
-{
-    builder.Services.AddHostedService<QueueProcessor>();
-}
-
 builder.Services.AddHttpClient();
 builder.Services.AddConfiguration(builder.Configuration);
 builder.Services.AddDependencies();
@@ -34,6 +24,12 @@ builder.Services.AddControllers();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+var localConfig = builder.Configuration.GetSection(nameof(LocalConfiguration)).Get<LocalConfiguration>();
+if (localConfig is null || !localConfig.RunningLocally)
+{
+    builder.Services.AddHostedService<QueueProcessor>();
+}
 
 var app = builder.Build();
 
@@ -45,9 +41,9 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+using var scope = app.Services.CreateScope();
 if (localConfig is null || !localConfig.RunningLocally)
 {
-    using var scope = app.Services.CreateScope();
     var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
 
     await databaseService.RemoveQueueItemsAsync(CancellationToken.None);
@@ -57,10 +53,10 @@ if (localConfig is null || !localConfig.RunningLocally)
     {
         await databaseService.CreateQueueItem(ApiCallType.TornItems, TornApiConstants.Items, CancellationToken.None);
     }
-
-    var jobScheduler = scope.ServiceProvider.GetRequiredService<IApiJobScheduler>();
-    jobScheduler.RegisterRecurringJobs();
 }
+
+var jobScheduler = scope.ServiceProvider.GetRequiredService<IApiJobScheduler>();
+jobScheduler.RegisterRecurringJobs();
 
 app.UseHttpsRedirection();
 

@@ -128,11 +128,10 @@ public class ItemRepository(
         return items.Select(item => item.AsDto());
     }
 
-    public async Task<IEnumerable<ItemDto>> GetResaleItemsAsync(CancellationToken stoppingToken)
+    public async Task<IEnumerable<ItemDto>> GetMarketItemsAsync(CancellationToken stoppingToken)
     {
         var items = await DbContext.Items
-            .Where(i => i.ValueSellPrice != null && 
-                        i.ValueSellPrice > QueryConstants.MinSellPrice)
+            .Where(i => i.ValueMarketPrice != null)
             .ToListAsync(stoppingToken);
 
         return items.Select(item => item.AsDto());

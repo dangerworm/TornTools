@@ -16,28 +16,28 @@ public class ApiJobScheduler(
     public void RegisterRecurringJobs()
     {
         RecurringJob.AddOrUpdate(
-            "CallDailyEndpoint",
-            () => RunDailyJob(),
+            nameof(DailyItemUpdate),
+            () => DailyItemUpdate(),
             "0 2 * * *" // At 02:00.
         );
 
         RecurringJob.AddOrUpdate(
-            "CallHourlyEndpoint",
-            () => RunHourlyJob(),
-            "0 * * * *" // Every hour.
+            nameof(UpdateNonResaleItems),
+            () => UpdateNonResaleItems(),
+            "0 */3 * * *" // At minute 0 past every 3rd hour.
         );
 
         RecurringJob.AddOrUpdate(
-            "Call15MinuteEndpoint",
+            nameof(Run20MinJob),
             () => Run20MinJob(),
             "0/20 * * * *" // At every 20th minute from 0 through 59.
         );
     }
 
     [DisplayName("Daily Item Update")]
-    public async Task RunDailyJob()
+    public async Task DailyItemUpdate()
     {
-        _logger.LogInformation("Queueing daily item update...");
+        _logger.LogInformation($"Running {nameof(DailyItemUpdate)}");
         await _databaseService.CreateQueueItem(
             callType: Core.Enums.ApiCallType.TornItems,
             endpointUrl: TornApiConstants.Items,
@@ -45,10 +45,10 @@ public class ApiJobScheduler(
         );
     }
 
-    [DisplayName("Hourly API Call")]
-    public async Task RunHourlyJob()
+    [DisplayName("Non-resale item update")]
+    public async Task UpdateNonResaleItems()
     {
-        _logger.LogInformation("Running hourly API job...");
+        _logger.LogInformation($"Running {nameof(UpdateNonResaleItems)}");
     }
 
     [DisplayName("20-Minute API Call")]

@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import HomeIcon from "@mui/icons-material/Home";
 import Sell from "@mui/icons-material/Sell";
+import Assessment from "@mui/icons-material/Assessment";
 import AccessTimeFilled from "@mui/icons-material/AccessTimeFilled";
 import TopAppBar from "./TopAppBar";
 import Footer from "./Footer";
@@ -22,8 +23,19 @@ import { useItems } from "../hooks/useItems";
 
 const menu = [
   { label: "Home", to: "/", icon: <HomeIcon />, requiresItems: false },
+  {
+    label: "Markets",
+    to: "/markets",
+    icon: <Assessment />,
+    requiresItems: true,
+  },
   { label: "Resale", to: "/resale", icon: <Sell />, requiresItems: true },
-  { label: "Time", to: "/time", icon: <AccessTimeFilled />, requiresItems: false },
+  {
+    label: "Time",
+    to: "/time",
+    icon: <AccessTimeFilled />,
+    requiresItems: false,
+  },
 ];
 
 export default function Layout() {
@@ -130,6 +142,9 @@ export default function Layout() {
           <Typography variant="h3" gutterBottom className="passero-one">
             dangerworm's Torn Tools
           </Typography>
+
+          <Divider sx={{ mb: 3 }} />
+
           <Outlet />
         </Box>
         <Footer />

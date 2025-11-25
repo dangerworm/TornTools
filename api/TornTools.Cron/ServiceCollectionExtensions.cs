@@ -25,7 +25,7 @@ public static class ServiceCollectionExtensions
              },
              new PostgreSqlStorageOptions
              {
-                 SchemaName = "hangfire",
+                 SchemaName = Environment.MachineName == "FERMI" ? "hangfire_local" : "hangfire",
                  PrepareSchemaIfNecessary = true
              });
         });
