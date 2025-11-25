@@ -31,6 +31,7 @@ resource "azurerm_linux_web_app" "backend_api" {
       "Development"
     )
     "ConnectionStrings__PostgresConnection" = "Host=${azurerm_postgresql_flexible_server.db_server.fqdn};Database=${azurerm_postgresql_flexible_server_database.postgres_db.name};Username=${azurerm_postgresql_flexible_server.db_server.administrator_login};Password=${azurerm_key_vault_secret.db_password.value};Ssl Mode=Require"
+    "LocalConfiguration__RunningLocally"    = "false"
     "TornApiCallerConfiguration__MaxCallsPerMinute" = "100"
   }
 
