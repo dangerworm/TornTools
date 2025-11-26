@@ -90,6 +90,10 @@ public class DatabaseService(
         var profitableItemIds = profitableItems
             .Where(pi => pi.Profit >= QueueProcessorConstants.MinProfitToPrioritise)
             .Select(pi => pi.ItemId)
+            .ToHashSet();
+
+        var profitableQueueItems = profitableItemIds
+            .SelectMany(BuildQueueItems)
             .ToList();
 
         // Find how many times each market has changed and group by times changed.
@@ -99,25 +103,39 @@ public class DatabaseService(
         var groupedChanges = changeLogs
             .Where(log => !profitableItemIds.Contains(log.ItemId))
             .GroupBy(log => log.ItemId)
-            .OrderByDescending(group => (int)Math.Floor(group.Count() / QueueProcessorConstants.GroupDivisor))
-            .ToDictionary(g => g.Key, g => (int)Math.Floor(g.Count() / QueueProcessorConstants.GroupDivisor))
-            .Where(dict => dict.Value > 1)
-            .ToDictionary();
+            .Select(group => new
+            {
+                ItemId = group.Key,
+                Weight = group.Count() / QueueProcessorConstants.GroupDivisor
+            })
+            .Where(x => x.Weight > 1)
+            .ToDictionary(x => x.ItemId, x => x.Weight);
 
-       var profitableQueueItems = profitableItemIds
+        // Anything that doesn't appear in the lists above is not changing frequently
+        // enough, but we still need to add them so that we become aware of changes
+        // if and when they happen.
+        var marketItems = await _itemRepository.GetMarketItemsAsync(stoppingToken);
+        var leftOverItems = marketItems
+            .Select(item => item.Id)
+            .Except(groupedChanges.Keys)
+            .Except(profitableItemIds)
             .SelectMany(BuildQueueItems)
             .ToList();
 
+        // Build the final queue, starting with the most frequently changing markets.
+        // Repeat calls for the profitable and grouped items, with small batches of
+        // left over items in between to ensure they get processed eventually.
         var queueItems = new List<QueueItemDto>();
-        if (groupedChanges.Count > 0)
+        if (groupedChanges.Any())
         {
             var maxNumberOfChanges = groupedChanges.Values.Max();
+            var batchSize = (int)Math.Ceiling(leftOverItems.Count * 1.0m / maxNumberOfChanges);
 
-            for (var numberOfChanges = maxNumberOfChanges; numberOfChanges >= 0; numberOfChanges--)
+            for (var i = 0; i < maxNumberOfChanges; i++)
             {
                 // Ensure that markets which change regularly are checked most often
                 var itemsToProcess = groupedChanges
-                    .Where(kv => kv.Value >= numberOfChanges)
+                    .Where(kv => kv.Value >= (maxNumberOfChanges - i))
                     .Select(kv => kv.Key)
                     .SelectMany(BuildQueueItems);
 
@@ -126,25 +144,22 @@ public class DatabaseService(
                 // Include anything appearing in the profitable listings
                 // so we don't leave old entries in the list for too long
                 queueItems.AddRange(profitableQueueItems);
+
+                // Add a small batch of left over items to ensure they get processed
+                var leftOverBatch = leftOverItems
+                    .Skip(i * batchSize)
+                    .Take(batchSize)
+                    .ToList();
+
+                queueItems.AddRange(leftOverBatch);
             }
         }
+        else
+        {
+            queueItems.AddRange(profitableQueueItems);
+            queueItems.AddRange(leftOverItems);
+        }
 
-        // Anything that doesn't appear above is clearly not changing frequently
-        // so add remaining items which have not changed in the time window
-        var marketItems = await _itemRepository.GetMarketItemsAsync(stoppingToken);
-        var leftOverItems = marketItems
-            .Select(item => item.Id)
-            .Except(groupedChanges.Keys)
-            .Except(profitableItemIds)
-            .SelectMany(BuildQueueItems)
-            .ToList();
-        
-        queueItems.AddRange(leftOverItems);
-
-        // We don't want a huge glut of non-moving items at the end of the queue
-        // so shuffle the entire list
-        queueItems.Shuffle();
-        
         await _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken);
     }
 
