@@ -83,42 +83,13 @@ public class DatabaseService(
         return _itemRepository.GetProfitableItemsAsync(stoppingToken);
     }
 
-    public async Task PopulateMarketQueue(CancellationToken stoppingToken)
+    public async Task PopulateMarketQueueItemsOfInterest(CancellationToken stoppingToken)
     {
-        // Anything appearing in the profitable listings should be prioritized
-        var profitableItems = await _itemRepository.GetProfitableItemsAsync(stoppingToken);
-        var profitableItemIds = profitableItems
-            .Where(pi => pi.Profit >= QueueProcessorConstants.MinProfitToPrioritise)
-            .Select(pi => pi.ItemId)
-            .ToHashSet();
+        // Anything appearing in the profitable listings should be prioritized.
+        // Anything that has changed recently will also be useful to scan.
+        var (profitableItemIds, groupedChanges) = await GetItemChangeData(stoppingToken);
 
         var profitableQueueItems = profitableItemIds
-            .SelectMany(BuildQueueItems)
-            .ToList();
-
-        // Find how many times each market has changed and group by times changed.
-        // Don't add anything appearing in profitableItemIds as these get added each
-        // time we process a group anyway
-        var changeLogs = await _itemChangeLogRepository.GetRecentItemChangeLogsAsync(TimeConstants.TimeWindowHours, stoppingToken);
-        var groupedChanges = changeLogs
-            .Where(log => !profitableItemIds.Contains(log.ItemId))
-            .GroupBy(log => log.ItemId)
-            .Select(group => new
-            {
-                ItemId = group.Key,
-                Weight = group.Count() / QueueProcessorConstants.GroupDivisor
-            })
-            .Where(x => x.Weight > 1)
-            .ToDictionary(x => x.ItemId, x => x.Weight);
-
-        // Anything that doesn't appear in the lists above is not changing frequently
-        // enough, but we still need to add them so that we become aware of changes
-        // if and when they happen.
-        var marketItems = await _itemRepository.GetMarketItemsAsync(stoppingToken);
-        var leftOverItems = marketItems
-            .Select(item => item.Id)
-            .Except(groupedChanges.Keys)
-            .Except(profitableItemIds)
             .SelectMany(BuildQueueItems)
             .ToList();
 
@@ -129,8 +100,6 @@ public class DatabaseService(
         if (groupedChanges.Any())
         {
             var maxNumberOfChanges = groupedChanges.Values.Max();
-            var batchSize = (int)Math.Ceiling(leftOverItems.Count * 1.0m / maxNumberOfChanges);
-
             for (var i = 0; i < maxNumberOfChanges; i++)
             {
                 // Ensure that markets which change regularly are checked most often
@@ -144,21 +113,27 @@ public class DatabaseService(
                 // Include anything appearing in the profitable listings
                 // so we don't leave old entries in the list for too long
                 queueItems.AddRange(profitableQueueItems);
-
-                // Add a small batch of left over items to ensure they get processed
-                var leftOverBatch = leftOverItems
-                    .Skip(i * batchSize)
-                    .Take(batchSize)
-                    .ToList();
-
-                queueItems.AddRange(leftOverBatch);
             }
         }
         else
         {
             queueItems.AddRange(profitableQueueItems);
-            queueItems.AddRange(leftOverItems);
         }
+
+        await _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken);
+    }
+
+    public async Task PopulateMarketQueueItemsRemaining(CancellationToken stoppingToken)
+    {
+        var (profitableItemIds, groupedChanges) = await GetItemChangeData(stoppingToken);
+
+        var marketItems = await _itemRepository.GetMarketItemsAsync(stoppingToken);
+        var queueItems = marketItems
+            .Select(item => item.Id)
+            .Except(profitableItemIds)
+            .Except(groupedChanges.Keys)
+            .SelectMany(BuildQueueItems)
+            .ToList();
 
         await _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken);
     }
@@ -205,7 +180,8 @@ public class DatabaseService(
 
     public Task<UserDto> UpsertUserDetailsAsync(UserDetailsInputModel userDetails, CancellationToken stoppingToken)
     {
-        var userDto = new UserDto {
+        var userDto = new UserDto
+        {
             ApiKey = userDetails.ApiKey,
             Id = userDetails.UserProfile.Id,
             Name = userDetails.UserProfile.Name,
@@ -221,6 +197,29 @@ public class DatabaseService(
         return _userRepository.ToggleUserFavourite(model.UserId, model.ItemId, model.Add, stoppingToken);
     }
 
+    private async Task<(HashSet<int> profitableItemIds, Dictionary<int, decimal> groupedChanges)> GetItemChangeData(CancellationToken stoppingToken)
+    {
+        var profitableItems = await _itemRepository.GetProfitableItemsAsync(stoppingToken);
+        var profitableItemIds = profitableItems
+            .Where(pi => pi.Profit >= QueueProcessorConstants.MinProfitToPrioritise)
+            .Select(pi => pi.ItemId)
+            .ToHashSet();
+
+        var changeLogs = await _itemChangeLogRepository.GetRecentItemChangeLogsAsync(TimeConstants.TimeWindowHours, stoppingToken);
+        var groupedChanges = changeLogs
+            .Where(log => !profitableItemIds.Contains(log.ItemId))
+            .GroupBy(log => log.ItemId)
+            .Select(group => new
+            {
+                ItemId = group.Key,
+                Weight = group.Count() / QueueProcessorConstants.GroupDivisor
+            })
+            .Where(x => x.Weight > 1)
+            .ToDictionary(x => x.ItemId, x => x.Weight);
+
+        return (profitableItemIds, groupedChanges);
+    }
+
     private static List<QueueItemDto> BuildQueueItems(int itemId)
     {
         var queueItems = new List<QueueItemDto>();
@@ -234,16 +233,6 @@ public class DatabaseService(
             CreatedAt = DateTime.UtcNow
         };
         queueItems.Add(itemMarketQueueItem);
-
-        //var bazaarQueueItem = new QueueItemDto
-        //{
-        //    CallType = CallType.Weav3rBazaarListings,
-        //    EndpointUrl = string.Format(Weav3rApiEndpointConstants.BazaarListings, itemId),
-        //    HttpMethod = "GET",
-        //    ItemStatus = nameof(QueueStatus.Pending),
-        //    CreatedAt = DateTime.UtcNow
-        //};
-        //queueItems.Add(itemMarketQueueItem);
 
         return queueItems;
     }

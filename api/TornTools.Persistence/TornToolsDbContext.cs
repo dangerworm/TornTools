@@ -47,9 +47,9 @@ public class TornToolsDbContext(
             e.Property(x => x.NewPrice).IsRequired();
 
             e.HasOne<ItemEntity>()
-                .WithMany()
-                .HasForeignKey(x => x.ItemId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .WithMany(i => i.ChangeLogs)
+                .HasForeignKey(icl => icl.ItemId)
+                .HasPrincipalKey(i => i.Id);
         });
 
         modelBuilder.Entity<ItemEntity>(e =>

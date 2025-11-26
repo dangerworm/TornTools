@@ -40,7 +40,7 @@ public class QueueProcessor(
                     {
                         // Queue only has InProgress or Failed items, so repopulate
                         await databaseService.RemoveQueueItemsAsync(stoppingToken);
-                        await databaseService.PopulateMarketQueue(stoppingToken);
+                        await databaseService.PopulateMarketQueueItemsOfInterest(stoppingToken);
                         continue;
                     }
                 }

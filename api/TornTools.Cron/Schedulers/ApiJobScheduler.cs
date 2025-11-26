@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using Hangfire;
+using Hangfire.Storage;
 using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
 using TornTools.Core.Constants;
@@ -9,7 +10,7 @@ using TornTools.Cron.Interfaces;
 
 namespace TornTools.Cron.Schedulers;
 public class ApiJobScheduler(
-    ILogger<ApiJobScheduler> logger, 
+    ILogger<ApiJobScheduler> logger,
     IApiCallerResolver callerResolver,
     IDatabaseService databaseService
 ) : IApiJobScheduler
@@ -20,6 +21,13 @@ public class ApiJobScheduler(
 
     public void RegisterRecurringJobs()
     {
+        using var connection = JobStorage.Current.GetConnection();
+        var recurringJobs = connection.GetRecurringJobs();
+        foreach (var job in recurringJobs)
+        {
+            RecurringJob.RemoveIfExists(job.Id);
+        }
+
         RecurringJob.AddOrUpdate(
             nameof(DailyItemUpdate),
             () => DailyItemUpdate(),
@@ -27,40 +35,41 @@ public class ApiJobScheduler(
         );
 
         RecurringJob.AddOrUpdate(
-            nameof(UpdateNonResaleItems),
-            () => UpdateNonResaleItems(),
-            "0 */3 * * *" // At minute 0 past every 3rd hour.
+            nameof(CheckUntouchedMarketItems),
+            () => CheckUntouchedMarketItems(),
+            "0 */1 * * *" // At minute 0 past every 1 hour.
         );
 
         RecurringJob.AddOrUpdate(
         nameof(UpdateForeignStock),
             () => UpdateForeignStock(),
-            "0/5 * * * *" // At every 5th minute from 0 through 59.
+            "0/10 * * * *" // At every 10th minute from 0 through 59.
         );
     }
 
-    [DisplayName("Daily Item Update")]
+    [DisplayName("Daily Item update")]
     public async Task DailyItemUpdate()
     {
-        _logger.LogInformation($"Running {nameof(DailyItemUpdate)}");
+        _logger.LogInformation($"Running Hangfire job {nameof(DailyItemUpdate)}");
         await _databaseService.CreateQueueItem(
-            callType: Core.Enums.ApiCallType.TornItems,
+            callType: ApiCallType.TornItems,
             endpointUrl: TornApiConstants.Items,
             stoppingToken: CancellationToken.None
         );
     }
 
-    [DisplayName("Non-resale item update")]
-    public async Task UpdateNonResaleItems()
+    [DisplayName("Untouched item update")]
+    public async Task CheckUntouchedMarketItems()
     {
-        _logger.LogInformation($"Running {nameof(UpdateNonResaleItems)}");
+        _logger.LogInformation($"Running Hangfire job {nameof(CheckUntouchedMarketItems)}");
+        await _databaseService.PopulateMarketQueueItemsRemaining(stoppingToken: CancellationToken.None);
     }
 
     [DisplayName("Foreign stock update")]
     public async Task UpdateForeignStock()
     {
-        _logger.LogInformation($"Running {nameof(UpdateForeignStock)}...");
-        
+        _logger.LogInformation($"Running Hangfire job {nameof(UpdateForeignStock)}");
+
         var queueItem = new QueueItemDto
         {
             CallType = ApiCallType.YataForeignStock,
