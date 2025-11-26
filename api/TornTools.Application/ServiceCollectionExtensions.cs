@@ -23,10 +23,12 @@ public static class ServiceCollectionExtensions
             });
 
         services.AddScoped<IApiCaller, TornApiCaller>();
+        services.AddScoped<IApiCaller, YataApiCaller>();
         services.AddScoped<IApiCallerResolver, ApiCallerResolver>();
 
         services.AddScoped<IApiCallHandler, TornItemsApiCallHandler>();
         services.AddScoped<IApiCallHandler, TornMarketListingsApiCallHandler>();
+        services.AddScoped<IApiCallHandler, YataStocksApiCallHandler>();
         services.AddScoped<IApiCallHandlerResolver, ApiCallHandlerResolver>();
         
         services.AddScoped<IDatabaseService, DatabaseService>();

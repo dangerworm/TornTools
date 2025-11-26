@@ -15,7 +15,6 @@ public class UserFavouriteItemEntity
     [Column("item_id")]
     public required int ItemId { get; set; }
 
-    [ForeignKey(nameof(UserId))]
     public UserEntity User { get; set; } = null!;
 
     public UserFavouriteItemDto AsDto()

@@ -72,6 +72,8 @@ public abstract class ApiCaller<TCaller>(
                 requestMessage.Headers.TryAddWithoutValidation(kvp.Key, kvp.Value);
             }
         }
+
+        await Task.CompletedTask;
     }
 
     protected virtual void AddBody(QueueItemDto queueItem, HttpRequestMessage requestMessage)

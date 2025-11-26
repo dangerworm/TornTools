@@ -29,8 +29,8 @@ public class TornApiCaller(
         await base.AddHeaders(requestMessage, item, stoppingToken);
     }
 
-    Task<bool> IApiCaller.CallAsync(QueueItemDto item, CancellationToken ct)
+    Task<bool> IApiCaller.CallAsync(QueueItemDto queueItemDto, CancellationToken stoppingToken)
     {
-        return CallAsync(item, ct);
+        return CallAsync(queueItemDto, stoppingToken);
     }
 }

@@ -21,8 +21,6 @@ export function useResaleScan(
 
   const timerRef = useRef<number | null>(null);
 
-
-
   useEffect(() => {
     setError(null);
 

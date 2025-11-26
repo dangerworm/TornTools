@@ -6,6 +6,8 @@ using Hangfire.PostgreSql;
 using TornTools.Cron.Interfaces;
 using TornTools.Cron.Schedulers;
 using TornTools.Core.Constants;
+using TornTools.Core.Configurations;
+using TornTools.Cron.Processors;
 
 namespace TornTools.Cron;
 
@@ -13,6 +15,9 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddHangfire(this IServiceCollection services, IConfiguration configuration)
     {
+        var localConfig = configuration.GetSection(nameof(LocalConfiguration)).Get<LocalConfiguration>();
+        var isLocal = localConfig is not null && localConfig.RunningLocally;
+
         services.AddHangfire(config =>
         {
             config
@@ -25,7 +30,7 @@ public static class ServiceCollectionExtensions
              },
              new PostgreSqlStorageOptions
              {
-                 SchemaName = Environment.MachineName == "FERMI" ? "hangfire_local" : "hangfire",
+                 SchemaName = isLocal ? "hangfire_local" : "hangfire",
                  PrepareSchemaIfNecessary = true
              });
         });

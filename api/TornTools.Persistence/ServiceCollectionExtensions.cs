@@ -13,6 +13,7 @@ public static class ServiceCollectionExtensions
         services.AddDbContext<ITornToolsDbContext, TornToolsDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString(DatabaseConstants.ConnectionString)));
 
+        services.AddScoped<IForeignStockItemRepository, ForeignStockItemRepository>();
         services.AddScoped<IItemChangeLogRepository, ItemChangeLogRepository>();
         services.AddScoped<IItemRepository, ItemRepository>();
         services.AddScoped<IListingRepository, ListingRepository>();

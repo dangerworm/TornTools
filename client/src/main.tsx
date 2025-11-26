@@ -7,6 +7,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { ItemsProvider } from "./contexts/ItemsContext.tsx";
 import { UserProvider } from "./contexts/UserContext.tsx";
 import App from "./App.tsx";
+import { ForeignStockItemsProvider } from "./contexts/ForeignStockItemsContext.tsx";
 
 const theme = createTheme({
   palette: { mode: "light" }, // change to 'dark' if you like
@@ -20,12 +21,14 @@ createRoot(document.getElementById("root")!).render(
     <ThemeProvider theme={theme}>
       <UserProvider>
         <ItemsProvider>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <CssBaseline />
-            <BrowserRouter basename={import.meta.env.BASE_URL}>
-              <App />
-            </BrowserRouter>
-          </LocalizationProvider>
+          <ForeignStockItemsProvider>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <CssBaseline />
+              <BrowserRouter basename={import.meta.env.BASE_URL}>
+                <App />
+              </BrowserRouter>
+            </LocalizationProvider>
+          </ForeignStockItemsProvider>
         </ItemsProvider>
       </UserProvider>
     </ThemeProvider>

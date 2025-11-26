@@ -90,6 +90,8 @@ public class ItemEntity
     [Column("details_ammo_rate_of_fire_maximum")]
     public int? DetailsAmmoRateOfFireMaximum { get; set; }
 
+    public ICollection<ForeignStockItemEntity> ForeignStockItems { get; set; } = [];
+
     public ItemDto AsDto()
     {
         return new ItemDto

@@ -17,12 +17,12 @@ import { OpenInNew } from "@mui/icons-material";
 import { useUser } from "../hooks/useUser";
 import type { Item } from "../types/items";
 
-interface ItemsTableProps {
+interface LocalMarketItemsTableProps {
   items: Item[];
   showVendor?: boolean;
 }
 
-const ItemsTable = ({ items, showVendor = true }: ItemsTableProps) => {
+const LocalMarketItemsTable = ({ items, showVendor = true }: LocalMarketItemsTableProps) => {
   const navigate = useNavigate();
   const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser();
 
@@ -44,7 +44,7 @@ const ItemsTable = ({ items, showVendor = true }: ItemsTableProps) => {
                 <TableCell>Item</TableCell>
                 <TableCell>Type</TableCell>
                 {showVendor && <TableCell align="right">Vendor</TableCell>}
-                <TableCell align="right">Buy Price</TableCell>
+                <TableCell align="right">City Price</TableCell>
                 <TableCell align="right">Sell Price</TableCell>
                 <TableCell align="right">Market Price</TableCell>
                 <TableCell align="right">Circulation</TableCell>
@@ -181,4 +181,4 @@ const ItemsTable = ({ items, showVendor = true }: ItemsTableProps) => {
   );
 };
 
-export default ItemsTable;
+export default LocalMarketItemsTable;

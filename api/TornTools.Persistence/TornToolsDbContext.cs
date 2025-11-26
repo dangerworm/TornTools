@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Net.NetworkInformation;
+using Microsoft.EntityFrameworkCore;
 using TornTools.Persistence.Entities;
 using TornTools.Persistence.Interfaces;
 
@@ -8,6 +9,7 @@ public class TornToolsDbContext(
     DbContextOptions<TornToolsDbContext> options
 ) : DbContext(options), ITornToolsDbContext
 {
+    public DbSet<ForeignStockItemEntity> ForeignStockItems { get; set; } = null!;
     public DbSet<ItemChangeLogEntity> ItemChangeLogs { get; set; } = null!;
     public DbSet<ItemEntity> Items { get; set; } = null!;
     public DbSet<ListingEntity> Listings { get; set; } = null!;
@@ -19,6 +21,22 @@ public class TornToolsDbContext(
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // Entity mapping
+
+        modelBuilder.Entity<ForeignStockItemEntity>(e =>
+        {
+            e.HasKey(x => new { x.ItemId, x.Country });
+            e.Property(x => x.ItemId).IsRequired();
+            e.Property(x => x.Country).IsRequired();
+            e.Property(x => x.ItemName).IsRequired();
+            e.Property(x => x.Quantity).IsRequired();
+            e.Property(x => x.Cost).IsRequired();
+            e.Property(x => x.LastUpdated).IsRequired();
+            
+            e.HasOne(fsi => fsi.Item)
+                .WithMany(i => i.ForeignStockItems)
+                .HasForeignKey(fsi => fsi.ItemId)
+                .HasPrincipalKey(i => i.Id);
+        });
 
         modelBuilder.Entity<ItemChangeLogEntity>(e =>
         {
@@ -74,11 +92,6 @@ public class TornToolsDbContext(
             e.Property(x => x.ApiKey).IsRequired();
             e.Property(x => x.Name).IsRequired();
             e.Property(x => x.Gender).IsRequired();
-
-            e.HasMany(u => u.FavouriteItems)
-                .WithOne(uf => uf.User)
-                .HasForeignKey(uf => uf.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<UserFavouriteItemEntity>(e =>
@@ -92,6 +105,11 @@ public class TornToolsDbContext(
             e.Property(x => x.ItemId)
                 .HasColumnName("item_id")
                 .IsRequired();
+
+            e.HasOne(ufi => ufi.User)
+                .WithMany(u => u.FavouriteItems)
+                .HasForeignKey(ufi => ufi.UserId)
+                .HasPrincipalKey(u => u.Id);
         });
 
         // View mapping

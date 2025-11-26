@@ -11,7 +11,8 @@ using TornTools.Persistence.Interfaces;
 namespace TornTools.Application.Services;
 
 public class DatabaseService(
-    ILogger<DatabaseService> logger, 
+    ILogger<DatabaseService> logger,
+    IForeignStockItemRepository foreignStockItemRepository,
     IItemChangeLogRepository itemChangeLogRepository,
     IItemRepository itemRepository,
     IListingRepository listingRepository,
@@ -20,11 +21,22 @@ public class DatabaseService(
 ) : IDatabaseService
 {
     private readonly ILogger<DatabaseService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IForeignStockItemRepository _foreignStockItemRepository = foreignStockItemRepository ?? throw new ArgumentNullException(nameof(foreignStockItemRepository));
     private readonly IItemChangeLogRepository _itemChangeLogRepository = itemChangeLogRepository ?? throw new ArgumentNullException(nameof(itemChangeLogRepository));
     private readonly IItemRepository _itemRepository = itemRepository ?? throw new ArgumentNullException(nameof(itemRepository));
     private readonly IListingRepository _listingRepository = listingRepository ?? throw new ArgumentNullException(nameof(listingRepository));
     private readonly IQueueItemRepository _queueItemRepository = queueItemRepository ?? throw new ArgumentNullException(nameof(queueItemRepository));
     private readonly IUserRepository _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+
+    public Task<IEnumerable<ForeignStockItemDto>> GetForeignStockItemsAsync(CancellationToken cancellationToken)
+    {
+        return _foreignStockItemRepository.GetItemsAsync(cancellationToken);
+    }
+
+    public Task UpsertForeignStockItemsAsync(IEnumerable<ForeignStockItemDto> items, CancellationToken stoppingToken)
+    {
+        return _foreignStockItemRepository.UpsertItemsAsync(items, stoppingToken);
+    }
 
     public Task CreateItemChangeLogAsync(ItemChangeLogDto changeLogDto, CancellationToken stoppingToken)
     {

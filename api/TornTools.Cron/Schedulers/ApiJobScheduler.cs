@@ -3,14 +3,19 @@ using Hangfire;
 using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
 using TornTools.Core.Constants;
+using TornTools.Core.DataTransferObjects;
+using TornTools.Core.Enums;
 using TornTools.Cron.Interfaces;
 
 namespace TornTools.Cron.Schedulers;
 public class ApiJobScheduler(
     ILogger<ApiJobScheduler> logger, 
-    IDatabaseService databaseService) : IApiJobScheduler
+    IApiCallerResolver callerResolver,
+    IDatabaseService databaseService
+) : IApiJobScheduler
 {
     private readonly ILogger<ApiJobScheduler> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IApiCallerResolver _callerResolver = callerResolver ?? throw new ArgumentNullException(nameof(callerResolver));
     private readonly IDatabaseService _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
 
     public void RegisterRecurringJobs()
@@ -28,9 +33,9 @@ public class ApiJobScheduler(
         );
 
         RecurringJob.AddOrUpdate(
-            nameof(Run20MinJob),
-            () => Run20MinJob(),
-            "0/20 * * * *" // At every 20th minute from 0 through 59.
+        nameof(UpdateForeignStock),
+            () => UpdateForeignStock(),
+            "0/5 * * * *" // At every 5th minute from 0 through 59.
         );
     }
 
@@ -51,9 +56,29 @@ public class ApiJobScheduler(
         _logger.LogInformation($"Running {nameof(UpdateNonResaleItems)}");
     }
 
-    [DisplayName("20-Minute API Call")]
-    public async Task Run20MinJob()
+    [DisplayName("Foreign stock update")]
+    public async Task UpdateForeignStock()
     {
-        _logger.LogInformation("Running 20-minute API job...");
+        _logger.LogInformation($"Running {nameof(UpdateForeignStock)}...");
+        
+        var queueItem = new QueueItemDto
+        {
+            CallType = ApiCallType.YataForeignStock,
+            EndpointUrl = YataApiConstants.ForeignStock
+        };
+
+        var success = false;
+        try
+        {
+            var caller = _callerResolver.GetCaller(ApiCallType.YataForeignStock);
+            success = await caller.CallAsync(
+                queueItem,
+                stoppingToken: CancellationToken.None
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unhandled exception processing {QueueItem} {Id}. Marking for retry.", nameof(QueueItemDto), queueItem.Id);
+        }
     }
 }

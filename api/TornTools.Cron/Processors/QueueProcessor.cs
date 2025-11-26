@@ -3,7 +3,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
 using TornTools.Core.Configurations;
-using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
 using TornTools.Cron.Enums;
 

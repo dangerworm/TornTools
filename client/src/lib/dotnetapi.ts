@@ -1,4 +1,5 @@
 import { API_BASE_URL } from "../constants/ApiConstants";
+import type { ForeignStockItem } from "../types/foreignStockItems";
 import type { Item } from "../types/items";
 import type { ProfitableListing } from "../types/profitableListings";
 import type { TornUserProfile } from "./tornapi";
@@ -14,6 +15,7 @@ export interface DotNetUserDetails {
 }
 
 const URL_ITEMS = `${API_BASE_URL}/GetItems`;
+const URL_FOREIGN_STOCK_ITEMS = `${API_BASE_URL}/GetForeignStockItems`;
 const URL_PROFITABLE_LISTINGS = `${API_BASE_URL}/GetProfitableListings`;
 const URL_POST_TOGGLE_USER_FAVOURITE = `${API_BASE_URL}/PostToggleUserFavourite`;
 const URL_POST_USER_DETAILS = `${API_BASE_URL}/PostUserDetails`;
@@ -25,6 +27,21 @@ export async function fetchItems(): Promise<Item[]> {
   };
   const res = await fetch(url, { headers });
   let data: Item[] = [];
+  try {
+    data = await res.json();
+  } catch {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  }
+  return data;
+}
+
+export async function fetchForeignStockItems(): Promise<ForeignStockItem[]> {
+  const url = URL_FOREIGN_STOCK_ITEMS;
+  const headers: Record<string, string> = {
+    accept: "application/json"
+  };
+  const res = await fetch(url, { headers });
+  let data: ForeignStockItem[] = [];
   try {
     data = await res.json();
   } catch {

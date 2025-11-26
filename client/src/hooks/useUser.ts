@@ -10,6 +10,7 @@ interface UserContextModel {
   dotNetUserDetails: DotNetUserDetails | null;
   loadingDotNetUserDetails: boolean;
   errorDotNetUserDetails: string | null;
+  fetchTornProfileAsync: (key: string) => Promise<void>;
   setApiKey: (key: string | null) => void;
   confirmApiKeyAsync: () => Promise<void>;
   toggleFavouriteItemAsync: (itemId: number) => Promise<void>;

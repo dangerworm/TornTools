@@ -1,42 +1,51 @@
-import { useMemo } from "react";
-import { useItems } from "../hooks/useItems";
-import { Box, Divider, Typography } from "@mui/material";
-import Loading from "../components/Loading";
-import ItemsTable from "../components/ItemTable";
+import { Link } from "react-router-dom";
+import {
+  Box,
+  Card,
+  CardContent,
+  Grid,
+  Typography,
+} from "@mui/material";
 
 const Markets = () => {
-  const { items } = useItems();
-
-  const countries = useMemo(() => {
-    if (!items) return [];
-    return Array
-      .from(new Set(items.map((i) => i.valueVendorCountry)))
-      .filter((c): c is string => c !== "Torn")
-      .sort();
-  }, [items]);
-
-  if (!items) return <Loading message="Loading items..." />;
-
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
         Markets
       </Typography>
 
-      {["Torn", ...countries].map((country: string | undefined) => (
-        <Box key={country} sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            {country}
-          </Typography>
-
-          <ItemsTable
-            items={items.filter((i) => i.valueVendorCountry === country)}
-            showVendor={items.some(i => !!i.valueVendorCountry)}
-          />
-        </Box>
-      ))}
-
-      <Divider sx={{ my: 4 }} />
+      <Grid container spacing={4} sx={{ mt: 2 }}>
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <Card variant="outlined" sx={{ height: "100%" }}>
+            <CardContent>
+              <Typography variant="h5" gutterBottom>
+                <Link to="/local-markets" className="no-underline">
+                  Local Markets
+                </Link>
+              </Typography>
+              <Typography variant="body1" sx={{ width: "80%" }}>
+                View markets for items available to buy and sell in Torn City
+                as well as those with no listed vendor.
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <Card variant="outlined" sx={{ height: "100%" }}>
+            <CardContent>
+              <Typography variant="h5" gutterBottom>
+                <Link to="/foreign-markets" className="no-underline">
+                  Foreign Markets
+                </Link>
+              </Typography>
+              <Typography variant="body1" sx={{ width: "80%" }}>
+                View markets for items available to buy and sell in foreign
+                countries outside of Torn City.
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
     </Box>
   );
 };

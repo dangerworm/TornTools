@@ -124,7 +124,7 @@ export const UserProvider = ({
         setLoadingTornUserProfile(false);
       }
     },
-    [updateCacheTimestamp]
+    [apiKey, updateCacheTimestamp]
   );
 
   // --- public setter for API key (called from UI when user types/pastes key) ---
@@ -282,6 +282,9 @@ export const UserProvider = ({
       loadingDotNetUserDetails,
       errorDotNetUserDetails,
 
+      // profile update
+      fetchTornProfileAsync,
+
       // actions
       setApiKey, // user types/pastes key here
       confirmApiKeyAsync, // "I agree" button
@@ -298,6 +301,7 @@ export const UserProvider = ({
       errorTornUserProfile,
       loadingDotNetUserDetails,
       errorDotNetUserDetails,
+      fetchTornProfileAsync,
       setApiKey,
       confirmApiKeyAsync,
       toggleFavouriteItemAsync,

@@ -3,5 +3,6 @@ public enum ApiCallType
 {
     TornItems,
     TornMarketListings,
-    Weav3rBazaarListings
+    Weav3rBazaarListings,
+    YataForeignStock
 }

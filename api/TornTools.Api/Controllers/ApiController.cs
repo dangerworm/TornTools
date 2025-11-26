@@ -42,6 +42,32 @@ public class ApiController(
         }
     }
 
+    [HttpGet(Name = "GetForeignStockItems")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetForeignStockItems(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var items = await _databaseService.GetForeignStockItemsAsync(cancellationToken);
+
+            if (items == null || !items.Any())
+                return NotFound("No items found.");
+
+            return Ok(items);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while retrieving {EntityType}.", "foreign stock items");
+
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                message = string.Format(ErrorMessage, "foreign stock items"),
+                details = ex.Message
+            });
+        }
+    }
+
     [HttpGet(Name = "GetProfitableListings")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]

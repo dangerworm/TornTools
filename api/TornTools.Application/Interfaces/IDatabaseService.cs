@@ -6,6 +6,9 @@ using TornTools.Cron.Enums;
 namespace TornTools.Application.Interfaces;
 public interface IDatabaseService
 {
+    Task<IEnumerable<ForeignStockItemDto>> GetForeignStockItemsAsync(CancellationToken cancellationToken);
+    Task UpsertForeignStockItemsAsync(IEnumerable<ForeignStockItemDto> items, CancellationToken stoppingToken);
+
     Task CreateItemChangeLogAsync(ItemChangeLogDto changeLogDto, CancellationToken stoppingToken);
 
     Task<IEnumerable<ItemDto>> GetAllItemsAsync(CancellationToken stoppingToken);
