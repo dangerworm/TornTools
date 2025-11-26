@@ -83,7 +83,7 @@ export default function MarketItemsTable({
                 <TableCell align="right">Qty</TableCell>
                 <TableCell align="right">Profit</TableCell>
                 <TableCell align="right">Updated</TableCell>
-                <TableCell align="right">Market</TableCell>
+                <TableCell align="right">Item</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -198,7 +198,7 @@ export default function MarketItemsTable({
                         </TableCell>
                         <TableCell
                           align="right"
-                          onClick={() => navigate(`/market/${r.itemId}`)}
+                          onClick={() => navigate(`/item/${r.itemId}`)}
                         >
                           <OpenInNew />
                         </TableCell>

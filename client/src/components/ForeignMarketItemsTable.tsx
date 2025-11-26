@@ -48,7 +48,7 @@ const ForeignMarketItemsTable = ({ items }: ForeignMarketItemsTableProps) => {
                 <TableCell align="right">Profit</TableCell>
                 <TableCell align="right">Available</TableCell>
                 <TableCell align="right">Last Updated</TableCell>
-                <TableCell align="right">Market</TableCell>
+                <TableCell align="right">Torn</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

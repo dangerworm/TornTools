@@ -48,7 +48,7 @@ const LocalMarketItemsTable = ({ items, showVendor = true }: LocalMarketItemsTab
                 <TableCell align="right">Sell Price</TableCell>
                 <TableCell align="right">Market Price</TableCell>
                 <TableCell align="right">Circulation</TableCell>
-                <TableCell align="right">Market</TableCell>
+                <TableCell align="right">Torn</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
