@@ -12,11 +12,15 @@ const itemTypesOfInterest = [
 ];
 
 const ForeignMarkets = () => {
-  const { items } = useForeignStockItems();
+  const { items, refresh } = useForeignStockItems();
   const { apiKey, tornUserProfile, fetchTornProfileAsync } = useUser();
 
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>(itemTypesOfInterest);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   useEffect(() => {
     if (!apiKey) {
@@ -87,11 +91,12 @@ const ForeignMarkets = () => {
           <Box
             key={country}
             sx={{
+              alignItems: "center",
               display: "inline-flex",
               flexDirection: "column",
-              alignItems: "center",
-              mr: 2,
+              minWidth: "4.5em",
               mb: 2,
+              mr: 2,
             }}
           >
             <img
@@ -114,15 +119,12 @@ const ForeignMarkets = () => {
         ))}
       </Box>
 
-      <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
-        Show Item Types
-      </Typography>
-
       <Box>
         <Chip
           label="All Item Types"
           variant={selectedItemTypes.length === 0 ? "filled" : "outlined"}
           onClick={() => setSelectedItemTypes([])}
+          sx={{ mb: 1, mr: 1 }}
         />
         {itemTypes.map((type) => (
           <Chip
@@ -138,7 +140,7 @@ const ForeignMarkets = () => {
                   : [...prev, type]
               );
             }}
-            sx={{ mb: 1, ml: 1 }}
+            sx={{ mb: 1, mr: 1 }}
           />
         ))}
       </Box>
