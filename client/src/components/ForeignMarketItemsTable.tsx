@@ -132,8 +132,8 @@ const ForeignMarketItemsTable = ({ items }: ForeignMarketItemsTableProps) => {
                         color={"success"}
                         size="small"
                       />
-                    ) : item.item.valueMarketPrice ? (
-                      <span>${item.item.valueMarketPrice.toLocaleString()}</span>
+                    ) : item.cost && item.item.valueMarketPrice ? (
+                      <span>${(item.item.valueMarketPrice - item.cost).toLocaleString()}</span>
                     ) : (
                       <span>&mdash;</span>
                     )}

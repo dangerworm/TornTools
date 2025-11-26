@@ -138,7 +138,7 @@ const ForeignMarkets = () => {
                   : [...prev, type]
               );
             }}
-            sx={{ ml: 1 }}
+            sx={{ mb: 1, ml: 1 }}
           />
         ))}
       </Box>
