@@ -95,7 +95,7 @@ const ForeignMarkets = () => {
             }}
           >
             <img
-              src={`public/${country?.toLowerCase().replace(" ", "-")}.svg`}
+              src={`/${country?.toLowerCase().replace(" ", "-")}.svg`}
               alt={`Flag of ${country}`}
               style={{
                 border: selectedCountries.includes(country || "")
@@ -155,7 +155,7 @@ const ForeignMarkets = () => {
           <Box key={country} sx={{ mb: 4 }}>
             <Typography variant="h5" gutterBottom>
               <img
-                src={`public/${country?.toLowerCase().replace(" ", "-")}.svg`}
+                src={`/${country?.toLowerCase().replace(" ", "-")}.svg`}
                 alt={`Flag of ${country}`}
                 style={{
                   maxWidth: "1em",
