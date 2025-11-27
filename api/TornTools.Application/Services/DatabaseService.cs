@@ -97,7 +97,7 @@ public class DatabaseService(
         // Repeat calls for the profitable and grouped items, with small batches of
         // left over items in between to ensure they get processed eventually.
         var queueItems = new List<QueueItemDto>();
-        if (groupedChanges.Any())
+        if (groupedChanges.Count != 0)
         {
             var maxNumberOfChanges = groupedChanges.Values.Max();
             for (var i = 0; i < maxNumberOfChanges; i++)
@@ -197,7 +197,7 @@ public class DatabaseService(
         return _userRepository.ToggleUserFavourite(model.UserId, model.ItemId, model.Add, stoppingToken);
     }
 
-    private async Task<(HashSet<int> profitableItemIds, Dictionary<int, decimal> groupedChanges)> GetItemChangeData(CancellationToken stoppingToken)
+    private async Task<(HashSet<int> profitableItemIds, Dictionary<int, int> groupedChanges)> GetItemChangeData(CancellationToken stoppingToken)
     {
         var profitableItems = await _itemRepository.GetProfitableItemsAsync(stoppingToken);
         var profitableItemIds = profitableItems
@@ -212,9 +212,8 @@ public class DatabaseService(
             .Select(group => new
             {
                 ItemId = group.Key,
-                Weight = group.Count() / QueueProcessorConstants.GroupDivisor
+                Weight = (int)Math.Ceiling(group.Count() / QueueProcessorConstants.GroupDivisor)
             })
-            .Where(x => x.Weight > 1)
             .ToDictionary(x => x.ItemId, x => x.Weight);
 
         return (profitableItemIds, groupedChanges);
