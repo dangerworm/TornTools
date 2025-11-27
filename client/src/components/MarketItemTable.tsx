@@ -21,12 +21,7 @@ import { OpenInNew } from "@mui/icons-material";
 import { useUser } from "../hooks/useUser";
 import { getSecondsSinceLastUpdate, timeAgo } from "../lib/time";
 import type { ProfitableListing } from "../types/profitableListings";
-
-const rowColor = (lastUpdated: Date): string => {
-  const diffSeconds = getSecondsSinceLastUpdate(lastUpdated);
-  const colorValue = Math.min(Math.max(Math.floor(diffSeconds / 3), 0), 171);
-  return `rgba(${colorValue}, ${colorValue}, ${colorValue}, 0.87)`; // default color
-};
+import { useThemeSettings } from "../hooks/useThemeSettings";
 
 const MotionTableRow = motion(TableRow);
 
@@ -48,9 +43,22 @@ export default function MarketItemsTable({
   sellPriceColumnNameOverride = "Sell",
 }: MarketItemsTableProps) {
   const navigate = useNavigate();
+  const { availableThemes, selectedThemeId } = useThemeSettings();
+
   const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser();
 
   const seenIdsRef = useRef<Set<number | string>>(new Set());
+
+  const rowColor = (lastUpdated: Date): string => {
+    const diffSeconds = getSecondsSinceLastUpdate(lastUpdated);
+    const selectedTheme = availableThemes.find((t) => t.id === selectedThemeId);
+    
+    let colorValue = Math.min(Math.max(Math.floor(diffSeconds / 3), 0), 171);
+    if (selectedTheme?.mode != null && selectedTheme.mode === "dark") {
+      colorValue = 255 - colorValue;
+    } 
+    return `rgba(${colorValue}, ${colorValue}, ${colorValue}, 0.87)`; // default color
+  };
 
   const openTornMarketPage = (itemId: number) => {
     window.open(

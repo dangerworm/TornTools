@@ -9,4 +9,6 @@ public class UserDto
     public required int Level { get; set; }
     public required string Gender { get; set; }
     public IEnumerable<int> FavouriteItems { get; set; } = [];
+    public long? PreferredThemeId { get; set; }
+    public ThemeDto? PreferredTheme { get; set; }
 }

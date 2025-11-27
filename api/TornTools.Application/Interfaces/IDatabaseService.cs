@@ -29,9 +29,12 @@ public interface IDatabaseService
     Task<QueueItemDto> SetQueueItemCompleted(Guid id, CancellationToken stoppingToken);
     Task RemoveQueueItemsAsync(CancellationToken stoppingToken, QueueStatus? statusToRemove = null);
     Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken);
-    
+
     Task<int> GetApiKeyCountAsync(CancellationToken stoppingToken);
     Task<string> GetNextApiKeyAsync(CancellationToken stoppingToken);
     Task<UserDto> UpsertUserDetailsAsync(UserDetailsInputModel userDetails, CancellationToken stoppingToken);
     Task<UserDto?> ToggleUserFavourite(UserFavouriteInputModel userFavouriteModel, CancellationToken stoppingToken);
+    Task<IEnumerable<ThemeDto>> GetThemesAsync(long? userId, CancellationToken stoppingToken);
+    Task<ThemeDto> UpsertThemeAsync(ThemeInputModel themeInputModel, CancellationToken stoppingToken);
+    Task<UserDto?> UpdateUserPreferredThemeAsync(UserThemeSelectionInputModel inputModel, CancellationToken stoppingToken);
 }

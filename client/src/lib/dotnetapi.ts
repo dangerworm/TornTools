@@ -2,6 +2,7 @@ import { API_BASE_URL } from "../constants/ApiConstants";
 import type { ForeignStockItem } from "../types/foreignStockItems";
 import type { Item } from "../types/items";
 import type { ProfitableListing } from "../types/profitableListings";
+import type { ThemeDefinition, ThemeInput } from "../types/themes";
 import type { TornUserProfile } from "./tornapi";
 
 export interface DotNetUserDetails {
@@ -12,6 +13,8 @@ export interface DotNetUserDetails {
   level: number;
   gender: string;
   favouriteItems: number[];
+  preferredThemeId?: number | null;
+  preferredTheme?: ThemeDefinition | null;
 }
 
 const URL_ITEMS = `${API_BASE_URL}/GetItems`;
@@ -19,6 +22,9 @@ const URL_FOREIGN_STOCK_ITEMS = `${API_BASE_URL}/GetForeignStockItems`;
 const URL_PROFITABLE_LISTINGS = `${API_BASE_URL}/GetProfitableListings`;
 const URL_POST_TOGGLE_USER_FAVOURITE = `${API_BASE_URL}/PostToggleUserFavourite`;
 const URL_POST_USER_DETAILS = `${API_BASE_URL}/PostUserDetails`;
+const URL_GET_THEMES = `${API_BASE_URL}/GetThemes`;
+const URL_POST_THEME = `${API_BASE_URL}/PostTheme`;
+const URL_POST_USER_THEME_SELECTION = `${API_BASE_URL}/PostUserThemeSelection`;
 
 export async function fetchItems(): Promise<Item[]> {
   const url = URL_ITEMS;
@@ -118,6 +124,69 @@ async function postToggleUserFavourite(
   };
   const body = JSON.stringify(content);
   const res = await fetch(url, { method: "POST", headers, body });
+  let data: DotNetUserDetails | null = null;
+  try {
+    data = await res.json();
+  } catch {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  }
+  return data;
+}
+
+export async function fetchThemes(
+  userId?: number | null
+): Promise<ThemeDefinition[]> {
+  const url = userId
+    ? `${URL_GET_THEMES}?userId=${encodeURIComponent(userId)}`
+    : URL_GET_THEMES;
+  const headers: Record<string, string> = {
+    accept: "application/json",
+  };
+  const res = await fetch(url, { headers });
+  let data: ThemeDefinition[] = [];
+  try {
+    data = await res.json();
+  } catch {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  }
+  return data;
+}
+
+export async function postThemeDefinition(
+  themeInput: ThemeInput
+): Promise<ThemeDefinition | null> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  const res = await fetch(URL_POST_THEME, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(themeInput),
+  });
+
+  let data: ThemeDefinition | null = null;
+  try {
+    data = await res.json();
+  } catch {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  }
+  return data;
+}
+
+export async function postUserThemeSelection(
+  userId: number,
+  themeId: number | null
+): Promise<DotNetUserDetails | null> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  const body = JSON.stringify({ userId, themeId });
+  const res = await fetch(URL_POST_USER_THEME_SELECTION, {
+    method: "POST",
+    headers,
+    body,
+  });
+
   let data: DotNetUserDetails | null = null;
   try {
     data = await res.json();

@@ -8,6 +8,8 @@ import LocalMarkets from "./pages/LocalMarkets";
 import ItemDetails from "./pages/ItemDetails";
 import Resale from "./pages/Resale";
 import Time from "./pages/Time";
+import FavouriteMarkets from "./pages/FavouriteMarkets";
+import UserSettings from "./pages/UserSettings";
 // import Trading from "./pages/Trading";
 
 function App() {
@@ -16,6 +18,8 @@ function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
         <Route path="/signin" element={<SignIn />} />
+        <Route path="/favourites" element={<FavouriteMarkets />} />
+        <Route path="/settings" element={<UserSettings />} />
         <Route path="/markets" element={<Markets />} />
         <Route path="/foreign-markets" element={<ForeignMarkets />} />
         <Route path="/local-markets" element={<LocalMarkets />} />

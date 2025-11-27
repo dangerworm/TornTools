@@ -17,6 +17,7 @@ public class TornToolsDbContext(
     public DbSet<QueueItemEntity> QueueItems { get; set; } = null!;
     public DbSet<UserEntity> Users { get; set; } = null!;
     public DbSet<UserFavouriteItemEntity> UserFavourites { get; set; } = null!;
+    public DbSet<ThemeEntity> Themes { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -92,6 +93,11 @@ public class TornToolsDbContext(
             e.Property(x => x.ApiKey).IsRequired();
             e.Property(x => x.Name).IsRequired();
             e.Property(x => x.Gender).IsRequired();
+
+            e.HasOne(u => u.PreferredTheme)
+                .WithMany()
+                .HasForeignKey(u => u.PreferredThemeId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<UserFavouriteItemEntity>(e =>
@@ -110,6 +116,20 @@ public class TornToolsDbContext(
                 .WithMany(u => u.FavouriteItems)
                 .HasForeignKey(ufi => ufi.UserId)
                 .HasPrincipalKey(u => u.Id);
+        });
+
+        modelBuilder.Entity<ThemeEntity>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Name).IsRequired();
+            e.Property(x => x.Mode).IsRequired();
+            e.Property(x => x.PrimaryColor).IsRequired();
+            e.Property(x => x.SecondaryColor).IsRequired();
+
+            e.HasOne(t => t.User)
+                .WithMany(u => u.CustomThemes)
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // View mapping
