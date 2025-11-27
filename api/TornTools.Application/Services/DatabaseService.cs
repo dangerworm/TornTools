@@ -222,7 +222,7 @@ public class DatabaseService(
         return _userRepository.UpdateUserPreferredThemeAsync(inputModel.UserId, inputModel.ThemeId, stoppingToken);
     }
 
-    private async Task<(HashSet<int> profitableItemIds, Dictionary<int, decimal> groupedChanges)> GetItemChangeData(CancellationToken stoppingToken)
+    private async Task<(HashSet<int> profitableItemIds, Dictionary<int, int> groupedChanges)> GetItemChangeData(CancellationToken stoppingToken)
     {
         var profitableItems = await _itemRepository.GetProfitableItemsAsync(stoppingToken);
         var profitableItemIds = profitableItems

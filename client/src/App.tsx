@@ -18,14 +18,14 @@ function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
         <Route path="/signin" element={<SignIn />} />
+        <Route path="/favourites" element={<FavouriteMarkets />} />
+        <Route path="/settings" element={<UserSettings />} />
         <Route path="/markets" element={<Markets />} />
         <Route path="/foreign-markets" element={<ForeignMarkets />} />
         <Route path="/local-markets" element={<LocalMarkets />} />
         <Route path="/item/:itemId" element={<ItemDetails />} />
         <Route path="/resale" element={<Resale />} />
         <Route path="/time" element={<Time />} />
-        <Route path="/favourites" element={<FavouriteMarkets />} />
-        <Route path="/settings" element={<UserSettings />} />
 
         <Route path="*" element={<h1>Not Found</h1>} />
       </Route>
