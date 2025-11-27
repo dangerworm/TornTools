@@ -4,11 +4,35 @@ import { useState } from "react";
 interface SteppedSliderProps {
   initialValueIndex?: number;
   label: string;
-  prefixUnit: string;
-  suffixUnit: string;
+  prefixUnit: PrefixUnit;
+  suffixUnit: SuffixUnit;
   sliderValues: number[];
   onValueChange: (newValue: number) => void;
 }
+
+type PrefixUnit = "$" | "";
+type SuffixUnit = "minute" | "";
+
+const getValueWithSuffix = (prefixUnit: PrefixUnit, value: number, suffixUnit: SuffixUnit): string => {
+  const outputValue = value.toLocaleString();
+  
+  if (suffixUnit === "") {
+    return `${prefixUnit}${outputValue}`;
+  }
+
+  if (suffixUnit === "minute" && value > 59) {
+    const hours = Math.floor(value / 60);
+    const suffix = hours === 1 ? "hour" : "hours";
+    return `${hours} ${suffix}`;
+  }
+
+  if (suffixUnit === "minute") {
+    const suffix = value === 1 ? "minute" : "minutes";
+    return `${value} ${suffix}`;
+  }
+
+  return outputValue;
+};
 
 export default function SteppedSlider({
   sliderValues,
@@ -30,7 +54,8 @@ export default function SteppedSlider({
   return (
     <>
       <Typography gutterBottom>
-        <strong>{label}:</strong> {prefixUnit}{sliderValues[sliderValueIndex].toLocaleString()}{suffixUnit}
+        <strong>{label}:</strong>{" "}
+        {getValueWithSuffix(prefixUnit, sliderValues[sliderValueIndex], suffixUnit)}
       </Typography>
       <Slider
         value={sliderValueIndex}

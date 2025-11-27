@@ -27,5 +27,7 @@ export const timeAgo = (date: string | Date): string => {
     }
   }
 
-  return "";
+  // For some reason the difference is sometimes less than 1 second
+  // Doesn't matter for now, so return "just now"
+  return "just now";
 };
