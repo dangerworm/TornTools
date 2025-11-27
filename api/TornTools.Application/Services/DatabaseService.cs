@@ -97,14 +97,14 @@ public class DatabaseService(
         // Repeat calls for the profitable and grouped items, with small batches of
         // left over items in between to ensure they get processed eventually.
         var queueItems = new List<QueueItemDto>();
-        if (groupedChanges.Any())
+        if (groupedChanges.Count != 0)
         {
             var maxNumberOfChanges = groupedChanges.Values.Max();
-            for (var i = 0; i < maxNumberOfChanges; i++)
+            for (var numberOfChanges = maxNumberOfChanges; numberOfChanges > 0; numberOfChanges--)
             {
                 // Ensure that markets which change regularly are checked most often
                 var itemsToProcess = groupedChanges
-                    .Where(kv => kv.Value >= (maxNumberOfChanges - i))
+                    .Where(kv => kv.Value >= numberOfChanges)
                     .Select(kv => kv.Key)
                     .SelectMany(BuildQueueItems);
 
@@ -237,9 +237,8 @@ public class DatabaseService(
             .Select(group => new
             {
                 ItemId = group.Key,
-                Weight = group.Count() / QueueProcessorConstants.GroupDivisor
+                Weight = (int)Math.Ceiling(group.Count() / QueueProcessorConstants.GroupDivisor)
             })
-            .Where(x => x.Weight > 1)
             .ToDictionary(x => x.ItemId, x => x.Weight);
 
         return (profitableItemIds, groupedChanges);
