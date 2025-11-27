@@ -32,6 +32,12 @@ public class UserEntity
 
     public ICollection<UserFavouriteItemEntity> FavouriteItems { get; set; } = [];
 
+    [Column("preferred_theme_id")]
+    public long? PreferredThemeId { get; set; }
+
+    public ThemeEntity? PreferredTheme { get; set; }
+    public ICollection<ThemeEntity> CustomThemes { get; set; } = [];
+
     public UserDto AsDto()
     {
         return new UserDto
@@ -42,7 +48,9 @@ public class UserEntity
             Name = Name,
             Gender = Gender,
             Level = Level,
-            FavouriteItems = FavouriteItems.Select(f => f.ItemId)
+            FavouriteItems = FavouriteItems.Select(f => f.ItemId),
+            PreferredThemeId = PreferredThemeId,
+            PreferredTheme = PreferredTheme?.AsDto()
         };
     }
 }

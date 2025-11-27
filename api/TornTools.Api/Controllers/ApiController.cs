@@ -135,4 +135,67 @@ public class ApiController(
             });
         }
     }
+
+    [HttpGet(Name = "GetThemes")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetThemes(long? userId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var themes = await _databaseService.GetThemesAsync(userId, cancellationToken);
+            return Ok(themes);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while retrieving themes.");
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                message = string.Format(ErrorMessage, "themes"),
+                details = ex.Message
+            });
+        }
+    }
+
+    [HttpPost(Name = "PostTheme")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> PostTheme([FromBody] ThemeInputModel themeInput)
+    {
+        try
+        {
+            var theme = await _databaseService.UpsertThemeAsync(themeInput, CancellationToken.None);
+            return Ok(theme);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while saving a theme.");
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                message = "An error occurred while saving a theme.",
+                details = ex.Message
+            });
+        }
+    }
+
+    [HttpPost(Name = "PostUserThemeSelection")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> PostUserThemeSelection([FromBody] UserThemeSelectionInputModel themeSelection)
+    {
+        try
+        {
+            var user = await _databaseService.UpdateUserPreferredThemeAsync(themeSelection, CancellationToken.None);
+            return Ok(user);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while saving user settings.");
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                message = "An error occurred while saving user settings.",
+                details = ex.Message
+            });
+        }
+    }
 }

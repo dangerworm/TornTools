@@ -14,6 +14,7 @@ interface UserContextModel {
   setApiKey: (key: string | null) => void;
   confirmApiKeyAsync: () => Promise<void>;
   toggleFavouriteItemAsync: (itemId: number) => Promise<void>;
+  updateDotNetUserDetails: (details: DotNetUserDetails | null) => void;
   clearAllUserData: () => void;
 }
 

@@ -71,10 +71,7 @@ export const UserProvider = ({
       abortRef.current = null;
     }
 
-    localStorage.removeItem(LOCAL_STORAGE_KEY_TORN_API_KEY);
-    localStorage.removeItem(LOCAL_STORAGE_KEY_TORN_USER_DETAILS);
-    localStorage.removeItem(LOCAL_STORAGE_KEY_DOTNET_USER_DETAILS);
-    localStorage.removeItem(LOCAL_STORAGE_KEY_USER_CACHE_TS);
+    localStorage.clear();
 
     setApiKeyState(null);
     setTornUserProfile(null);
@@ -84,6 +81,22 @@ export const UserProvider = ({
     setErrorTornUserProfile(null);
     setErrorDotNetUserDetails(null);
   }, []);
+
+  const updateDotNetUserDetails = useCallback(
+    (details: DotNetUserDetails | null) => {
+      setDotNetUserDetails(details);
+      if (details) {
+        localStorage.setItem(
+          LOCAL_STORAGE_KEY_DOTNET_USER_DETAILS,
+          JSON.stringify(details)
+        );
+        updateCacheTimestamp();
+      } else {
+        localStorage.removeItem(LOCAL_STORAGE_KEY_DOTNET_USER_DETAILS);
+      }
+    },
+    [updateCacheTimestamp]
+  );
 
   // --- Torn profile fetch ---
 
@@ -170,12 +183,7 @@ export const UserProvider = ({
     try {
       const userData = await postUserDetails(apiKey, tornUserProfile);
       if (userData) {
-        setDotNetUserDetails(userData);
-        localStorage.setItem(
-          LOCAL_STORAGE_KEY_DOTNET_USER_DETAILS,
-          JSON.stringify(userData)
-        );
-        updateCacheTimestamp();
+        updateDotNetUserDetails(userData);
       }
     } catch (e: unknown) {
       if (e instanceof Error) {
@@ -214,15 +222,10 @@ export const UserProvider = ({
       }
 
       if (userData) {
-        setDotNetUserDetails(userData);
-        localStorage.setItem(
-          LOCAL_STORAGE_KEY_DOTNET_USER_DETAILS,
-          JSON.stringify(userData)
-        );
-        updateCacheTimestamp();
+        updateDotNetUserDetails(userData);
       }
     },
-    [dotNetUserDetails, updateCacheTimestamp]
+    [dotNetUserDetails, updateCacheTimestamp, updateDotNetUserDetails]
   );
 
   // --- initial load: restore from cache if within TTL ---
@@ -292,6 +295,7 @@ export const UserProvider = ({
 
       // optional: expose an explicit logout if you like
       clearAllUserData,
+      updateDotNetUserDetails,
     }),
     [
       apiKey,
@@ -306,6 +310,7 @@ export const UserProvider = ({
       confirmApiKeyAsync,
       toggleFavouriteItemAsync,
       clearAllUserData,
+      updateDotNetUserDetails,
     ]
   );
 

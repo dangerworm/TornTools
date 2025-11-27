@@ -8,6 +8,8 @@ import LocalMarkets from "./pages/LocalMarkets";
 import ItemDetails from "./pages/ItemDetails";
 import Resale from "./pages/Resale";
 import Time from "./pages/Time";
+import FavouriteMarkets from "./pages/FavouriteMarkets";
+import UserSettings from "./pages/UserSettings";
 // import Trading from "./pages/Trading";
 
 function App() {
@@ -22,6 +24,8 @@ function App() {
         <Route path="/item/:itemId" element={<ItemDetails />} />
         <Route path="/resale" element={<Resale />} />
         <Route path="/time" element={<Time />} />
+        <Route path="/favourites" element={<FavouriteMarkets />} />
+        <Route path="/settings" element={<UserSettings />} />
 
         <Route path="*" element={<h1>Not Found</h1>} />
       </Route>
