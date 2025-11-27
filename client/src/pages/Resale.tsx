@@ -10,7 +10,7 @@ const Resale = () => {
   const { items } = useItems();
 
   const minuteRangeValues = [
-    1, 2, 3, 5, 10, 30, 60, 120, 240, 480, 720, 1440,
+    1, 2, 3, 5, 10, 30, 60, 120
   ];
 
   const priceRangeValues = [
@@ -83,7 +83,7 @@ const Resale = () => {
           <SteppedSlider
             label="Max Time Since Last Update"
             prefixUnit=""
-            suffixUnit=" minutes"
+            suffixUnit="minute"
             sliderValues={minuteRangeValues}
             initialValueIndex={initialMaxTimeSinceLastUpdateIndex}
             onValueChange={handleMaxTimeSinceLastUpdateSliderValueChange}
