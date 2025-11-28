@@ -58,6 +58,16 @@ public class DatabaseService(
         return _itemRepository.UpsertItemsAsync(items, stoppingToken);
     }
 
+    public Task<IEnumerable<ItemHistoryPointDto>> GetItemPriceHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken)
+    {
+        return _itemChangeLogRepository.GetItemPriceHistoryAsync(itemId, window, stoppingToken);
+    }
+
+    public Task<IEnumerable<ItemHistoryPointDto>> GetItemVelocityHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken)
+    {
+        return _itemChangeLogRepository.GetItemVelocityHistoryAsync(itemId, window, stoppingToken);
+    }
+
     public Task CreateListingsAsync(IEnumerable<ListingDto> listings, CancellationToken stoppingToken)
     {
         return _listingRepository.CreateListingsAsync(listings, stoppingToken);

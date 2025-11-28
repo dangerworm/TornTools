@@ -8,19 +8,24 @@ import {
   Button,
   Menu,
   MenuItem,
+  TextField,
+  Autocomplete,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Link, useNavigate } from "react-router-dom";
 import { useUser } from "../hooks/useUser";
 import "../index.css";
+import { useItems } from "../hooks/useItems";
 
 interface TopAppBarProps {
   handleDrawerToggle: () => void;
 }
 
 function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
+  const { items } = useItems();
   const { dotNetUserDetails, clearAllUserData } = useUser();
   const navigate = useNavigate();
+
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
   const handleOpenMenu = (event: MouseEvent<HTMLElement>) => {
@@ -62,6 +67,30 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
           </Typography>
         </Box>
 
+        <Box sx={{ alignItems: "center", ml: "auto", mr: "auto" }}>
+          <Autocomplete
+            disablePortal
+            options={items.map(i => ({label: i.name, id: i.id}))}
+            onChange={(_, value) => {
+              if (value) {
+                navigate(`/item/${value.id}`);
+              }
+            }}
+            sx={{ 
+              borderRadius: 1,
+              width: 300 
+            }}
+            renderInput={(params) =>
+              <TextField
+                {...params}
+                placeholder="Search items..." 
+                size="small"
+                variant="outlined"
+              />
+            }
+          />
+        </Box>
+
         <Box sx={{ ml: "auto" }}>
           {dotNetUserDetails ? (
             <>
@@ -70,12 +99,7 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
                 onClick={handleOpenMenu}
                 sx={{ textTransform: "none" }}
               >
-                <Typography
-                  variant="h6"
-                  noWrap
-                  component="div"
-                  className="geo"
-                >
+                <Typography variant="h6" noWrap component="div" className="geo">
                   {dotNetUserDetails.name} [{dotNetUserDetails.id}]
                 </Typography>
               </Button>

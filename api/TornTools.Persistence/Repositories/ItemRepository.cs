@@ -109,7 +109,9 @@ public class ItemRepository(
 
     public async Task<IEnumerable<ItemDto>> GetAllItemsAsync(CancellationToken stoppingToken)
     {
-        var items = await DbContext.Items.ToListAsync(stoppingToken);
+        var items = await DbContext.Items
+            .Where(i => i.Type != "Unused")
+            .ToListAsync(stoppingToken);
 
         return items.Select(item => item.AsDto());
     }
