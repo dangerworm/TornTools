@@ -1,6 +1,7 @@
 import { API_BASE_URL } from "../constants/ApiConstants";
 import type { ForeignStockItem } from "../types/foreignStockItems";
 import type { Item } from "../types/items";
+import type { HistoryWindow, ItemHistoryPoint } from "../types/history";
 import type { ProfitableListing } from "../types/profitableListings";
 import type { ThemeDefinition, ThemeInput } from "../types/themes";
 import type { TornUserProfile } from "./tornapi";
@@ -25,6 +26,7 @@ const URL_POST_USER_DETAILS = `${API_BASE_URL}/PostUserDetails`;
 const URL_GET_THEMES = `${API_BASE_URL}/GetThemes`;
 const URL_POST_THEME = `${API_BASE_URL}/PostTheme`;
 const URL_POST_USER_THEME_SELECTION = `${API_BASE_URL}/PostUserThemeSelection`;
+const URL_ITEM_HISTORY_BASE = `${API_BASE_URL}/items`;
 
 export async function fetchItems(): Promise<Item[]> {
   const url = URL_ITEMS;
@@ -33,6 +35,44 @@ export async function fetchItems(): Promise<Item[]> {
   };
   const res = await fetch(url, { headers });
   let data: Item[] = [];
+  try {
+    data = await res.json();
+  } catch {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  }
+  return data;
+}
+
+export async function fetchItemPriceHistory(
+  itemId: number,
+  window: HistoryWindow
+): Promise<ItemHistoryPoint[]> {
+  const url = `${URL_ITEM_HISTORY_BASE}/${itemId}/history/price?window=${encodeURIComponent(window)}`;
+  const headers: Record<string, string> = {
+    accept: "application/json",
+  };
+
+  const res = await fetch(url, { headers });
+  let data: ItemHistoryPoint[] = [];
+  try {
+    data = await res.json();
+  } catch {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  }
+  return data;
+}
+
+export async function fetchItemVelocityHistory(
+  itemId: number,
+  window: HistoryWindow
+): Promise<ItemHistoryPoint[]> {
+  const url = `${URL_ITEM_HISTORY_BASE}/${itemId}/history/velocity?window=${encodeURIComponent(window)}`;
+  const headers: Record<string, string> = {
+    accept: "application/json",
+  };
+
+  const res = await fetch(url, { headers });
+  let data: ItemHistoryPoint[] = [];
   try {
     data = await res.json();
   } catch {

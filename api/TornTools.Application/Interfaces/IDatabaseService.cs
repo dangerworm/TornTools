@@ -14,6 +14,8 @@ public interface IDatabaseService
     Task<IEnumerable<ItemDto>> GetAllItemsAsync(CancellationToken stoppingToken);
     Task<int> GetNumberOfItemsAsync(CancellationToken stoppingToken);
     Task UpsertItemsAsync(IEnumerable<ItemDto> items, CancellationToken stoppingToken);
+    Task<IEnumerable<ItemHistoryPointDto>> GetItemPriceHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken);
+    Task<IEnumerable<ItemHistoryPointDto>> GetItemVelocityHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken);
     
     Task CreateListingsAsync(IEnumerable<ListingDto> listings, CancellationToken stoppingToken);
     Task<IEnumerable<ListingDto>> GetListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken);

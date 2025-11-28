@@ -1,8 +1,33 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Box, Card, Chip, Grid, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Card,
+  CardContent,
+  CardHeader,
+  Chip,
+  Grid,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import Loading from "../components/Loading";
+import { useItemPriceHistory, useItemVelocityHistory } from "../hooks/useItemHistory";
 import { useItems } from "../hooks/useItems";
+import type { HistoryWindow } from "../types/history";
 import type { Item } from "../types/items";
 
 interface InfoCardProps {
@@ -54,11 +79,99 @@ const InfoCard = ({
   );
 };
 
+const HISTORY_WINDOWS: { label: string; value: HistoryWindow }[] = [
+  { label: "30m", value: "30m" },
+  { label: "1h", value: "1h" },
+  { label: "4h", value: "4h" },
+  { label: "Day", value: "1d" },
+  { label: "Week", value: "1w" },
+  { label: "Month", value: "1m" },
+  { label: "3m", value: "3m" },
+  { label: "Year", value: "1y" },
+];
+
 const ItemDetails = () => {
   const { itemId } = useParams<{ itemId: string }>();
   const { itemsById } = useItems();
+  const theme = useTheme();
+
+  const [priceWindow, setPriceWindow] = useState<HistoryWindow>("1d");
+  const [velocityWindow, setVelocityWindow] = useState<HistoryWindow>("1d");
 
   const [item, setItem] = useState<Item | null>(null);
+
+  const {
+    data: priceHistory,
+    loading: priceHistoryLoading,
+    error: priceHistoryError,
+  } = useItemPriceHistory(item?.id, priceWindow);
+
+  const {
+    data: velocityHistory,
+    loading: velocityHistoryLoading,
+    error: velocityHistoryError,
+  } = useItemVelocityHistory(item?.id, velocityWindow);
+
+  const timestampFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(undefined, {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      }),
+    []
+  );
+
+  const priceSeries = useMemo(
+    () =>
+      priceHistory
+        .filter((point) => typeof point.price === "number")
+        .map((point) => ({
+          time: new Date(point.timestamp).getTime(),
+          price: point.price ?? 0,
+        })),
+    [priceHistory]
+  );
+
+  const velocitySeries = useMemo(
+    () =>
+      velocityHistory
+        .filter((point) => typeof point.velocity === "number")
+        .map((point) => ({
+          time: new Date(point.timestamp).getTime(),
+          velocity: point.velocity ?? 0,
+        })),
+    [velocityHistory]
+  );
+
+  const gridColor = alpha(theme.palette.text.primary, 0.12);
+  const axisColor = theme.palette.text.secondary;
+  const areaFill = alpha(theme.palette.primary.main, 0.18);
+  const areaStroke = theme.palette.primary.main;
+  const barColor = theme.palette.secondary.main;
+
+  const formatTimestamp = (value: number) => timestampFormatter.format(new Date(value));
+  const formatPrice = (value: number) => `$${value.toLocaleString()}`;
+
+  const renderWindowToggle = (
+    selected: HistoryWindow,
+    onChange: (window: HistoryWindow) => void
+  ) => (
+    <ToggleButtonGroup
+      exclusive
+      size="small"
+      value={selected}
+      color="primary"
+      onChange={(_, value) => value && onChange(value)}
+    >
+      {HISTORY_WINDOWS.map((window) => (
+        <ToggleButton key={window.value} value={window.value}>
+          {window.label}
+        </ToggleButton>
+      ))}
+    </ToggleButtonGroup>
+  );
 
   useEffect(() => {
     setItem(itemsById[Number(itemId)] || null);
@@ -144,6 +257,108 @@ const ItemDetails = () => {
               isCurrency={false}
               value={item?.circulation}
             />
+          </Grid>
+        </Grid>
+
+        <Grid size={{ xs: 12 }}>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Card
+                elevation={2}
+                sx={{ backgroundColor: "background.paper", height: "100%" }}
+              >
+                <CardHeader
+                  title="Price history"
+                  action={renderWindowToggle(priceWindow, setPriceWindow)}
+                  sx={{ pb: 0 }}
+                />
+                <CardContent>
+                  {priceHistoryLoading ? (
+                    <Loading message="Loading price history..." />
+                  ) : priceHistoryError ? (
+                    <Alert severity="error">{priceHistoryError}</Alert>
+                  ) : priceSeries.length ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <AreaChart data={priceSeries} margin={{ top: 10, right: 10, left: -10 }}>
+                        <defs>
+                          <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={areaStroke} stopOpacity={0.6} />
+                            <stop offset="95%" stopColor={areaStroke} stopOpacity={0.05} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid stroke={gridColor} strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="time"
+                          type="number"
+                          domain={["dataMin", "dataMax"]}
+                          tickFormatter={formatTimestamp}
+                          stroke={axisColor}
+                        />
+                        <YAxis tickFormatter={formatPrice} stroke={axisColor} />
+                        <Tooltip
+                          labelFormatter={(label) => formatTimestamp(label as number)}
+                          formatter={(value: number) => [formatPrice(value), "Price"]}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="price"
+                          stroke={areaStroke}
+                          fill="url(#priceGradient)"
+                          strokeWidth={2}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <Typography color="text.secondary" sx={{ mt: 1 }}>
+                      No price history available.
+                    </Typography>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Card
+                elevation={2}
+                sx={{ backgroundColor: "background.paper", height: "100%" }}
+              >
+                <CardHeader
+                  title="Market velocity"
+                  action={renderWindowToggle(velocityWindow, setVelocityWindow)}
+                  sx={{ pb: 0 }}
+                />
+                <CardContent>
+                  {velocityHistoryLoading ? (
+                    <Loading message="Loading market velocity..." />
+                  ) : velocityHistoryError ? (
+                    <Alert severity="error">{velocityHistoryError}</Alert>
+                  ) : velocitySeries.length ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={velocitySeries} margin={{ top: 10, right: 10, left: -10 }}>
+                        <CartesianGrid stroke={gridColor} strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="time"
+                          type="number"
+                          domain={["dataMin", "dataMax"]}
+                          tickFormatter={formatTimestamp}
+                          stroke={axisColor}
+                        />
+                        <YAxis allowDecimals={false} stroke={axisColor} />
+                        <Tooltip
+                          labelFormatter={(label) => formatTimestamp(label as number)}
+                          formatter={(value: number) => [value.toLocaleString(), "Changes"]}
+                        />
+                        <Bar dataKey="velocity" fill={barColor} radius={[6, 6, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <Typography color="text.secondary" sx={{ mt: 1 }}>
+                      No recent change data available.
+                    </Typography>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
           </Grid>
         </Grid>
       </Grid>
