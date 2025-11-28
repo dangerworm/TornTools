@@ -19,7 +19,9 @@ public class TornItemsApiCallHandler(
         var payload = JsonSerializer.Deserialize<ItemsPayload>(content)
             ?? throw new Exception($"Failed to deserialize {nameof(ItemsPayload)} from API response.");
         
-        var items = payload.Items.Select(item => new ItemDto(item));
+        var items = payload.Items
+            .Where(item => !string.Equals(item.Type, "Unused", StringComparison.InvariantCultureIgnoreCase))
+            .Select(item => new ItemDto(item));
 
         await DatabaseService.UpsertItemsAsync(items, stoppingToken);
     }
