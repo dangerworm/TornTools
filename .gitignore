@@ -156,6 +156,3 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 client/package-lock.json
 infra/.terraform.lock.hcl
-
-# Custom
-client/src/package-lock.json
