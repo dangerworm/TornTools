@@ -1,5 +1,3 @@
-using System;
-
 namespace TornTools.Core.DataTransferObjects;
 
 public class ItemHistoryPointDto

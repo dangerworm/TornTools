@@ -23,7 +23,7 @@ import { getSecondsSinceLastUpdate, timeAgo } from "../lib/time";
 import type { ProfitableListing } from "../types/profitableListings";
 import { useThemeSettings } from "../hooks/useThemeSettings";
 
-const MotionTableRow = motion(TableRow);
+const MotionTableRow = motion.create(TableRow);
 
 interface MarketItemsTableProps {
   rows: ProfitableListing[];

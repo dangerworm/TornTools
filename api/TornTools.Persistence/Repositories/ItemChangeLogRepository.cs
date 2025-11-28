@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Npgsql.EntityFrameworkCore.PostgreSQL;
+using Npgsql;
 using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Enums;
 using TornTools.Core.Extensions;
@@ -17,6 +14,17 @@ public class ItemChangeLogRepository(
     TornToolsDbContext dbContext
 ) : RepositoryBase<ItemChangeLogRepository>(logger, dbContext), IItemChangeLogRepository
 {
+    private const string ItemMarketHistoryPointQuery = @"SELECT
+    to_timestamp(
+        floor(extract(epoch from ""change_time"") / @bucket) * @bucket
+    ) AS ""Bucket"",
+    AVG(""new_price"") AS ""AveragePrice"",
+    COUNT(*) AS ""Count""
+FROM ""public"".""item_change_logs""
+WHERE ""change_time"" > @cutoffDate AND ""item_id"" = @itemId
+GROUP BY ""Bucket""
+ORDER BY ""Bucket""";
+
     public async Task<ItemChangeLogDto> CreateItemChangeLogAsync(ItemChangeLogDto itemChangeLogDto, CancellationToken stoppingToken)
     {
         var itemChangeLog = CreateEntityFromDto(itemChangeLogDto);
@@ -39,54 +47,40 @@ public class ItemChangeLogRepository(
     {
         var buckets = await GetAggregatedHistoryAsync(itemId, window, stoppingToken);
 
-        return buckets
+        return [.. buckets
             .Select(b => new ItemHistoryPointDto
             {
-                Timestamp = b.Timestamp,
-                Price = (long)Math.Round(b.AveragePrice)
-            })
-            .ToList();
+                Timestamp = b.Bucket,
+                Price = (long)Math.Round(b.AveragePrice ?? 0)
+            })];
     }
 
     public async Task<IEnumerable<ItemHistoryPointDto>> GetItemVelocityHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken)
     {
         var buckets = await GetAggregatedHistoryAsync(itemId, window, stoppingToken);
 
-        return buckets
+        return [.. buckets
             .Select(b => new ItemHistoryPointDto
             {
-                Timestamp = b.Timestamp,
+                Timestamp = b.Bucket,
                 Velocity = b.Count
-            })
-            .ToList();
+            })];
     }
 
-    private async Task<List<HistoryAggregation>> GetAggregatedHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken)
+    private async Task<IEnumerable<ItemMarketHistoryPointEntity>> GetAggregatedHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken)
     {
         var (range, bucket) = window.ToWindowConfiguration();
         var bucketSeconds = bucket.TotalSeconds;
         var cutoffDate = DateTime.UtcNow.Subtract(range);
 
-        var groupedBuckets = await DbContext.ItemChangeLogs
-            .Where(cl => cl.ItemId == itemId && cl.ChangeTime >= cutoffDate)
-            .GroupBy(cl => Math.Floor((NpgsqlDbFunctionsExtensions.DatePart(EF.Functions, "epoch", cl.ChangeTime) ?? 0d) / bucketSeconds))
-            .Select(g => new
-            {
-                Bucket = g.Key,
-                AveragePrice = g.Average(cl => (double)cl.NewPrice),
-                Count = g.Count()
-            })
+        return await DbContext.Set<ItemMarketHistoryPointEntity>()
+            .FromSqlRaw(
+                ItemMarketHistoryPointQuery,
+                new NpgsqlParameter("bucket", bucketSeconds),
+                new NpgsqlParameter("cutoffDate", cutoffDate),
+                new NpgsqlParameter("itemId", itemId)
+            )
             .ToListAsync(stoppingToken);
-
-        return groupedBuckets
-            .Select(g => new HistoryAggregation
-            {
-                Timestamp = DateTimeOffset.FromUnixTimeSeconds((long)(g.Bucket * bucketSeconds)).UtcDateTime,
-                AveragePrice = g.AveragePrice,
-                Count = g.Count
-            })
-            .OrderBy(g => g.Timestamp)
-            .ToList();
     }
 
     private static ItemChangeLogEntity CreateEntityFromDto(ItemChangeLogDto itemDto)
@@ -99,12 +93,5 @@ public class ItemChangeLogRepository(
             ChangeTime = itemDto.ChangeTime,
             NewPrice = itemDto.NewPrice
         };
-    }
-
-    private sealed class HistoryAggregation
-    {
-        public required DateTime Timestamp { get; init; }
-        public required double AveragePrice { get; init; }
-        public required int Count { get; init; }
     }
 }

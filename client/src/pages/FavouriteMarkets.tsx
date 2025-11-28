@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   Alert,
   Box,
@@ -12,18 +12,23 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
+import Favorite from "@mui/icons-material/Favorite";
+import FavoriteBorder from "@mui/icons-material/FavoriteBorder";
 import { Link as RouterLink } from "react-router-dom";
 import { useUser } from "../hooks/useUser";
 import { useItems } from "../hooks/useItems";
 
 const FavouriteMarkets = () => {
-  const { dotNetUserDetails } = useUser();
+  const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser();
   const { itemsById } = useItems();
 
-  const favouriteItems = useMemo(
-    () => dotNetUserDetails?.favouriteItems ?? [],
-    [dotNetUserDetails?.favouriteItems]
-  );
+  const favouriteItems = useRef(dotNetUserDetails?.favouriteItems ?? []);
+
+  useEffect(() => {
+    if (favouriteItems.current.length === 0 && dotNetUserDetails?.favouriteItems) {
+      favouriteItems.current = dotNetUserDetails.favouriteItems;
+    }
+  }, [dotNetUserDetails?.favouriteItems]);
 
   if (!dotNetUserDetails) {
     return (
@@ -33,7 +38,7 @@ const FavouriteMarkets = () => {
     );
   }
 
-  if (!favouriteItems.length) {
+  if (!dotNetUserDetails?.favouriteItems.length) {
     return (
       <Alert severity="info" sx={{ width: "95%" }}>
         You have not saved any favourite markets yet. Use the heart icon in the
@@ -55,15 +60,32 @@ const FavouriteMarkets = () => {
         <Table size="small">
           <TableHead>
             <TableRow>
+              {dotNetUserDetails && <TableCell>Favourite</TableCell>}
               <TableCell>Item</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {favouriteItems.map((id) => {
+            {favouriteItems.current.map((id) => {
               const item = itemsById[id];
               return (
                 <TableRow key={id} hover>
+                  {dotNetUserDetails && (
+                    <TableCell
+                      align="left"
+                      onClick={() => toggleFavouriteItemAsync(id)}
+                    >
+                      {dotNetUserDetails.favouriteItems?.includes(id) ? (
+                        <Favorite
+                          sx={{ cursor: "pointer", color: "#1976d2" }}
+                        />
+                      ) : (
+                        <FavoriteBorder
+                          sx={{ cursor: "pointer", color: "gray" }}
+                        />
+                      )}
+                    </TableCell>
+                  )}
                   <TableCell>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <img
@@ -73,9 +95,8 @@ const FavouriteMarkets = () => {
                         height={24}
                         style={{ borderRadius: 4 }}
                         onError={(e) => {
-                          (
-                            e.currentTarget as HTMLImageElement
-                          ).style.display = "none";
+                          (e.currentTarget as HTMLImageElement).style.display =
+                            "none";
                         }}
                       />
                       <Typography variant="body2">

@@ -62,6 +62,8 @@ public class TornToolsDbContext(
             e.Property(x => x.IsFoundInCity).IsRequired();
         });
 
+        modelBuilder.Entity<ItemMarketHistoryPointEntity>().HasNoKey();
+
         modelBuilder.Entity<ListingEntity>(e =>
         {
             e.HasKey(x => x.Id);

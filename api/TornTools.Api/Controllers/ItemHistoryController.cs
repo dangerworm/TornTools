@@ -1,8 +1,5 @@
-using System;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using TornTools.Application.Interfaces;
-using TornTools.Core.Enums;
 using TornTools.Core.Extensions;
 
 namespace TornTools.Api.Controllers;

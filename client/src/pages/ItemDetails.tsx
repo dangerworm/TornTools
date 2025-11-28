@@ -24,11 +24,17 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import Favorite from "@mui/icons-material/Favorite";
+import FavoriteBorder from "@mui/icons-material/FavoriteBorder";
 import Loading from "../components/Loading";
-import { useItemPriceHistory, useItemVelocityHistory } from "../hooks/useItemHistory";
+import {
+  useItemPriceHistory,
+  useItemVelocityHistory,
+} from "../hooks/useItemHistory";
 import { useItems } from "../hooks/useItems";
 import type { HistoryWindow } from "../types/history";
 import type { Item } from "../types/items";
+import { useUser } from "../hooks/useUser";
 
 interface InfoCardProps {
   heading: string;
@@ -44,7 +50,7 @@ const InfoCard = ({
   value,
 }: InfoCardProps) => {
   return (
-    <Grid size={{ xs: 12, md: 3 }}>
+    <Grid size={{ xs: 6, md: 3 }}>
       <Card
         elevation={2}
         sx={{
@@ -93,6 +99,7 @@ const HISTORY_WINDOWS: { label: string; value: HistoryWindow }[] = [
 const ItemDetails = () => {
   const { itemId } = useParams<{ itemId: string }>();
   const { itemsById } = useItems();
+  const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser();
   const theme = useTheme();
 
   const [priceWindow, setPriceWindow] = useState<HistoryWindow>("1d");
@@ -147,11 +154,11 @@ const ItemDetails = () => {
 
   const gridColor = alpha(theme.palette.text.primary, 0.12);
   const axisColor = theme.palette.text.secondary;
-  const areaFill = alpha(theme.palette.primary.main, 0.18);
   const areaStroke = theme.palette.primary.main;
   const barColor = theme.palette.secondary.main;
 
-  const formatTimestamp = (value: number) => timestampFormatter.format(new Date(value));
+  const formatTimestamp = (value: number) =>
+    timestampFormatter.format(new Date(value));
   const formatPrice = (value: number) => `$${value.toLocaleString()}`;
 
   const renderWindowToggle = (
@@ -199,8 +206,31 @@ const ItemDetails = () => {
             {item?.type && item?.subType && ` (${item.type} – ${item.subType})`}
           </Typography>
         </Grid>
-        <Grid size={{ xs: 2 }} sx={{ textAlign: "right", mt: 1, mr: 4 }}>
+
+        <Grid sx={{ flexGrow: 0, mt: 1, mr: 4, textAlign: "right" }}>
           {item?.isTradable && <Chip label="Tradable" color="primary" />}
+        </Grid>
+
+        <Grid sx={{ flexGrow: 0, mt: 1, mr: 4, textAlign: "right" }}>
+          {dotNetUserDetails && (
+            <Chip
+              label={dotNetUserDetails.favouriteItems?.includes(item.id) ? "Favourited" : "Favourite"}
+              icon={
+                dotNetUserDetails.favouriteItems?.includes(item.id) ? (
+                  <Favorite sx={{ cursor: "pointer", color: "red" }} />
+                ) : (
+                  <FavoriteBorder sx={{ cursor: "pointer", color: "gray" }} />
+                )
+              }
+              color={
+                dotNetUserDetails.favouriteItems?.includes(item.id)
+                  ? "secondary"
+                  : "default"
+              }
+              onClick={() => toggleFavouriteItemAsync(item.id)}
+              sx={{ pl: 0.5 }}
+            ></Chip>
+          )}
         </Grid>
 
         <Grid size={{ xs: 12 }}>
@@ -220,8 +250,8 @@ const ItemDetails = () => {
                 .
               </>
             )}
-            {item.effect ? <>{" "}{item.effect}</> : ""}
-            {item.requirement ? <>{" "}{item.requirement}</> : ""}
+            {item.effect ? <> {item.effect}</> : ""}
+            {item.requirement ? <> {item.requirement}</> : ""}
           </Typography>
         </Grid>
 
@@ -246,8 +276,8 @@ const ItemDetails = () => {
               heading="Market Price"
               isCurrency={true}
               isProfitable={
-                !item.valueBuyPrice ||
-                !item.valueMarketPrice ||
+                !!item.valueBuyPrice &&
+                !!item.valueMarketPrice &&
                 item.valueMarketPrice > item.valueBuyPrice
               }
               value={item?.valueMarketPrice}
@@ -279,14 +309,34 @@ const ItemDetails = () => {
                     <Alert severity="error">{priceHistoryError}</Alert>
                   ) : priceSeries.length ? (
                     <ResponsiveContainer width="100%" height={300}>
-                      <AreaChart data={priceSeries} margin={{ top: 10, right: 10, left: -10 }}>
+                      <AreaChart
+                        data={priceSeries}
+                        margin={{ top: 10, right: 10, left: -10 }}
+                      >
                         <defs>
-                          <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={areaStroke} stopOpacity={0.6} />
-                            <stop offset="95%" stopColor={areaStroke} stopOpacity={0.05} />
+                          <linearGradient
+                            id="priceGradient"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                          >
+                            <stop
+                              offset="5%"
+                              stopColor={areaStroke}
+                              stopOpacity={0.6}
+                            />
+                            <stop
+                              offset="95%"
+                              stopColor={areaStroke}
+                              stopOpacity={0.05}
+                            />
                           </linearGradient>
                         </defs>
-                        <CartesianGrid stroke={gridColor} strokeDasharray="3 3" />
+                        <CartesianGrid
+                          stroke={gridColor}
+                          strokeDasharray="3 3"
+                        />
                         <XAxis
                           dataKey="time"
                           type="number"
@@ -296,8 +346,13 @@ const ItemDetails = () => {
                         />
                         <YAxis tickFormatter={formatPrice} stroke={axisColor} />
                         <Tooltip
-                          labelFormatter={(label) => formatTimestamp(label as number)}
-                          formatter={(value: number) => [formatPrice(value), "Price"]}
+                          labelFormatter={(label) =>
+                            formatTimestamp(label as number)
+                          }
+                          formatter={(value: number) => [
+                            formatPrice(value),
+                            "Price",
+                          ]}
                         />
                         <Area
                           type="monotone"
@@ -334,8 +389,14 @@ const ItemDetails = () => {
                     <Alert severity="error">{velocityHistoryError}</Alert>
                   ) : velocitySeries.length ? (
                     <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={velocitySeries} margin={{ top: 10, right: 10, left: -10 }}>
-                        <CartesianGrid stroke={gridColor} strokeDasharray="3 3" />
+                      <BarChart
+                        data={velocitySeries}
+                        margin={{ top: 10, right: 10, left: -10 }}
+                      >
+                        <CartesianGrid
+                          stroke={gridColor}
+                          strokeDasharray="3 3"
+                        />
                         <XAxis
                           dataKey="time"
                           type="number"
@@ -345,10 +406,19 @@ const ItemDetails = () => {
                         />
                         <YAxis allowDecimals={false} stroke={axisColor} />
                         <Tooltip
-                          labelFormatter={(label) => formatTimestamp(label as number)}
-                          formatter={(value: number) => [value.toLocaleString(), "Changes"]}
+                          labelFormatter={(label) =>
+                            formatTimestamp(label as number)
+                          }
+                          formatter={(value: number) => [
+                            value.toLocaleString(),
+                            "Changes",
+                          ]}
                         />
-                        <Bar dataKey="velocity" fill={barColor} radius={[6, 6, 0, 0]} />
+                        <Bar
+                          dataKey="velocity"
+                          fill={barColor}
+                          radius={[6, 6, 0, 0]}
+                        />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
