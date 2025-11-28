@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "../lib/react-query";
 import {
   fetchItemPriceHistory,
   fetchItemVelocityHistory,
@@ -17,51 +17,44 @@ type HistoryFetcher = (
   window: HistoryWindow
 ) => Promise<ItemHistoryPoint[]>;
 
-const useHistoryFetcher = (
+const HISTORY_STALE_TIME_MS = 5 * 60 * 1000;
+
+const getErrorMessage = (error: unknown) => {
+  if (!error) return null;
+  return error instanceof Error ? error.message : "Failed to load history";
+};
+
+const useHistoryQuery = (
   fetcher: HistoryFetcher,
   itemId: number | undefined,
-  window: HistoryWindow
+  window: HistoryWindow,
+  keySuffix: string
 ): ItemHistoryState => {
-  const [data, setData] = useState<ItemHistoryPoint[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const query = useQuery<ItemHistoryPoint[]>({
+    queryKey: ["itemHistory", keySuffix, itemId, window],
+    queryFn: () => fetcher(itemId!, window),
+    enabled: !!itemId,
+    staleTime: HISTORY_STALE_TIME_MS,
+    initialData: [] as ItemHistoryPoint[],
+  });
 
-  const load = useCallback(async () => {
-    if (!itemId) {
-      setData([]);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const result = await fetcher(itemId, window);
-      setData(result);
-    } catch (e) {
-      if (e instanceof Error) {
-        setError(e.message);
-      } else {
-        setError("Failed to load history");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [fetcher, itemId, window]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  return { data, loading, error, refresh: load };
+  return {
+    data: query.data ?? [],
+    loading: query.isLoading,
+    error: getErrorMessage(query.error),
+    refresh: async () => {
+      if (!itemId) return;
+      await query.refetch();
+    },
+  };
 };
 
 export const useItemPriceHistory = (
   itemId: number | undefined,
   window: HistoryWindow
-) => useHistoryFetcher(fetchItemPriceHistory, itemId, window);
+) => useHistoryQuery(fetchItemPriceHistory, itemId, window, "price");
 
 export const useItemVelocityHistory = (
   itemId: number | undefined,
   window: HistoryWindow
-) => useHistoryFetcher(fetchItemVelocityHistory, itemId, window);
+) => useHistoryQuery(fetchItemVelocityHistory, itemId, window, "velocity");

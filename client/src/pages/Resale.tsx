@@ -7,7 +7,7 @@ import { useState } from "react";
 import SteppedSlider from "../components/SteppedSlider";
 
 const Resale = () => {
-  const { items } = useItems();
+  const { items, loading } = useItems();
 
   const minuteRangeValues = [
     1, 2, 3, 5, 10, 30, 60, 120
@@ -40,7 +40,7 @@ const Resale = () => {
     setMaxTimeSinceLastUpdate(newValue);
   }
 
-  if (!items) return <Loading />;
+  if (loading) return <Loading />;
 
   return (
     <Box>

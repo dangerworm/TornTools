@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Box, Chip, Divider, Typography } from "@mui/material";
+import { Alert, Box, Chip, Divider, Typography } from "@mui/material";
 import Loading from "../components/Loading";
 import ForeignMarketItemsTable from "../components/ForeignMarketItemsTable";
 import { useForeignStockItems } from "../hooks/useForeignStockItems";
@@ -12,15 +12,11 @@ const itemTypesOfInterest = [
 ];
 
 const ForeignMarkets = () => {
-  const { items, refresh } = useForeignStockItems();
+  const { items, loading, error } = useForeignStockItems();
   const { apiKey, tornUserProfile, fetchTornProfileAsync } = useUser();
 
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>(itemTypesOfInterest);
-
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
 
   useEffect(() => {
     if (!apiKey) {
@@ -74,7 +70,8 @@ const ForeignMarkets = () => {
     });
   };
 
-  if (!items) return <Loading message="Loading items..." />;
+  if (loading) return <Loading message="Loading items..." />;
+  if (error) return <Alert severity="error">{error}</Alert>;
 
   return (
     <Box>
