@@ -1,7 +1,9 @@
 using Hangfire;
 using TornTools.Api;
+using TornTools.Api.Observability;
 using TornTools.Application;
 using TornTools.Application.Interfaces;
+using TornTools.Application.Observability;
 using TornTools.Core;
 using TornTools.Core.Configurations;
 using TornTools.Core.Constants;
@@ -13,11 +15,21 @@ using TornTools.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Logging.ClearProviders();
+builder.Logging.AddJsonConsole(options =>
+{
+    options.IncludeScopes = true;
+    options.TimestampFormat = "yyyy-MM-ddTHH:mm:ss.fffZ";
+    options.UseUtcTimestamp = true;
+});
+
 builder.Services.AddCorsPolicy();
 builder.Services.AddDatabase(builder.Configuration);
 builder.Services.AddHangfire(builder.Configuration);
 builder.Services.AddHttpClient();
 builder.Services.AddConfiguration(builder.Configuration);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<IMetricsCollector, MetricsCollector>();
 builder.Services.AddDependencies();
 
 builder.Services.AddControllers();
@@ -60,6 +72,9 @@ jobScheduler.RegisterRecurringJobs();
 
 app.UseHttpsRedirection();
 
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<RequestLoggingMiddleware>();
+
 app.UseRouting();
 
 app.UseCors(ApiConstants.CorsPolicy);
@@ -67,5 +82,7 @@ app.UseCors(ApiConstants.CorsPolicy);
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapGet("/metrics", (IMetricsCollector metrics) => Results.Json(metrics.CreateSnapshot()));
 
 await app.RunAsync();

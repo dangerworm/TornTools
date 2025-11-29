@@ -10,8 +10,9 @@ public class TornApiCaller(
     ILogger<TornApiCaller> logger,
     IApiCallHandlerResolver callHandlerResolver,
     IDatabaseService databaseService,
-    IHttpClientFactory httpClientFactory
-) : ApiCaller<TornApiCaller>(logger, callHandlerResolver, databaseService, httpClientFactory), IApiCaller
+    IHttpClientFactory httpClientFactory,
+    IMetricsCollector metricsCollector
+) : ApiCaller<TornApiCaller>(logger, callHandlerResolver, databaseService, httpClientFactory, metricsCollector), IApiCaller
 {
     public override IEnumerable<ApiCallType> CallTypes =>
     [
