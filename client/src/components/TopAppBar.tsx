@@ -5,14 +5,16 @@ import {
   IconButton,
   Typography,
   Box,
-  Button,
   Menu,
   MenuItem,
   TextField,
   Autocomplete,
+  Divider,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-import { Link, useNavigate } from "react-router-dom";
+import AccountCircle from "@mui/icons-material/AccountCircle";
+import AccountCircleOutlined from "@mui/icons-material/AccountCircleOutlined";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "../hooks/useUser";
 import "../index.css";
 import { useItems } from "../hooks/useItems";
@@ -49,8 +51,8 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
       position="fixed"
       sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
     >
-      <Toolbar>
-        <Box sx={{ display: "flex", alignItems: "center", mr: 2 }}>
+      <Toolbar sx={{ gap: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
           {/* Hamburger only on small screens */}
           <IconButton
             color="inherit"
@@ -62,12 +64,26 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
             <MenuIcon />
           </IconButton>
 
-          <Typography variant="h6" noWrap component="div" className="geo">
+          <Typography
+            variant="h6"
+            noWrap
+            component="div"
+            className="geo"
+            sx={{ display: { xs: "none", sm: "block" } }}
+          >
             dangerworm's Torn Tools
           </Typography>
         </Box>
 
-        <Box sx={{ alignItems: "center", ml: "auto", mr: "auto" }}>
+        <Box
+          sx={{
+            alignItems: "center",
+            display: "flex",
+            flexGrow: 1,
+            justifyContent: { xs: "flex-start", sm: "center" },
+            mr: { xs: 1, sm: 0 },
+          }}
+        >
           <Autocomplete
             disablePortal
             options={items.map(i => ({label: i.name, id: i.id}))}
@@ -76,14 +92,23 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
                 navigate(`/item/${value.id}`);
               }
             }}
-            sx={{ 
+            sx={{
               borderRadius: 1,
-              width: 300 
+              width: { xs: 250, sm: 300 },
+              maxWidth: { xs: 250, sm: 400 },
+            }}
+            slotProps={{
+              paper: {
+                sx: (theme) => ({
+                  bgcolor: theme.palette.background.paper,
+                  color: theme.palette.text.primary,
+                }),
+              },
             }}
             renderInput={(params) =>
               <TextField
                 {...params}
-                placeholder="Search items..." 
+                placeholder="Search items..."
                 size="small"
                 variant="outlined"
               />
@@ -92,22 +117,37 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
         </Box>
 
         <Box sx={{ ml: "auto" }}>
-          {dotNetUserDetails ? (
-            <>
-              <Button
-                color="inherit"
-                onClick={handleOpenMenu}
-                sx={{ textTransform: "none" }}
-              >
-                <Typography variant="h6" noWrap component="div" className="geo">
-                  {dotNetUserDetails.name} [{dotNetUserDetails.id}]
-                </Typography>
-              </Button>
-              <Menu
-                anchorEl={menuAnchor}
-                open={Boolean(menuAnchor)}
-                onClose={handleCloseMenu}
-              >
+          <IconButton
+            color="inherit"
+            onClick={handleOpenMenu}
+            aria-label="user menu"
+            aria-controls={menuAnchor ? "user-menu" : undefined}
+            aria-haspopup="true"
+            sx={{
+              color: (theme) =>
+                dotNetUserDetails
+                  ? theme.palette.primary.contrastText
+                  : theme.palette.action.active,
+            }}
+          >
+            {dotNetUserDetails ? <AccountCircle /> : <AccountCircleOutlined />}
+          </IconButton>
+          <Menu
+            id="user-menu"
+            anchorEl={menuAnchor}
+            open={Boolean(menuAnchor)}
+            onClose={handleCloseMenu}
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            transformOrigin={{ vertical: "top", horizontal: "right" }}
+          >
+            {dotNetUserDetails ? (
+              <>
+                <MenuItem disabled sx={{ opacity: 1, cursor: "default" }}>
+                  <Typography variant="body2" component="div">
+                    {dotNetUserDetails.name} [{dotNetUserDetails.id}]
+                  </Typography>
+                </MenuItem>
+                <Divider sx={{ my: 0.5 }} />
                 <MenuItem onClick={() => handleMenuNavigation("/favourites")}>
                   Favourite markets
                 </MenuItem>
@@ -115,20 +155,13 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
                   User settings
                 </MenuItem>
                 <MenuItem onClick={handleSignOut}>Sign out</MenuItem>
-              </Menu>
-            </>
-          ) : (
-            <Button
-              color="inherit"
-              component={Link}
-              to="/signin"
-              sx={{ textTransform: "none" }}
-            >
-              <Typography variant="h6" noWrap component="div" className="geo">
+              </>
+            ) : (
+              <MenuItem onClick={() => handleMenuNavigation("/signin")}>
                 Sign in
-              </Typography>
-            </Button>
-          )}
+              </MenuItem>
+            )}
+          </Menu>
         </Box>
       </Toolbar>
     </AppBar>
