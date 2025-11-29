@@ -9,3 +9,11 @@ const configuredApiUrl =
 console.log("configuredApiUrl", configuredApiUrl)
 
 export const API_BASE_URL = configuredApiUrl.replace(/\/$/, "");
+
+const bazaarUrl =
+  import.meta.env.VITE_WEAV3R_BAZAAR_URL &&
+  import.meta.env.VITE_WEAV3R_BAZAAR_URL.trim().length > 0
+    ? import.meta.env.VITE_WEAV3R_BAZAAR_URL.trim()
+    : null;
+
+export const BAZAAR_SOURCE_URL = bazaarUrl;

@@ -5,6 +5,7 @@ import { useItems } from "../hooks/useItems";
 import MarketItemsTable from "../components/MarketItemTable";
 import { useState } from "react";
 import SteppedSlider from "../components/SteppedSlider";
+import { useBazaarCollector } from "../hooks/useBazaarCollector";
 
 const Resale = () => {
   const { items } = useItems();
@@ -27,6 +28,7 @@ const Resale = () => {
   const [maxTimeSinceLastUpdate, setMaxTimeSinceLastUpdate] = useState(minuteRangeValues[initialMaxTimeSinceLastUpdateIndex]);
 
   const { rows, error } = useResaleScan(items, { intervalMs: 1000 });
+  const { lastSync: bazaarLastSync, error: bazaarError, hasEndpoint } = useBazaarCollector(Boolean(items?.length));
 
   const handleMinProfitSliderValueChange = (newValue: number) => {
     setMinProfit(newValue);
@@ -54,6 +56,14 @@ const Resale = () => {
         low and sell high.
       </Typography>
 
+      {hasEndpoint && (
+        <Typography variant="body2" color={bazaarError ? "error" : "textSecondary"} gutterBottom>
+          Bazaar listings are refreshed in the background while this page stays open
+          {bazaarLastSync ? ` (last sync ${bazaarLastSync.toLocaleTimeString()})` : "."}
+          {bazaarError ? ` ${bazaarError}` : ""}
+        </Typography>
+      )}
+
       <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
         Filters
       </Typography>
@@ -79,7 +89,7 @@ const Resale = () => {
             onValueChange={handleMaxBuyPriceSliderValueChange}
           />
         </Grid>
-         <Grid size={{ xs: 12, sm: 6, md: 4 }} alignItems="center">
+        <Grid size={{ xs: 12, sm: 6, md: 4 }} alignItems="center">
           <SteppedSlider
             label="Max Time Since Last Update"
             prefixUnit=""

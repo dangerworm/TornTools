@@ -125,7 +125,7 @@ export const UserProvider = ({
         updateCacheTimestamp();
       } catch (e) {
         // If deliberately cancelled, don't show an error
-        if ((e as any)?.name === "AbortError") {
+        if (e instanceof DOMException && e.name === "AbortError") {
           return;
         }
         if (e instanceof Error) {

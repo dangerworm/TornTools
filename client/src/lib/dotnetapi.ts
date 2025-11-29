@@ -5,6 +5,7 @@ import type { HistoryWindow, ItemHistoryPoint } from "../types/history";
 import type { ProfitableListing } from "../types/profitableListings";
 import type { ThemeDefinition, ThemeInput } from "../types/themes";
 import type { TornUserProfile } from "./tornapi";
+import type { BazaarListingSubmission } from "../types/bazaar";
 
 export interface DotNetUserDetails {
   apiKey: string;
@@ -21,6 +22,7 @@ export interface DotNetUserDetails {
 const URL_ITEMS = `${API_BASE_URL}/GetItems`;
 const URL_FOREIGN_STOCK_ITEMS = `${API_BASE_URL}/GetForeignStockItems`;
 const URL_PROFITABLE_LISTINGS = `${API_BASE_URL}/GetProfitableListings`;
+const URL_POST_BAZAAR_LISTINGS = `${API_BASE_URL}/PostBazaarListings`;
 const URL_POST_TOGGLE_USER_FAVOURITE = `${API_BASE_URL}/PostToggleUserFavourite`;
 const URL_POST_USER_DETAILS = `${API_BASE_URL}/PostUserDetails`;
 const URL_GET_THEMES = `${API_BASE_URL}/GetThemes`;
@@ -109,6 +111,21 @@ export async function fetchProfitableListings(): Promise<ProfitableListing[]> {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
   }
   return data;
+}
+
+export async function postBazaarListings(
+  listings: BazaarListingSubmission[]
+): Promise<void> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  const body = JSON.stringify(listings);
+  const res = await fetch(URL_POST_BAZAAR_LISTINGS, { method: "POST", headers, body });
+
+  if (!res.ok) {
+    throw new Error(`Failed to submit bazaar listings (HTTP ${res.status}).`);
+  }
 }
 
 export async function postUserDetails(

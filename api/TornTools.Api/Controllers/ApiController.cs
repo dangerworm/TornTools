@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 using TornTools.Application.Interfaces;
 using TornTools.Core.Models.InputModels;
+using TornTools.Core.DataTransferObjects;
+using TornTools.Core.Enums;
 
 namespace TornTools.Api.Controllers;
 
@@ -89,6 +92,51 @@ public class ApiController(
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
                 message = string.Format(ErrorMessage, "listings"),
+                details = ex.Message
+            });
+        }
+    }
+
+    [HttpPost(Name = "PostBazaarListings")]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> PostBazaarListings([FromBody] IEnumerable<BazaarListingInputModel> listings, CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (listings is null || !listings.Any())
+            {
+                return BadRequest("No bazaar listings were supplied.");
+            }
+
+            var correlationId = Guid.NewGuid();
+            var now = DateTime.UtcNow;
+
+            var dtoListings = listings
+                .Select((listing, index) => new ListingDto
+                {
+                    CorrelationId = correlationId,
+                    Source = Source.Weav3r,
+                    PlayerId = listing.PlayerId,
+                    ItemId = listing.ItemId,
+                    ListingPosition = listing.ListingPosition ?? index,
+                    TimeSeen = (listing.TimeSeen ?? now).ToUniversalTime(),
+                    Price = listing.Price,
+                    Quantity = listing.Quantity,
+                })
+                .ToList();
+
+            await _databaseService.CreateListingsAsync(dtoListings, cancellationToken);
+
+            return Accepted(new { correlationId, count = dtoListings.Count });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while processing bazaar listings.");
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                message = "An error occurred while processing bazaar listings.",
                 details = ex.Message
             });
         }

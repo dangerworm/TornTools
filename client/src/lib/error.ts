@@ -1,8 +1,11 @@
 export function toErrorMessage(e: unknown): string {
   if (e instanceof Error) return e.message;
   if (typeof e === 'string') return e;
-  if (e && typeof e === 'object' && 'message' in e && typeof (e as any).message === 'string') {
-    return (e as { message: string }).message;
+  if (e && typeof e === 'object' && 'message' in e) {
+    const message = (e as { message?: unknown }).message;
+    if (typeof message === 'string') {
+      return message;
+    }
   }
   try {
     return JSON.stringify(e);
