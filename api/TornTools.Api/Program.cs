@@ -1,5 +1,6 @@
 using Hangfire;
 using TornTools.Api;
+using TornTools.Api.Validation;
 using TornTools.Application;
 using TornTools.Application.Interfaces;
 using TornTools.Core;
@@ -21,6 +22,27 @@ builder.Services.AddConfiguration(builder.Configuration);
 builder.Services.AddDependencies();
 
 builder.Services.AddControllers();
+builder.Services.AddValidatorsFromAssemblyContaining<UserDetailsInputModelValidator>();
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationClientsideAdapters();
+
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState
+            .Where(entry => entry.Value?.Errors.Count > 0)
+            .ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value!.Errors.Select(error => error.ErrorMessage).ToArray());
+
+        return new BadRequestObjectResult(new
+        {
+            message = "Validation failed.",
+            errors
+        });
+    };
+});
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
