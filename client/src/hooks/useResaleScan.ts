@@ -1,5 +1,4 @@
 import { useQuery } from "./useQuery";
-import type { Item } from "../types/items";
 import { fetchProfitableListings } from "../lib/dotnetapi";
 import type { ProfitableListing } from "../types/profitableListings";
 
@@ -22,6 +21,7 @@ export function useResaleScan(
       const payload = await fetchProfitableListings();
       return payload;
     },
+    enabled: true,
     refetchInterval: intervalMs,
     staleTime: intervalMs,
     initialData: [],
