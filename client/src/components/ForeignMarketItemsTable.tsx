@@ -11,7 +11,6 @@ import {
 import { useUser } from "../hooks/useUser";
 import { type ForeignStockItem } from "../types/foreignStockItems";
 import ForeignMarketItemsTableRow from "./ForeignMarketItemsTableRow";
-import { useMemo } from "react";
 
 interface ForeignMarketItemsTableProps {
   items: ForeignStockItem[];
