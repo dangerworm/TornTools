@@ -1,5 +1,6 @@
 import { Slider, Typography } from "@mui/material";
 import { useState } from "react";
+import { getFormattedText, type PrefixUnit, type SuffixUnit } from "../lib/textFormat";
 
 interface SteppedSliderProps {
   initialValueIndex?: number;
@@ -9,30 +10,6 @@ interface SteppedSliderProps {
   sliderValues: number[];
   onValueChange: (newValue: number) => void;
 }
-
-type PrefixUnit = "$" | "";
-type SuffixUnit = "minute" | "";
-
-const getValueWithSuffix = (prefixUnit: PrefixUnit, value: number, suffixUnit: SuffixUnit): string => {
-  const outputValue = value.toLocaleString();
-  
-  if (suffixUnit === "") {
-    return `${prefixUnit}${outputValue}`;
-  }
-
-  if (suffixUnit === "minute" && value > 59) {
-    const hours = Math.floor(value / 60);
-    const suffix = hours === 1 ? "hour" : "hours";
-    return `${hours} ${suffix}`;
-  }
-
-  if (suffixUnit === "minute") {
-    const suffix = value === 1 ? "minute" : "minutes";
-    return `${value} ${suffix}`;
-  }
-
-  return outputValue;
-};
 
 export default function SteppedSlider({
   sliderValues,
@@ -55,7 +32,7 @@ export default function SteppedSlider({
     <>
       <Typography gutterBottom>
         <strong>{label}:</strong>{" "}
-        {getValueWithSuffix(prefixUnit, sliderValues[sliderValueIndex], suffixUnit)}
+        {getFormattedText(prefixUnit, sliderValues[sliderValueIndex], suffixUnit)}
       </Typography>
       <Slider
         value={sliderValueIndex}

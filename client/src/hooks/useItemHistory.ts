@@ -1,4 +1,4 @@
-import { useQuery } from "../lib/react-query";
+import { useQuery } from "./useQuery";
 import {
   fetchItemPriceHistory,
   fetchItemVelocityHistory,

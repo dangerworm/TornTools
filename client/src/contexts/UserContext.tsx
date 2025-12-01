@@ -64,7 +64,6 @@ export const UserProvider = ({
   }, []);
 
   const clearAllUserData = useCallback(() => {
-    console.log("Clearing all user data");
     // Abort any in-flight Torn request
     if (abortRef.current) {
       abortRef.current.abort();
@@ -102,7 +101,6 @@ export const UserProvider = ({
 
   const fetchTornProfileAsync = useCallback(
     async (key: string) => {
-      console.log("Fetching Torn user profile");
       setLoadingTornUserProfile(true);
       setErrorTornUserProfile(null);
 
@@ -137,15 +135,13 @@ export const UserProvider = ({
         setLoadingTornUserProfile(false);
       }
     },
-    [apiKey, updateCacheTimestamp]
+    [updateCacheTimestamp]
   );
 
   // --- public setter for API key (called from UI when user types/pastes key) ---
 
   const setApiKey = useCallback(
     async (key: string | null) => {
-      console.log("setApiKey called with:", key);
-
       if (!key) {
         // Treat null/empty as logout
         clearAllUserData();
@@ -169,7 +165,6 @@ export const UserProvider = ({
   // --- "I agree to add this API key" flow ---
 
   const confirmApiKeyAsync = useCallback(async () => {
-    console.log("confirmApiKeyAsync called");
     if (!apiKey || !tornUserProfile) {
       console.warn(
         "Cannot confirm API key: missing apiKey or tornUserProfile"
@@ -194,7 +189,7 @@ export const UserProvider = ({
     } finally {
       setLoadingDotNetUserDetails(false);
     }
-  }, [apiKey, tornUserProfile, updateCacheTimestamp]);
+  }, [apiKey, tornUserProfile, updateDotNetUserDetails]);
 
   // --- favourites toggle ---
 
@@ -225,7 +220,7 @@ export const UserProvider = ({
         updateDotNetUserDetails(userData);
       }
     },
-    [dotNetUserDetails, updateCacheTimestamp, updateDotNetUserDetails]
+    [dotNetUserDetails, updateDotNetUserDetails]
   );
 
   // --- initial load: restore from cache if within TTL ---

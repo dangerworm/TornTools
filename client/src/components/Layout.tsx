@@ -20,23 +20,7 @@ import Footer from "./Footer";
 import { DRAWER_WIDTH } from "../constants";
 import "../index.css";
 import { useItems } from "../hooks/useItems";
-
-const menu = [
-  { label: "Home", to: "/", icon: <HomeIcon />, requiresItems: false },
-  {
-    label: "Markets",
-    to: "/markets",
-    icon: <Assessment />,
-    requiresItems: true,
-  },
-  { label: "Resale", to: "/resale", icon: <Sell />, requiresItems: true },
-  {
-    label: "Time",
-    to: "/time",
-    icon: <AccessTimeFilled />,
-    requiresItems: false,
-  },
-];
+import { useMemo } from "react";
 
 export default function Layout() {
   const { items } = useItems();
@@ -45,39 +29,64 @@ export default function Layout() {
 
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
 
-  // Mark the left-nav item as selected when on that route (or a sub-route)
-  const isActive = (to: string) => {
-    if (to === "/") return location.pathname === "/";
-    return location.pathname === to || location.pathname.startsWith(`${to}/`);
-  };
+  const drawerContent = useMemo(() => {
+    //Mark the left-nav item as selected when on that route (or a sub-route)
+    const isActive = (to: string) => {
+      if (to === "/") return location.pathname === "/";
+      return (location.pathname === to || location.pathname.startsWith(`${to}/`));
+    };
 
-  const drawerContent = (
-    <div>
-      {/* Spacer so content starts below the AppBar */}
-      <Toolbar />
-      <Divider />
-      <List>
-        {menu.map((item) => {
-          if (item.requiresItems && (!items || items.length === 0)) {
-            return null;
-          }
+    const menu = [
+      { label: "Home", to: "/", icon: <HomeIcon />, requiresItems: false },
+      {
+        label: "City Markets",
+        to: "/local-markets",
+        icon: <Assessment />,
+        requiresItems: true,
+      },
+      {
+        label: "Foreign Markets",
+        to: "/foreign-markets",
+        icon: <Assessment />,
+        requiresItems: true,
+      },
+      { label: "Resale", to: "/resale", icon: <Sell />, requiresItems: true },
+      {
+        label: "Time",
+        to: "/time",
+        icon: <AccessTimeFilled />,
+        requiresItems: false,
+      },
+    ];
 
-          return (
-            <ListItemButton
-              key={item.to}
-              component={NavLink}
-              to={item.to}
-              selected={isActive(item.to)}
-              onClick={() => setMobileOpen(false)} // close temporary drawer after click
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.label} />
-            </ListItemButton>
-          );
-        })}
-      </List>
-    </div>
-  );
+    return (
+      <div>
+        {/* Spacer so content starts below the AppBar */}
+        <Toolbar />
+        <Divider />
+        <List>
+          {menu.map((item) => {
+            if (item.requiresItems && (!items || items.length === 0)) {
+              return null;
+            }
+
+            return (
+              <ListItemButton
+                key={item.to}
+                component={NavLink}
+                to={item.to}
+                selected={isActive(item.to)}
+                onClick={() => setMobileOpen(false)} // close temporary drawer after click
+              >
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.label} />
+              </ListItemButton>
+            );
+          })}
+        </List>
+      </div>
+    );
+  }, [items, location.pathname]);
 
   return (
     <Box sx={{ display: "flex" }}>

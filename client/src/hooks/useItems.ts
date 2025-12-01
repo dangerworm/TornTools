@@ -1,7 +1,7 @@
 import { useMemo } from "react";
-import { useQuery } from "../lib/react-query";
 import { fetchItems } from "../lib/dotnetapi";
 import type { Item, ItemsMap } from "../types/items";
+import { useQuery } from "./useQuery";
 
 const LOCAL_STORAGE_KEY_ITEMS = "torntools:items:v1";
 const LOCAL_STORAGE_KEY_ITEMS_TIME_SERVED = "torntools:items:v1:ts";
@@ -64,7 +64,8 @@ export const useItems = (ttlMs = DEFAULT_TTL_MS) => {
     initialData: () => getCachedItems(ttlMs),
   });
 
-  const itemsById = query.data ?? {};
+  const itemsById = useMemo(() => query.data ?? {}, [query.data]);
+
   const items = useMemo(
     () => Object.values(itemsById).sort((a, b) => a.name.localeCompare(b.name)),
     [itemsById]
@@ -79,7 +80,7 @@ export const useItems = (ttlMs = DEFAULT_TTL_MS) => {
   return {
     items,
     itemsById,
-    loading: query.isLoading || (!query.data && query.isFetching),
+    loading: query.isLoading || query.isFetching,
     error,
     refresh: query.refetch,
   };

@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { useQuery } from "../lib/react-query";
+import { useEffect, useMemo } from "react";
+import { useQuery } from "./useQuery";
 import { fetchForeignStockItems } from "../lib/dotnetapi";
 import type {
   ForeignStockItem,
@@ -9,7 +9,7 @@ import type {
 const LOCAL_STORAGE_KEY_FOREIGN_STOCK_ITEMS = "torntools:foreignStockItems:v1";
 const LOCAL_STORAGE_KEY_FOREIGN_STOCK_ITEMS_TIME_SERVED =
   "torntools:foreignStockItems:v1:ts";
-const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_TTL_MS = 5 * 60 * 1000;
 
 const normalizeItems = (resp: ForeignStockItem[]): ForeignStockItemsMap => {
   const map: ForeignStockItemsMap = {};
@@ -72,7 +72,8 @@ export const useForeignStockItems = (ttlMs = DEFAULT_TTL_MS) => {
     initialData: () => getCachedItems(ttlMs),
   });
 
-  const itemsById = query.data ?? {};
+  const itemsById = useMemo(() => query.data ?? {}, [query.data]);
+
   const items = useMemo(
     () =>
       Object.values(itemsById).sort((a, b) =>
@@ -90,7 +91,7 @@ export const useForeignStockItems = (ttlMs = DEFAULT_TTL_MS) => {
   return {
     items,
     itemsById,
-    loading: query.isLoading || (!query.data && query.isFetching),
+    loading: query.isLoading || query.isFetching,
     error,
     refresh: query.refetch,
   };

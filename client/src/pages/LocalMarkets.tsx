@@ -1,17 +1,36 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useItems } from "../hooks/useItems";
-import { Box, Divider, Typography } from "@mui/material";
+import {
+  Box,
+  Checkbox,
+  Chip,
+  Divider,
+  FormControlLabel,
+  FormGroup,
+  Typography,
+} from "@mui/material";
 import Loading from "../components/Loading";
 import LocalMarketItemsTable from "../components/LocalMarketItemsTable";
+import { isItemProfitable } from "../types/items";
 
 const LocalMarkets = () => {
   const { items } = useItems();
+
+  const [showProfitableOnly, setShowProfitableOnly] = useState(true);
+  const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>([]);
 
   const countries = useMemo(() => {
     if (!items) return [];
     return Array.from(new Set(items.map((i) => i.valueVendorCountry)))
       .filter((country: string | undefined) => !country || country === "Torn")
       .sort();
+  }, [items]);
+
+  const itemTypes = useMemo(() => {
+    if (!items) return [];
+    return Array.from(
+      new Set(items.map((i) => i.type).filter((type) => type))
+    ).sort();
   }, [items]);
 
   if (!items) return <Loading message="Loading items..." />;
@@ -22,20 +41,70 @@ const LocalMarkets = () => {
         Local Markets
       </Typography>
 
-      {countries.map((country: string | undefined) => (
-        <Box key={country} sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            {country?.replace("Torn", "Torn City") ?? "No Vendor"}
-          </Typography>
+      <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
+        Filters
+      </Typography>
 
-          <LocalMarketItemsTable
-            items={items.filter((i) => i.valueVendorCountry === country)}
-            showVendor={false}
+      <FormGroup>
+        <FormControlLabel
+          control={
+            <Checkbox
+              defaultChecked
+              checked={showProfitableOnly}
+              onChange={() => setShowProfitableOnly(!showProfitableOnly)}
+            />
+          }
+          label="Show Profitable Items Only"
+        />
+      </FormGroup>
+
+      <Box>
+        <Chip
+          label="All Item Types"
+          variant={selectedItemTypes.length === 0 ? "filled" : "outlined"}
+          onClick={() => setSelectedItemTypes([])}
+          sx={{ mb: 1, mr: 1 }}
+        />
+        {itemTypes.map((type) => (
+          <Chip
+            key={type}
+            label={type}
+            color={"primary"}
+            variant={selectedItemTypes.includes(type!) ? "filled" : "outlined"}
+            onClick={() => {
+              if (!type) return;
+              setSelectedItemTypes((prev) =>
+                prev.includes(type!)
+                  ? prev.filter((t) => t !== type)
+                  : [...prev, type]
+              );
+            }}
+            sx={{ mb: 1, mr: 1 }}
           />
-        </Box>
-      ))}
+        ))}
+      </Box>
 
-      <Divider sx={{ my: 4 }} />
+      {countries.map((country: string | undefined) => (
+        <>
+          <Divider sx={{ my: 4 }} />
+
+          <Box key={country} sx={{ mb: 4, width: "95%" }}>
+            <Typography variant="h5" gutterBottom>
+              {country?.replace("Torn", "Torn City") ?? "No Vendor"}
+            </Typography>
+
+            <LocalMarketItemsTable
+              items={items.filter(
+                (i) =>
+                  (!showProfitableOnly || isItemProfitable(i)) &&
+                  (selectedItemTypes.length === 0 ||
+                    selectedItemTypes.includes(i.type!))
+              )}
+              showVendor={false}
+            />
+          </Box>
+        </>
+      ))}
     </Box>
   );
 };
