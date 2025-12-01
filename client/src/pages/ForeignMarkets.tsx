@@ -10,15 +10,15 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import Loading from "../components/Loading";
 import ForeignMarketItemsTable from "../components/ForeignMarketItemsTable";
-import { useForeignStockItems } from "../hooks/useForeignStockItems";
 import { useUser } from "../hooks/useUser";
+import { useForeignMarketsScan } from "../hooks/useForeignMarketsScan";
+import Loading from "../components/Loading";
 
 const itemTypesOfInterest = ["Drug", "Flower", "Plushie"];
 
 const ForeignMarkets = () => {
-  const { items, loading, error } = useForeignStockItems();
+  const { rows, error } = useForeignMarketsScan({ intervalMs: 60000 });
   const { apiKey, tornUserProfile, fetchTornProfileAsync } = useUser();
 
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
@@ -29,13 +29,13 @@ const ForeignMarkets = () => {
 
   const filteredItems = useMemo(() => {
     const lowerSearchTerm = searchTerm.toLowerCase();
-    return items.filter(
-      (item) =>
+    return rows.filter(
+      (row) =>
         (selectedItemTypes.length === 0 ||
-          selectedItemTypes.includes(item.item.type!)) &&
-        item.itemName.toLowerCase().includes(lowerSearchTerm)
+          selectedItemTypes.includes(row.item.type!)) &&
+        row.itemName.toLowerCase().includes(lowerSearchTerm)
     );
-  }, [items, searchTerm, selectedItemTypes]);
+  }, [rows, searchTerm, selectedItemTypes]);
 
   useEffect(() => {
     if (!apiKey) {
@@ -65,18 +65,18 @@ const ForeignMarkets = () => {
   }, [tornUserProfile]);
 
   const countries = useMemo(() => {
-    if (!items) return [];
-    return Array.from(new Set(items.map((i) => i.country)))
+    if (!rows) return [];
+    return Array.from(new Set(rows.map((i) => i.country)))
       .filter((country: string | undefined) => country && country !== "Torn")
       .sort();
-  }, [items]);
+  }, [rows]);
 
   const itemTypes = useMemo(() => {
-    if (!items) return [];
+    if (!rows) return [];
     return Array.from(
-      new Set(items.map((i) => i.item.type).filter((type) => type))
+      new Set(rows.map((i) => i.item.type).filter((type) => type))
     ).sort();
-  }, [items]);
+  }, [rows]);
 
   const handleCountryFilterChange = (country: string) => {
     setSelectedCountries((prevSelected) => {
@@ -88,9 +88,7 @@ const ForeignMarkets = () => {
     });
   };
 
-  console.log("items", items);
-
-  if (loading) return <Loading message="Loading items..." />;
+  if (!rows) return <Loading message="Loading foreign markets..." />;
   if (error) return <Alert severity="error">{error}</Alert>;
 
   return (
@@ -188,8 +186,6 @@ const ForeignMarkets = () => {
         </FormGroup>
       </Box>
 
-      <Divider sx={{ my: 4 }} />
-
       {countries
         .filter(
           (country) =>
@@ -200,6 +196,7 @@ const ForeignMarkets = () => {
           <>
             {filteredItems.filter((i) => i.country === country).length > 0 && (
               <Box key={country} sx={{ mb: 4 }}>
+                <Divider sx={{ my: 4 }} />
                 <Typography variant="h5" gutterBottom>
                   <img
                     src={`/${country?.toLowerCase().replace(" ", "-")}.svg`}
@@ -222,8 +219,6 @@ const ForeignMarkets = () => {
             )}
           </>
         ))}
-
-      <Divider sx={{ my: 4 }} />
     </Box>
   );
 };

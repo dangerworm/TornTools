@@ -3,6 +3,7 @@ import { Box, Grid, Typography } from "@mui/material";
 import { useResaleScan } from "../hooks/useResaleScan";
 import MarketItemsTable from "../components/MarketItemTable";
 import SteppedSlider from "../components/SteppedSlider";
+import { Loading } from "../components/Loading";
 
 const Resale = () => {
   const { rows, error } = useResaleScan({ intervalMs: 1000 });
@@ -36,6 +37,8 @@ const Resale = () => {
   const handleMaxTimeSinceLastUpdateSliderValueChange = (newValue: number) => {
     setMaxTimeSinceLastUpdate(newValue);
   }
+
+  if (!rows) return <Loading message="Loading resale opportunities..."/>;
 
   return (
     <Box>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useItems } from "../hooks/useItems";
 import {
   Box,
@@ -49,7 +49,6 @@ const LocalMarkets = () => {
         <FormControlLabel
           control={
             <Checkbox
-              defaultChecked
               checked={showProfitableOnly}
               onChange={() => setShowProfitableOnly(!showProfitableOnly)}
             />
@@ -85,10 +84,10 @@ const LocalMarkets = () => {
       </Box>
 
       {countries.map((country: string | undefined) => (
-        <>
+        <Fragment key={country}>
           <Divider sx={{ my: 4 }} />
 
-          <Box key={country} sx={{ mb: 4, width: "95%" }}>
+          <Box sx={{ mb: 4, width: "95%" }}>
             <Typography variant="h5" gutterBottom>
               {country?.replace("Torn", "Torn City") ?? "No Vendor"}
             </Typography>
@@ -103,7 +102,7 @@ const LocalMarkets = () => {
               showVendor={false}
             />
           </Box>
-        </>
+        </Fragment>
       ))}
     </Box>
   );

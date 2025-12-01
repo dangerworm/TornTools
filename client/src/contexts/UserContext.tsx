@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { UserContext } from "../hooks/useUser";
+import { UserContext, type UserContextModel } from "../hooks/useUser";
 import { fetchTornUserDetails, type TornUserProfile } from "../lib/tornapi";
 import {
   postAddUserFavourite,
@@ -291,7 +291,7 @@ export const UserProvider = ({
       // optional: expose an explicit logout if you like
       clearAllUserData,
       updateDotNetUserDetails,
-    }),
+    } as UserContextModel),
     [
       apiKey,
       tornUserProfile,
