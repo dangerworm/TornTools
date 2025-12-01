@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Alert,
@@ -36,6 +36,10 @@ import type { HistoryWindow } from "../types/history";
 import { isItemProfitable, type Item } from "../types/items";
 import { useUser } from "../hooks/useUser";
 import { getFormattedText } from "../lib/textFormat";
+import type {
+  NameType,
+  Payload,
+} from "recharts/types/component/DefaultTooltipContent";
 
 interface InfoCardProps {
   heading: string;
@@ -101,43 +105,48 @@ interface ItemDetailsProps {
 }
 
 const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
-  const urlItemId = useParams<{ itemId: string }>();
+  const { itemId: urlItemId } = useParams<{ itemId: string }>();
 
-  const [item, setItem] = useState<Item | null>(inputItem || null);
+  const [item, setItem] = useState<Item | null>(null);
+  const [itemId, setItemId] = useState<number | undefined>(
+    inputItem ? inputItem.id : urlItemId ? parseInt(urlItemId, 10) : undefined
+  );
 
   const [priceWindow, setPriceWindow] = useState<HistoryWindow>("1w");
   const [velocityWindow, setVelocityWindow] = useState<HistoryWindow>("1w");
-
-  const itemIdRef = useRef<number | undefined>(item?.id || undefined);
 
   const { itemsById } = useItems();
   const {
     data: priceHistory,
     loading: priceHistoryLoading,
     error: priceHistoryError,
-  } = useItemPriceHistory(itemIdRef.current, priceWindow);
-
+  } = useItemPriceHistory(itemId, priceWindow);
   const {
     data: velocityHistory,
     loading: velocityHistoryLoading,
     error: velocityHistoryError,
-  } = useItemVelocityHistory(itemIdRef.current, velocityWindow);
+  } = useItemVelocityHistory(itemId, velocityWindow);
   const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser();
   const theme = useTheme();
 
   useEffect(() => {
-    if (inputItem) {
-      itemIdRef.current = inputItem.id;
-      setItem(inputItem);
-      return;
+    if (urlItemId) {
+      const parsedId = parseInt(urlItemId, 10);
+      setItemId((prev) => (prev !== parsedId ? parsedId : prev));
     }
+  }, [urlItemId, itemId]);
 
-    if (!itemIdRef.current) {
-      itemIdRef.current = parseInt(urlItemId.itemId || "", 10);
-      setItem(itemsById[itemIdRef.current] || null);
-      return;
+  useEffect(() => {
+    if (inputItem?.id) {
+      setItemId((prev) => (prev !== inputItem.id ? inputItem.id : prev));
     }
-  }, [inputItem, urlItemId.itemId, itemsById]);
+  }, [inputItem, itemId]);
+
+  useEffect(() => {
+    if (itemId && itemsById[itemId]) {
+      setItem(itemsById[itemId]);
+    }
+  }, [itemId, itemsById]);
 
   const timestampFormatter = useMemo(
     () =>
@@ -181,9 +190,6 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
   const areaStroke = theme.palette.primary.main;
   const barColor = theme.palette.secondary.main;
 
-  const formatTimestamp = (value: number) =>
-    timestampFormatter.format(new Date(value));
-
   const renderWindowToggle = (
     selected: HistoryWindow,
     onChange: (window: HistoryWindow) => void
@@ -202,6 +208,37 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
       ))}
     </ToggleButtonGroup>
   );
+
+  interface CustomTooltipProps {
+    active?: boolean;
+    payload?: Payload<number, NameType>[];
+    label?: number;
+  }
+
+  const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+    if (!active || !payload?.length) return null;
+
+    const price = payload[0].value;
+
+    return (
+      <div
+        style={{
+          padding: "4px 8px",
+          background: "rgba(0,0,0,0.85)",
+          border: "1px solid #444",
+          borderRadius: 6,
+          fontSize: "0.8rem",
+          color: "#fff",
+        }}
+      >
+        <div>{formatTimestamp(label!)}</div>
+        <div>Price: {getFormattedText("$", price!, "")}</div>
+      </div>
+    );
+  };
+
+  const formatTimestamp = (value: number) =>
+    timestampFormatter.format(new Date(value));
 
   if (!itemsById || !item) return <Loading message="Loading items..." />;
 
@@ -334,7 +371,14 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
                     <ResponsiveContainer width="100%" height={300}>
                       <AreaChart
                         data={priceSeries}
-                        margin={{ top: 10, right: 10, left: 20 }}
+                        margin={{
+                          left:
+                            Math.max(
+                              ...priceSeries.map((p) => p.price)
+                            ).toLocaleString().length * 4,
+                          right: 10,
+                          top: 10,
+                        }}
                       >
                         <defs>
                           <linearGradient
@@ -373,15 +417,7 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
                           }
                           stroke={axisColor}
                         />
-                        <Tooltip
-                          labelFormatter={(label) =>
-                            formatTimestamp(label as number)
-                          }
-                          formatter={(value: number) => [
-                            getFormattedText("$", value, ""),
-                            "Price",
-                          ]}
-                        />
+                        <Tooltip content={CustomTooltip} />
                         <Area
                           type="monotone"
                           dataKey="price"
@@ -432,19 +468,16 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
                           tickFormatter={formatTimestamp}
                           stroke={axisColor}
                         />
-                        <YAxis 
+                        <YAxis
                           allowDecimals={false}
-                          label={{ value: "Number of changes", angle: -90, position: "insideLeft" }}
-                          stroke={axisColor} />
-                        <Tooltip
-                          labelFormatter={(label) =>
-                            formatTimestamp(label as number)
-                          }
-                          formatter={(value: number) => [
-                            value.toLocaleString(),
-                            "Changes",
-                          ]}
+                          label={{
+                            value: "Number of changes",
+                            angle: -90,
+                            position: "insideLeft",
+                          }}
+                          stroke={axisColor}
                         />
+                        <Tooltip content={CustomTooltip} />
                         <Bar
                           dataKey="velocity"
                           fill={barColor}

@@ -44,8 +44,6 @@ const openTornMarketPage = (itemId: number) => {
 };
 
 const openTornShopPage = (vendorName: string) => {
-  console.log("vendorName", vendorName);
-
   if (shopUrls.has(vendorName)) {  
     window.open(shopUrls.get(vendorName)!, "_blank");
     return;
