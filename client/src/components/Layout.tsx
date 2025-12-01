@@ -30,7 +30,6 @@ export default function Layout() {
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
 
   const drawerContent = useMemo(() => {
-    //Mark the left-nav item as selected when on that route (or a sub-route)
     const isActive = (to: string) => {
       if (to === "/") return location.pathname === "/";
       return (location.pathname === to || location.pathname.startsWith(`${to}/`));
@@ -50,7 +49,12 @@ export default function Layout() {
         icon: <Assessment />,
         requiresItems: true,
       },
-      { label: "Resale", to: "/resale", icon: <Sell />, requiresItems: true },
+      { 
+        label: "Resale", 
+        to: "/resale", 
+        icon: <Sell />, 
+        requiresItems: true,
+      },
       {
         label: "Time",
         to: "/time",
