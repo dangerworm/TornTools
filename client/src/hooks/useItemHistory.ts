@@ -35,7 +35,7 @@ const useHistoryQuery = (
     queryFn: () => fetcher(itemId!, window),
     enabled: !!itemId,
     staleTime: HISTORY_STALE_TIME_MS,
-    initialData: [] as ItemHistoryPoint[],
+    initialData: undefined
   });
 
   return {
