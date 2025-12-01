@@ -72,7 +72,9 @@ const InfoCard = ({
                 size="medium"
                 sx={{ fontSize: "1em", mr: 1 }}
               />
-            ) : getFormattedText(isCurrency ? "$" : "", value, "")
+            ) : (
+              getFormattedText(isCurrency ? "$" : "", value, "")
+            )
           ) : (
             <span>&mdash;</span>
           )}
@@ -332,7 +334,7 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
                     <ResponsiveContainer width="100%" height={300}>
                       <AreaChart
                         data={priceSeries}
-                        margin={{ top: 10, right: 10, left: 0 }}
+                        margin={{ top: 10, right: 10, left: 20 }}
                       >
                         <defs>
                           <linearGradient
@@ -365,7 +367,12 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
                           tickFormatter={formatTimestamp}
                           stroke={axisColor}
                         />
-                        <YAxis tickFormatter={(value) => getFormattedText("$", value, "")} stroke={axisColor} />
+                        <YAxis
+                          tickFormatter={(value) =>
+                            getFormattedText("$", value, "")
+                          }
+                          stroke={axisColor}
+                        />
                         <Tooltip
                           labelFormatter={(label) =>
                             formatTimestamp(label as number)
@@ -412,7 +419,7 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart
                         data={velocitySeries}
-                        margin={{ top: 10, right: 10, left: -35 }}
+                        margin={{ top: 10, right: 10, left: 20 }}
                       >
                         <CartesianGrid
                           stroke={gridColor}
@@ -425,7 +432,10 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
                           tickFormatter={formatTimestamp}
                           stroke={axisColor}
                         />
-                        <YAxis allowDecimals={false} stroke={axisColor} />
+                        <YAxis 
+                          allowDecimals={false}
+                          label={{ value: "Number of changes", angle: -90, position: "insideLeft" }}
+                          stroke={axisColor} />
                         <Tooltip
                           labelFormatter={(label) =>
                             formatTimestamp(label as number)

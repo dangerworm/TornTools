@@ -29,9 +29,9 @@ public class ApiJobScheduler(
         }
 
         RecurringJob.AddOrUpdate(
-            nameof(DailyItemUpdate),
-            () => DailyItemUpdate(),
-            "0 2 * * *" // At 02:00.
+            nameof(ItemUpdate),
+            () => ItemUpdate(),
+            "0 */3 * * *" // At minute 0 past every 3rd hour.
         );
 
         RecurringJob.AddOrUpdate(
@@ -48,9 +48,9 @@ public class ApiJobScheduler(
     }
 
     [DisplayName("Daily Item update")]
-    public async Task DailyItemUpdate()
+    public async Task ItemUpdate()
     {
-        _logger.LogInformation($"Running Hangfire job {nameof(DailyItemUpdate)}");
+        _logger.LogInformation($"Running Hangfire job {nameof(ItemUpdate)}");
         await _databaseService.CreateQueueItem(
             callType: ApiCallType.TornItems,
             endpointUrl: TornApiConstants.Items,

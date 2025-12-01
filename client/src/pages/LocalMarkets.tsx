@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useItems } from "../hooks/useItems";
 import {
   Box,
@@ -14,10 +14,14 @@ import LocalMarketItemsTable from "../components/LocalMarketItemsTable";
 import { isItemProfitable } from "../types/items";
 
 const LocalMarkets = () => {
-  const { items } = useItems();
+  const { items, refresh } = useItems();
 
   const [showProfitableOnly, setShowProfitableOnly] = useState(true);
   const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>([]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   const countries = useMemo(() => {
     if (!items) return [];
@@ -38,7 +42,7 @@ const LocalMarkets = () => {
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
-        Local Markets
+        City Markets
       </Typography>
 
       <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
@@ -95,11 +99,13 @@ const LocalMarkets = () => {
             <LocalMarketItemsTable
               items={items.filter(
                 (i) =>
+                  (i.valueVendorCountry === country) &&
                   (!showProfitableOnly || isItemProfitable(i)) &&
                   (selectedItemTypes.length === 0 ||
                     selectedItemTypes.includes(i.type!))
               )}
-              showVendor={false}
+              showCityPrice={!!country}
+              showVendor={!!country}
             />
           </Box>
         </Fragment>

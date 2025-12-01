@@ -13,13 +13,28 @@ import {
   FavoriteBorder,
   KeyboardArrowDown,
   KeyboardArrowUp,
-  OpenInNew,
+  ShoppingCart,
+  Storefront,
 } from "@mui/icons-material";
 import { useUser } from "../hooks/useUser";
 import { isItemProfitable, type Item } from "../types/items";
 import { useState } from "react";
 import ItemDetails from "../pages/ItemDetails";
 import { getFormattedText } from "../lib/textFormat";
+
+const shopUrls: Map<string, string> = new Map([
+  ["Big Al's Gun Shop", "https://www.torn.com/bigalgunshop.php"],
+  ["Bits 'n' Bobs", "https://www.torn.com/shops.php?step=bitsnbobs"],
+  ["Sally's Sweet Shop", "https://www.torn.com/shops.php?step=candy"],
+  ["the Docks", "https://www.torn.com/shops.php?step=docks"],
+  ["the Jewelry Store", "https://www.torn.com/shops.php?step=jewelry"],
+  ["the Post Office", "https://www.torn.com/shops.php?step=postoffice"],
+  ["the Print Shop", "https://www.torn.com/shops.php?step=printstore"],
+  ["the Pharmacy", "https://www.torn.com/shops.php?step=pharmacy"],
+  ["the Recycling Center", "https://www.torn.com/shops.php?step=recyclingcenter"],
+  ["the Super Store", "https://www.torn.com/shops.php?step=super"],
+  ["TC Clothing", "https://www.torn.com/shops.php?step=clothes"],
+]);
 
 const openTornMarketPage = (itemId: number) => {
   window.open(
@@ -28,13 +43,24 @@ const openTornMarketPage = (itemId: number) => {
   );
 };
 
+const openTornShopPage = (vendorName: string) => {
+  console.log("vendorName", vendorName);
+
+  if (shopUrls.has(vendorName)) {  
+    window.open(shopUrls.get(vendorName)!, "_blank");
+    return;
+  }
+};
+
 interface LocalMarketItemsTableRowProps {
   item: Item;
+  showCityPrice: boolean;
   showVendor: boolean;
 }
 
 const LocalMarketItemsTableRow = ({
   item,
+  showCityPrice,
   showVendor,
 }: LocalMarketItemsTableRowProps) => {
   const navigate = useNavigate();
@@ -101,21 +127,15 @@ const LocalMarketItemsTableRow = ({
           </TableCell>
         )}
 
-        <TableCell align="right" onClick={() => navigate(`/item/${item.id}`)}>
-          {item.valueBuyPrice ? (
-            <span>{getFormattedText("$", item.valueBuyPrice!, "")}</span>
-          ) : (
-            <span>&mdash;</span>
-          )}
-        </TableCell>
-
-        <TableCell align="right" onClick={() => navigate(`/item/${item.id}`)}>
-          {item.valueSellPrice ? (
-            <span>{getFormattedText("$", item.valueSellPrice, "")}</span>
-          ) : (
-            <span>&mdash;</span>
-          )}
-        </TableCell>
+        {showCityPrice && (
+          <TableCell align="right" onClick={() => navigate(`/item/${item.id}`)}>
+            {item.valueBuyPrice ? (
+              <span>{getFormattedText("$", item.valueBuyPrice!, "")}</span>
+            ) : (
+              <span>&mdash;</span>
+            )}
+          </TableCell>
+        )}
 
         <TableCell align="right" onClick={() => navigate(`/item/${item.id}`)}>
           {item.valueMarketPrice ? (
@@ -125,26 +145,65 @@ const LocalMarketItemsTableRow = ({
           )}
         </TableCell>
 
-        <TableCell align="right" onClick={() => navigate(`/item/${item.id}`)}>
-          {isItemProfitable(item) &&
-          item.valueBuyPrice &&
-          item.valueMarketPrice ? (
-            <Chip
-              label={getFormattedText("$", item.valueMarketPrice - item.valueBuyPrice, "")}
-              color={"success"}
-              size="small"
-            />
-          ) : (
-            <span>&mdash;</span>
-          )}
-        </TableCell>
+        {showCityPrice && (
+          <TableCell align="right" onClick={() => navigate(`/item/${item.id}`)}>
+            {isItemProfitable(item) &&
+            item.valueBuyPrice &&
+            item.valueMarketPrice ? (
+              <Chip
+                label={getFormattedText(
+                  "$",
+                  item.valueMarketPrice - item.valueBuyPrice,
+                  ""
+                )}
+                color={"success"}
+                size="small"
+              />
+            ) : (
+              <span>&mdash;</span>
+            )}
+          </TableCell>
+        )}
+
+        {showCityPrice && (
+          <TableCell align="right" onClick={() => navigate(`/item/${item.id}`)}>
+            {isItemProfitable(item) &&
+            item.valueBuyPrice &&
+            item.valueMarketPrice ? (
+              getFormattedText(
+                "",
+                ((item.valueMarketPrice - item.valueBuyPrice) /
+                  item.valueBuyPrice) *
+                  100,
+                "%"
+              )
+            ) : (
+              <span>&mdash;</span>
+            )}
+          </TableCell>
+        )}
 
         <TableCell align="right" onClick={() => navigate(`/item/${item.id}`)}>
           {getFormattedText("", item.circulation ?? 0, "")}
         </TableCell>
 
-        <TableCell align="right" onClick={() => openTornMarketPage(item.id)}>
-          <OpenInNew />
+        <TableCell
+          align="right"
+          onClick={() =>
+            showVendor &&
+            item.valueVendorName &&
+            shopUrls.has(item.valueVendorName)
+              ? openTornShopPage(item.valueVendorName)
+              : openTornMarketPage(item.id)
+          }
+        >
+          {showVendor &&
+          item.valueVendorName &&
+          shopUrls.has(item.valueVendorName) ? (
+            <ShoppingCart />
+          ) : (
+            <Storefront />
+          )}
         </TableCell>
       </TableRow>
       <TableRow>
