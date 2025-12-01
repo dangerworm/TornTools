@@ -41,60 +41,77 @@ const Home = () => {
         </Alert>
       )}
 
-      <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
-        Tools
-      </Typography>
-      <Grid container spacing={4} sx={{ mt: 2 }}>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <Card variant="outlined" sx={{ height: "100%" }}>
-            <CardContent>
-              <Typography variant="h5" gutterBottom>
-                <Link to="/markets" className="no-underline">
-                  Markets
-                </Link>
-              </Typography>
-              <Typography variant="body1">
-                View markets organised by country.
-                In future iterations this will be expanded to include filters
-                and additional information.
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+      {!loading && (
+        <>
+          <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
+            Tools
+          </Typography>
+          <Grid container spacing={4} sx={{ mt: 2 }}>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Card variant="outlined" sx={{ height: "100%" }}>
+                <CardContent>
+                  <Typography variant="h5" gutterBottom>
+                    <Link to="/local-markets" className="no-underline">
+                      City Markets
+                    </Link>
+                  </Typography>
+                  <Typography variant="body1">
+                    View the item markets for Torn City, including price history
+                    and favourite items.
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
 
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <Card variant="outlined" sx={{ height: "100%" }}>
-            <CardContent>
-              <Typography variant="h5" gutterBottom>
-                <Link to="/resale" className="no-underline">
-                  Resale Opportunities
-                </Link>
-              </Typography>
-              <Typography variant="body1">
-                Checks the market for profitable resale listings.
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Card variant="outlined" sx={{ height: "100%" }}>
+                <CardContent>
+                  <Typography variant="h5" gutterBottom>
+                    <Link to="/foreign-markets" className="no-underline">
+                      Foreign Markets
+                    </Link>
+                  </Typography>
+                  <Typography variant="body1">
+                    View markets from other countries around the world.
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
 
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <Card variant="outlined" sx={{ height: "100%" }}>
-            <CardContent>
-              <Typography variant="h5" gutterBottom>
-                <Link to="/time" className="no-underline">
-                  Time Conversion
-                </Link>
-              </Typography>
-              <Typography variant="body1">
-                Convert between your local time and Torn City time (TCT).
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-      </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Card variant="outlined" sx={{ height: "100%" }}>
+                <CardContent>
+                  <Typography variant="h5" gutterBottom>
+                    <Link to="/resale" className="no-underline">
+                      Resale Opportunities
+                    </Link>
+                  </Typography>
+                  <Typography variant="body1">
+                    Checks the market for profitable resale listings.
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Card variant="outlined" sx={{ height: "100%" }}>
+                <CardContent>
+                  <Typography variant="h5" gutterBottom>
+                    <Link to="/time" className="no-underline">
+                      Time Conversion
+                    </Link>
+                  </Typography>
+                  <Typography variant="body1">
+                    Convert between your local time and Torn City time (TCT).
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </>
+      )}
     </>
   );
-}
+};
 
 export default Home;

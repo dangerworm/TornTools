@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Alert,
@@ -33,8 +33,9 @@ import {
 } from "../hooks/useItemHistory";
 import { useItems } from "../hooks/useItems";
 import type { HistoryWindow } from "../types/history";
-import type { Item } from "../types/items";
+import { isItemProfitable, type Item } from "../types/items";
 import { useUser } from "../hooks/useUser";
+import { getFormattedText } from "../lib/textFormat";
 
 interface InfoCardProps {
   heading: string;
@@ -67,15 +68,11 @@ const InfoCard = ({
             isProfitable ? (
               <Chip
                 color="success"
-                label={`$${value.toLocaleString()}`}
+                label={getFormattedText("$", value, "")}
                 size="medium"
                 sx={{ fontSize: "1em", mr: 1 }}
               />
-            ) : isCurrency ? (
-              `$${value.toLocaleString()}`
-            ) : (
-              value.toLocaleString()
-            )
+            ) : getFormattedText(isCurrency ? "$" : "", value, "")
           ) : (
             <span>&mdash;</span>
           )}
@@ -96,38 +93,63 @@ const HISTORY_WINDOWS: { label: string; value: HistoryWindow }[] = [
   { label: "Year", value: "1y" },
 ];
 
-const ItemDetails = () => {
-  const { itemId } = useParams<{ itemId: string }>();
+interface ItemDetailsProps {
+  inputItem?: Item;
+  inlineView?: boolean;
+}
+
+const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
+  const urlItemId = useParams<{ itemId: string }>();
+
+  const [item, setItem] = useState<Item | null>(inputItem || null);
+
+  const [priceWindow, setPriceWindow] = useState<HistoryWindow>("1w");
+  const [velocityWindow, setVelocityWindow] = useState<HistoryWindow>("1w");
+
+  const itemIdRef = useRef<number | undefined>(item?.id || undefined);
+
   const { itemsById } = useItems();
-  const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser();
-  const theme = useTheme();
-
-  const [priceWindow, setPriceWindow] = useState<HistoryWindow>("1d");
-  const [velocityWindow, setVelocityWindow] = useState<HistoryWindow>("1d");
-
-  const [item, setItem] = useState<Item | null>(null);
-
   const {
     data: priceHistory,
     loading: priceHistoryLoading,
     error: priceHistoryError,
-  } = useItemPriceHistory(item?.id, priceWindow);
+  } = useItemPriceHistory(itemIdRef.current, priceWindow);
 
   const {
     data: velocityHistory,
     loading: velocityHistoryLoading,
     error: velocityHistoryError,
-  } = useItemVelocityHistory(item?.id, velocityWindow);
+  } = useItemVelocityHistory(itemIdRef.current, velocityWindow);
+  const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser();
+  const theme = useTheme();
+
+  useEffect(() => {
+    if (inputItem) {
+      itemIdRef.current = inputItem.id;
+      setItem(inputItem);
+      return;
+    }
+
+    if (!itemIdRef.current) {
+      itemIdRef.current = parseInt(urlItemId.itemId || "", 10);
+      setItem(itemsById[itemIdRef.current] || null);
+      return;
+    }
+  }, [inputItem, urlItemId.itemId, itemsById]);
 
   const timestampFormatter = useMemo(
     () =>
-      new Intl.DateTimeFormat(undefined, {
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      }),
-    []
+      priceWindow === "30m" || priceWindow === "1h" || priceWindow === "4h"
+        ? new Intl.DateTimeFormat(undefined, {
+            hour: "numeric",
+            minute: "2-digit",
+          })
+        : new Intl.DateTimeFormat(undefined, {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          }),
+    [priceWindow]
   );
 
   const priceSeries = useMemo(
@@ -159,7 +181,6 @@ const ItemDetails = () => {
 
   const formatTimestamp = (value: number) =>
     timestampFormatter.format(new Date(value));
-  const formatPrice = (value: number) => `$${value.toLocaleString()}`;
 
   const renderWindowToggle = (
     selected: HistoryWindow,
@@ -180,58 +201,66 @@ const ItemDetails = () => {
     </ToggleButtonGroup>
   );
 
-  useEffect(() => {
-    setItem(itemsById[Number(itemId)] || null);
-  }, [itemId, itemsById]);
-
   if (!itemsById || !item) return <Loading message="Loading items..." />;
 
   return (
     <Box>
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid sx={{ width: 80 }}>
-          <img
-            alt=""
-            src={`https://www.torn.com/images/items/${item!.id}/large.png`}
-            style={{ borderRadius: 4 }}
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-            }}
-          />
-        </Grid>
-        <Grid sx={{ flexGrow: 1 }}>
-          <Typography variant="h4" sx={{ ml: 2, mt: 0.6 }} gutterBottom>
-            {item?.name}
-            {item?.type && !item?.subType && ` (${item.type})`}
-            {item?.type && item?.subType && ` (${item.type} – ${item.subType})`}
-          </Typography>
-        </Grid>
+      <Grid container spacing={2} sx={{ mb: 2, mt: inlineView ? 2 : 0 }}>
+        {!inlineView && (
+          <>
+            <Grid sx={{ width: 80 }}>
+              <img
+                alt=""
+                src={`https://www.torn.com/images/items/${item!.id}/large.png`}
+                style={{ borderRadius: 4 }}
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                }}
+              />
+            </Grid>
+            <Grid sx={{ flexGrow: 1 }}>
+              <Typography variant="h4" sx={{ ml: 2, mt: 0.6 }} gutterBottom>
+                {item?.name}
+                {item?.type && !item?.subType && ` (${item.type})`}
+                {item?.type &&
+                  item?.subType &&
+                  ` (${item.type} – ${item.subType})`}
+              </Typography>
+            </Grid>
 
-        <Grid sx={{ flexGrow: 0, mt: 1, mr: 4, textAlign: "right" }}>
-          {item?.isTradable && <Chip label="Tradable" color="primary" />}
-        </Grid>
+            <Grid sx={{ flexGrow: 0, mt: 1, mr: 4, textAlign: "right" }}>
+              {item?.isTradable && <Chip label="Tradable" color="primary" />}
+            </Grid>
 
-        <Grid sx={{ flexGrow: 0, mt: 1, mr: 4, textAlign: "right" }}>
-          {dotNetUserDetails && (
-            <Chip
-              label={dotNetUserDetails.favouriteItems?.includes(item.id) ? "Favourited" : "Favourite"}
-              icon={
-                dotNetUserDetails.favouriteItems?.includes(item.id) ? (
-                  <Favorite sx={{ cursor: "pointer", color: "red" }} />
-                ) : (
-                  <FavoriteBorder sx={{ cursor: "pointer", color: "gray" }} />
-                )
-              }
-              color={
-                dotNetUserDetails.favouriteItems?.includes(item.id)
-                  ? "secondary"
-                  : "default"
-              }
-              onClick={() => toggleFavouriteItemAsync(item.id)}
-              sx={{ pl: 0.5 }}
-            ></Chip>
-          )}
-        </Grid>
+            <Grid sx={{ flexGrow: 0, mt: 1, mr: 4, textAlign: "right" }}>
+              {dotNetUserDetails && (
+                <Chip
+                  label={
+                    dotNetUserDetails.favouriteItems?.includes(item.id)
+                      ? "Favourited"
+                      : "Favourite"
+                  }
+                  icon={
+                    dotNetUserDetails.favouriteItems?.includes(item.id) ? (
+                      <Favorite sx={{ cursor: "pointer", color: "red" }} />
+                    ) : (
+                      <FavoriteBorder
+                        sx={{ cursor: "pointer", color: "gray" }}
+                      />
+                    )
+                  }
+                  color={
+                    dotNetUserDetails.favouriteItems?.includes(item.id)
+                      ? "secondary"
+                      : "default"
+                  }
+                  onClick={() => toggleFavouriteItemAsync(item.id)}
+                  sx={{ pl: 0.5 }}
+                />
+              )}
+            </Grid>
+          </>
+        )}
 
         <Grid size={{ xs: 12 }}>
           <Typography variant="body1" gutterBottom>
@@ -260,11 +289,7 @@ const ItemDetails = () => {
             <InfoCard
               heading="Buy Price"
               isCurrency={true}
-              isProfitable={
-                !item.valueBuyPrice ||
-                !item.valueMarketPrice ||
-                item.valueMarketPrice > item.valueBuyPrice
-              }
+              isProfitable={isItemProfitable(item)}
               value={item?.valueBuyPrice}
             />
             <InfoCard
@@ -275,11 +300,7 @@ const ItemDetails = () => {
             <InfoCard
               heading="Market Price"
               isCurrency={true}
-              isProfitable={
-                !!item.valueBuyPrice &&
-                !!item.valueMarketPrice &&
-                item.valueMarketPrice > item.valueBuyPrice
-              }
+              isProfitable={isItemProfitable(item)}
               value={item?.valueMarketPrice}
             />
             <InfoCard
@@ -311,7 +332,7 @@ const ItemDetails = () => {
                     <ResponsiveContainer width="100%" height={300}>
                       <AreaChart
                         data={priceSeries}
-                        margin={{ top: 10, right: 10, left: -10 }}
+                        margin={{ top: 10, right: 10, left: 0 }}
                       >
                         <defs>
                           <linearGradient
@@ -344,13 +365,13 @@ const ItemDetails = () => {
                           tickFormatter={formatTimestamp}
                           stroke={axisColor}
                         />
-                        <YAxis tickFormatter={formatPrice} stroke={axisColor} />
+                        <YAxis tickFormatter={(value) => getFormattedText("$", value, "")} stroke={axisColor} />
                         <Tooltip
                           labelFormatter={(label) =>
                             formatTimestamp(label as number)
                           }
                           formatter={(value: number) => [
-                            formatPrice(value),
+                            getFormattedText("$", value, ""),
                             "Price",
                           ]}
                         />
@@ -391,7 +412,7 @@ const ItemDetails = () => {
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart
                         data={velocitySeries}
-                        margin={{ top: 10, right: 10, left: -10 }}
+                        margin={{ top: 10, right: 10, left: -35 }}
                       >
                         <CartesianGrid
                           stroke={gridColor}

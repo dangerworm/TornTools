@@ -30,3 +30,12 @@ export interface Item {
 }
 
 export type ItemsMap = Record<number, Item>;
+
+export const isItemProfitable = (item: Item): boolean => {
+  return (
+    item.isTradable &&  
+    !!item.valueBuyPrice &&
+    !!item.valueMarketPrice &&
+    item.valueMarketPrice > item.valueBuyPrice
+  );
+}

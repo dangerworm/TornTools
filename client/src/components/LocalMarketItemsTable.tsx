@@ -1,45 +1,84 @@
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
 import {
   Box,
-  Chip,
+  Grid,
   Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
-  Typography,
+  TextField,
 } from "@mui/material";
-import Favorite from "@mui/icons-material/Favorite";
-import FavoriteBorder from "@mui/icons-material/FavoriteBorder";
-import { OpenInNew } from "@mui/icons-material";
-import { useUser } from "../hooks/useUser";
 import type { Item } from "../types/items";
+import { useUser } from "../hooks/useUser";
+import LocalMarketItemsTableRow from "./LocalMarketItemsTableRow";
 
 interface LocalMarketItemsTableProps {
   items: Item[];
   showVendor?: boolean;
 }
 
-const LocalMarketItemsTable = ({ items, showVendor = true }: LocalMarketItemsTableProps) => {
-  const navigate = useNavigate();
-  const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser();
+const LocalMarketItemsTable = ({
+  items,
+  showVendor = true,
+}: LocalMarketItemsTableProps) => {
+  const { dotNetUserDetails } = useUser();
 
-  const openTornMarketPage = (itemId: number) => {
-    window.open(
-      `https://www.torn.com/page.php?sid=ItemMarket#/market/view=search&itemID=${itemId}&sortField=price&sortOrder=ASC`,
-      "_blank"
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredItems = useMemo(() => {
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    return items.filter((item) =>
+      item.name.toLowerCase().includes(lowerSearchTerm)
     );
-  };
+  }, [items, searchTerm]);
+
+  const pagedItems = useMemo(
+    () => filteredItems.slice(page * rowsPerPage, (page + 1) * rowsPerPage),
+    [filteredItems, page, rowsPerPage]
+  );
 
   return (
     <>
       <Box>
-        <TableContainer component={Paper} sx={{ mt: 2, width: "95%" }}>
+        <Grid container spacing={2} sx={{ mb: 1 }}>
+           <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: "left" }}>
+            <TextField
+              label="Search"
+              variant="outlined"
+              size="small"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              sx={{ minWidth: 400, mt: 1 }}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: "right" }}>
+            <TablePagination
+              component="div"
+              count={filteredItems.length}
+              page={page}
+              onPageChange={(_, newPage) => setPage(newPage)}
+              rowsPerPage={rowsPerPage}
+              rowsPerPageOptions={[10, 25, 50, 100]}
+              onRowsPerPageChange={(event) => {
+                setRowsPerPage(parseInt(event.target.value, 10));
+                setPage(1);
+              }}
+              sx={{ ml: 0 }}
+            />
+          </Grid>
+        </Grid>
+
+        <TableContainer component={Paper}>
           <Table size="small">
             <TableHead>
-              <TableRow>
+              <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
+                <TableCell>Info</TableCell>
                 {dotNetUserDetails && <TableCell>Fav</TableCell>}
                 <TableCell>Item</TableCell>
                 <TableCell>Type</TableCell>
@@ -47,131 +86,18 @@ const LocalMarketItemsTable = ({ items, showVendor = true }: LocalMarketItemsTab
                 <TableCell align="right">City Price</TableCell>
                 <TableCell align="right">Sell Price</TableCell>
                 <TableCell align="right">Market Price</TableCell>
+                <TableCell align="right">Profit</TableCell>
                 <TableCell align="right">Circulation</TableCell>
                 <TableCell align="right">Torn</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {items.map((item) => (
-                <TableRow hover key={item.id}>
-                  {dotNetUserDetails && (
-                    <TableCell
-                      align="left"
-                      onClick={() => toggleFavouriteItemAsync(item.id)}
-                    >
-                      {dotNetUserDetails.favouriteItems?.includes(item.id) ? (
-                        <Favorite
-                          sx={{ cursor: "pointer", color: "#1976d2" }}
-                        />
-                      ) : (
-                        <FavoriteBorder
-                          sx={{ cursor: "pointer", color: "gray" }}
-                        />
-                      )}
-                    </TableCell>
-                  )}
-
-                  <TableCell onClick={() => navigate(`/item/${item.id}`)}>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      <img
-                        alt=""
-                        src={`https://www.torn.com/images/items/${item.id}/small.png`}
-                        width={24}
-                        height={24}
-                        style={{ borderRadius: 4 }}
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.display =
-                            "none";
-                        }}
-                      />
-                      <Typography variant="body2">{item.name}</Typography>
-                    </Box>
-                  </TableCell>
-
-                  <TableCell onClick={() => navigate(`/item/${item.id}`)}>
-                    {item.type}
-                  </TableCell>
-
-                  {showVendor && (
-                    <TableCell
-                      align="right"
-                      onClick={() => navigate(`/item/${item.id}`)}
-                    >
-                      {item.valueVendorName?.startsWith("the")
-                        ? item.valueVendorName.substring(4)
-                        : item.valueVendorName}
-                    </TableCell>
-                  )}
-
-                  <TableCell
-                    align="right"
-                    onClick={() => navigate(`/item/${item.id}`)}
-                  >
-                    {item.valueBuyPrice &&
-                    item.valueMarketPrice &&
-                    item.valueMarketPrice > item.valueBuyPrice ? (
-                      <Chip
-                        label={`$${item.valueBuyPrice.toLocaleString()}`}
-                        color={"success"}
-                        size="small"
-                      />
-                    ) : item.valueBuyPrice ? (
-                      <span>${item.valueBuyPrice!.toLocaleString()}</span>
-                    ) : (
-                      <span>&mdash;</span>
-                    )}
-                  </TableCell>
-
-                  <TableCell
-                    align="right"
-                    onClick={() => navigate(`/item/${item.id}`)}
-                  >
-                    {item.valueSellPrice ? (
-                      `$${item.valueSellPrice.toLocaleString()}`
-                    ) : (
-                      <span>&mdash;</span>
-                    )}
-                  </TableCell>
-
-                  <TableCell
-                    align="right"
-                    onClick={() => navigate(`/item/${item.id}`)}
-                  >
-                    {item.valueBuyPrice &&
-                    item.valueMarketPrice &&
-                    item.valueMarketPrice > item.valueBuyPrice ? (
-                      <Chip
-                        label={`$${item.valueMarketPrice.toLocaleString()}`}
-                        color={"success"}
-                        size="small"
-                      />
-                    ) : item.valueMarketPrice ? (
-                      <span>${item.valueMarketPrice.toLocaleString()}</span>
-                    ) : (
-                      <span>&mdash;</span>
-                    )}
-                  </TableCell>
-
-                  <TableCell
-                    align="right"
-                    onClick={() => navigate(`/item/${item.id}`)}
-                  >
-                    {item.circulation?.toLocaleString()}
-                  </TableCell>
-
-                  <TableCell
-                    align="right"
-                    onClick={() => openTornMarketPage(item.id)}
-                  >
-                    <OpenInNew />
-                  </TableCell>
-                </TableRow>
+              {pagedItems.map((item) => (
+                <LocalMarketItemsTableRow
+                  key={item.id}
+                  item={item}
+                  showVendor={showVendor}
+                />
               ))}
             </TableBody>
           </Table>

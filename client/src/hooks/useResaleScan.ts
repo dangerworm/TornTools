@@ -1,6 +1,4 @@
-// src/hooks/useMarketScan.ts
-import { useEffect, useRef, useState } from "react";
-import type { Item } from "../types/items";
+import { useQuery } from "./useQuery";
 import { fetchProfitableListings } from "../lib/dotnetapi";
 import type { ProfitableListing } from "../types/profitableListings";
 
@@ -10,49 +8,30 @@ interface Options {
   intervalMs?: number; // one call per interval (keeps us <100/min by default)
 }
 
+export const PROFITABLE_LISTINGS_QUERY_KEY = ["profitableListings"] as const;
+
 export function useResaleScan(
-  items: Item[] | null,
   opts?: Options
 ) {
   const { intervalMs = 1000 } = opts || {};
 
-  const [rows, setRows] = useState<ProfitableListing[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const query = useQuery<ProfitableListing[]>({
+    queryKey: PROFITABLE_LISTINGS_QUERY_KEY,
+    queryFn: async () => {
+      const payload = await fetchProfitableListings();
+      return payload;
+    },
+    enabled: true,
+    refetchInterval: intervalMs,
+    staleTime: intervalMs,
+    initialData: [],
+  });
 
-  const timerRef = useRef<number | null>(null);
+  const error = query.error
+    ? query.error instanceof Error
+      ? query.error.message
+      : "Failed to load listings"
+    : null;
 
-  useEffect(() => {
-    setError(null);
-
-    if (!items || items.length === 0) {
-      setRows([]);
-      return;
-    }
-
-    const tick = async () => {
-      fetchProfitableListings()
-        .then(data => {
-          setRows(data)
-        })
-        .catch(err => {
-          setError(err.message);
-          setRows([]);
-        });
-    };
-
-    // Start interval
-    timerRef.current = window.setInterval(tick, intervalMs);
-    void tick();
-
-    // Cleanup on unmount or when deps change
-    return () => {
-      if (timerRef.current !== null) {
-        window.clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-
-  }, [items, intervalMs]);
-
-  return { rows, error };
+  return { rows: query.data ?? [], error };
 }

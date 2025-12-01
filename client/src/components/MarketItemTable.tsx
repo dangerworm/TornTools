@@ -22,6 +22,7 @@ import { useUser } from "../hooks/useUser";
 import { getSecondsSinceLastUpdate, timeAgo } from "../lib/time";
 import type { ProfitableListing } from "../types/profitableListings";
 import { useThemeSettings } from "../hooks/useThemeSettings";
+import { getFormattedText } from "../lib/textFormat";
 
 const MotionTableRow = motion.create(TableRow);
 
@@ -169,22 +170,22 @@ export default function MarketItemsTable({
                           style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
                         >
                           {r.minPrice === r.maxPrice
-                            ? `$${r.minPrice.toLocaleString()}`
-                            : `$${r.minPrice?.toLocaleString()} - $${r.maxPrice?.toLocaleString()}`}
+                            ? getFormattedText("$", r.minPrice, "")
+                            : `${getFormattedText("$", r.minPrice, "")} - ${getFormattedText("$", r.maxPrice, "")}`}
                         </TableCell>
                         <TableCell
                           align="right"
                           onClick={() => openTornMarketPage(r.itemId)}
                           style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
                         >
-                          ${r.sellPrice.toLocaleString()}
+                          {getFormattedText("$", r.sellPrice, "")}
                         </TableCell>
                         <TableCell
                           align="right"
                           onClick={() => (r)}
                           style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
                         >
-                          {r.quantity.toLocaleString()}
+                          {getFormattedText("", r.quantity, "")}
                         </TableCell>
 
                         <TableCell
@@ -193,7 +194,7 @@ export default function MarketItemsTable({
                           style={{ color: rgbToHex(rowColor(r.lastUpdated)) }}
                         >
                           <Chip
-                            label={`$${r.profit.toLocaleString()}`}
+                            label={getFormattedText("$", r.profit, "")}
                             color={"success"}
                             size="small"
                           />
