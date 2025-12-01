@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Grid,
@@ -18,11 +18,13 @@ import LocalMarketItemsTableRow from "./LocalMarketItemsTableRow";
 
 interface LocalMarketItemsTableProps {
   items: Item[];
+  showCityPrice?: boolean;
   showVendor?: boolean;
 }
 
 const LocalMarketItemsTable = ({
   items,
+  showCityPrice = true,
   showVendor = true,
 }: LocalMarketItemsTableProps) => {
   const { dotNetUserDetails } = useUser();
@@ -34,7 +36,9 @@ const LocalMarketItemsTable = ({
   const filteredItems = useMemo(() => {
     const lowerSearchTerm = searchTerm.toLowerCase();
     return items.filter((item) =>
-      item.name.toLowerCase().includes(lowerSearchTerm)
+      item.name.toLowerCase().includes(lowerSearchTerm) ||
+      item.type?.toLowerCase().includes(lowerSearchTerm) ||
+      item.valueVendorName?.toLowerCase().includes(lowerSearchTerm)
     );
   }, [items, searchTerm]);
 
@@ -42,6 +46,12 @@ const LocalMarketItemsTable = ({
     () => filteredItems.slice(page * rowsPerPage, (page + 1) * rowsPerPage),
     [filteredItems, page, rowsPerPage]
   );
+
+  useEffect(() => {
+    if (page > 0 && page * rowsPerPage >= filteredItems.length) {
+      setPage(Math.max(0, Math.ceil(filteredItems.length / rowsPerPage) - 1));
+    }
+  }, [filteredItems, page, rowsPerPage]);
 
   return (
     <>
@@ -83,10 +93,10 @@ const LocalMarketItemsTable = ({
                 <TableCell>Item</TableCell>
                 <TableCell>Type</TableCell>
                 {showVendor && <TableCell align="right">Vendor</TableCell>}
-                <TableCell align="right">City Price</TableCell>
-                <TableCell align="right">Sell Price</TableCell>
+                {showCityPrice && <TableCell align="right">City Price</TableCell>}
                 <TableCell align="right">Market Price</TableCell>
-                <TableCell align="right">Profit</TableCell>
+                {showCityPrice && <TableCell align="right">Profit</TableCell>}
+                {showCityPrice && <TableCell align="right">Profit/Cost</TableCell>}
                 <TableCell align="right">Circulation</TableCell>
                 <TableCell align="right">Torn</TableCell>
               </TableRow>
@@ -97,6 +107,7 @@ const LocalMarketItemsTable = ({
                   key={item.id}
                   item={item}
                   showVendor={showVendor}
+                  showCityPrice={showCityPrice}
                 />
               ))}
             </TableBody>

@@ -6,7 +6,7 @@ import type { Item, ItemsMap } from "../types/items";
 
 const LOCAL_STORAGE_KEY_ITEMS = "torntools:items:v1";
 const LOCAL_STORAGE_KEY_ITEMS_TIME_SERVED = "torntools:items:v1:ts";
-const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_TTL_MS = 60 * 60 * 1000;
 
 const normalizeItems = (resp: Item[]): ItemsMap => {
   const map: ItemsMap = {};
@@ -83,18 +83,20 @@ export const ItemsProvider = ({
     [itemsById]
   );
 
+  const now = useMemo(() => Date.now(), []);
+
   useEffect(() => {
     const timeServed = Number(
       localStorage.getItem(LOCAL_STORAGE_KEY_ITEMS_TIME_SERVED) ?? 0
     );
-    const age = Date.now() - timeServed;
+    const age = now - timeServed;
 
     const cached = localStorage.getItem(LOCAL_STORAGE_KEY_ITEMS);
     if (cached && age < ttlMs) {
       setItemsById(JSON.parse(cached));
     }
     void revalidate();
-  }, [ttlMs]);
+  }, [ttlMs, now]);
 
   const revalidate = async () => {
     setLoading(true);
