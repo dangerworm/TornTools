@@ -1,26 +1,41 @@
 import { useEffect, useMemo, useState } from "react";
-import { Box, Chip, Divider, Typography } from "@mui/material";
-import Loading from "../components/Loading";
+import {
+  Alert,
+  Box,
+  Chip,
+  Divider,
+  FormGroup,
+  FormLabel,
+  Grid,
+  TextField,
+  Typography,
+} from "@mui/material";
 import ForeignMarketItemsTable from "../components/ForeignMarketItemsTable";
-import { useForeignStockItems } from "../hooks/useForeignStockItems";
 import { useUser } from "../hooks/useUser";
+import { useForeignMarketsScan } from "../hooks/useForeignMarketsScan";
+import Loading from "../components/Loading";
 
-const itemTypesOfInterest = [
-  "Drug",
-  "Flower",
-  "Plushie"
-];
+const itemTypesOfInterest = ["Drug", "Flower", "Plushie"];
 
 const ForeignMarkets = () => {
-  const { items, refresh } = useForeignStockItems();
+  const { rows, error } = useForeignMarketsScan({ intervalMs: 60000 });
   const { apiKey, tornUserProfile, fetchTornProfileAsync } = useUser();
 
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-  const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>(itemTypesOfInterest);
+  const [selectedItemTypes, setSelectedItemTypes] =
+    useState<string[]>(itemTypesOfInterest);
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredItems = useMemo(() => {
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    return rows.filter(
+      (row) =>
+        (selectedItemTypes.length === 0 ||
+          selectedItemTypes.includes(row.item.type!)) &&
+        row.itemName.toLowerCase().includes(lowerSearchTerm)
+    );
+  }, [rows, searchTerm, selectedItemTypes]);
 
   useEffect(() => {
     if (!apiKey) {
@@ -37,10 +52,9 @@ const ForeignMarkets = () => {
       return;
     }
 
-    console.log("Torn user status:", tornUserProfile.status);
-
-    if (tornUserProfile.status.state === "Traveling" &&
-        !tornUserProfile.status.description.startsWith("Returning to")
+    if (
+      tornUserProfile.status.state === "Traveling" &&
+      !tornUserProfile.status.description.startsWith("Returning to")
     ) {
       const destination = tornUserProfile.status.description.replace(
         "Traveling to ",
@@ -51,18 +65,18 @@ const ForeignMarkets = () => {
   }, [tornUserProfile]);
 
   const countries = useMemo(() => {
-    if (!items) return [];
-    return Array.from(new Set(items.map((i) => i.country)))
+    if (!rows) return [];
+    return Array.from(new Set(rows.map((i) => i.country)))
       .filter((country: string | undefined) => country && country !== "Torn")
       .sort();
-  }, [items]);
+  }, [rows]);
 
   const itemTypes = useMemo(() => {
-    if (!items) return [];
+    if (!rows) return [];
     return Array.from(
-      new Set(items.map((i) => i.item.type).filter((type) => type))
+      new Set(rows.map((i) => i.item.type).filter((type) => type))
     ).sort();
-  }, [items]);
+  }, [rows]);
 
   const handleCountryFilterChange = (country: string) => {
     setSelectedCountries((prevSelected) => {
@@ -74,10 +88,11 @@ const ForeignMarkets = () => {
     });
   };
 
-  if (!items) return <Loading message="Loading items..." />;
+  if (!rows) return <Loading message="Loading foreign markets..." />;
+  if (error) return <Alert severity="error">{error}</Alert>;
 
   return (
-    <Box>
+    <Box sx={{ width: "95%" }}>
       <Typography variant="h4" gutterBottom>
         Foreign Markets
       </Typography>
@@ -87,36 +102,48 @@ const ForeignMarkets = () => {
       </Typography>
 
       <Box>
-        {countries.map((country: string | undefined) => (
-          <Box
-            key={country}
-            sx={{
-              alignItems: "center",
-              display: "inline-flex",
-              flexDirection: "column",
-              minWidth: "4.5em",
-              mb: 2,
-              mr: 2,
-            }}
-          >
-            <img
-              src={`/${country?.toLowerCase().replace(" ", "-")}.svg`}
-              alt={`Flag of ${country}`}
-              style={{
-                border: selectedCountries.includes(country || "")
-                  ? "4px solid #0966c2"
-                  : "2px solid transparent",
-                borderRadius: "3em",
-                cursor: "pointer",
-                maxWidth: "3em",
-                height: "3em",
-                objectFit: "cover",
-              }}
-              onClick={() => handleCountryFilterChange(country || "")}
-            />
-            <Typography variant="caption">{country}</Typography>
-          </Box>
-        ))}
+        <Grid container spacing={2}>
+          {countries.map((country: string | undefined) => (
+            <Grid key={country} size="auto">
+              <Box
+                key={country}
+                sx={{
+                  alignItems: "center",
+                  display: "inline-flex",
+                  flexDirection: "column",
+                  minWidth: "4em",
+                  mb: 2,
+                  mr: 2,
+                  textAlign: "center",
+                }}
+              >
+                <img
+                  src={`/${country?.toLowerCase().replace(" ", "-")}.svg`}
+                  alt={`Flag of ${country}`}
+                  style={{
+                    border: selectedCountries.includes(country || "")
+                      ? "4px solid #0966c2"
+                      : "2px solid transparent",
+                    borderRadius: "3em",
+                    cursor: "pointer",
+                    maxWidth: "3em",
+                    height: "3em",
+                    objectFit: "cover",
+                  }}
+                  onClick={() => handleCountryFilterChange(country || "")}
+                />
+                <Typography variant="caption">
+                  {country?.split(" ").map((countryPart) => (
+                    <>
+                      {countryPart}
+                      <br />
+                    </>
+                  ))}
+                </Typography>
+              </Box>
+            </Grid>
+          ))}
+        </Grid>
       </Box>
 
       <Box>
@@ -130,7 +157,7 @@ const ForeignMarkets = () => {
           <Chip
             key={type}
             label={type}
-            color={itemTypesOfInterest.includes(type!) ? "success" : "primary"}
+            color={"primary"}
             variant={selectedItemTypes.includes(type!) ? "filled" : "outlined"}
             onClick={() => {
               if (!type) return;
@@ -145,7 +172,19 @@ const ForeignMarkets = () => {
         ))}
       </Box>
 
-      <Divider sx={{ my: 4 }} />
+      <Box sx={{ my: 2 }}>
+        <FormGroup>
+          <FormLabel sx={{ mb: 1 }}>Search items:</FormLabel>
+          <TextField
+            label="Search"
+            variant="outlined"
+            size="small"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{ minWidth: 400 }}
+          />
+        </FormGroup>
+      </Box>
 
       {countries
         .filter(
@@ -154,34 +193,32 @@ const ForeignMarkets = () => {
             selectedCountries.includes(country || "")
         )
         .map((country: string | undefined) => (
-          <Box key={country} sx={{ mb: 4 }}>
-            <Typography variant="h5" gutterBottom>
-              <img
-                src={`/${country?.toLowerCase().replace(" ", "-")}.svg`}
-                alt={`Flag of ${country}`}
-                style={{
-                  maxWidth: "1em",
-                  height: "auto",
-                  marginRight: 8,
-                  top: 3,
-                  position: "relative",
-                }}
-              />
-              {country}
-            </Typography>
+          <>
+            {filteredItems.filter((i) => i.country === country).length > 0 && (
+              <Box key={country} sx={{ mb: 4 }}>
+                <Divider sx={{ my: 4 }} />
+                <Typography variant="h5" gutterBottom>
+                  <img
+                    src={`/${country?.toLowerCase().replace(" ", "-")}.svg`}
+                    alt={`Flag of ${country}`}
+                    style={{
+                      maxWidth: "1em",
+                      height: "auto",
+                      marginRight: 8,
+                      top: 3,
+                      position: "relative",
+                    }}
+                  />
+                  {country}
+                </Typography>
 
-            <ForeignMarketItemsTable
-              items={items.filter(
-                (i) =>
-                  i.country === country &&
-                  (selectedItemTypes.length === 0 ||
-                    selectedItemTypes.includes(i.item.type!))
-              )}
-            />
-          </Box>
+                <ForeignMarketItemsTable
+                  items={filteredItems.filter((i) => i.country === country)}
+                />
+              </Box>
+            )}
+          </>
         ))}
-
-      <Divider sx={{ my: 4 }} />
     </Box>
   );
 };

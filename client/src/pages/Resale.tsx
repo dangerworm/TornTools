@@ -1,13 +1,12 @@
-import { Box, Grid, Typography } from "@mui/material";
-import Loading from "../components/Loading";
-import { useResaleScan } from "../hooks/useResaleScan";
-import { useItems } from "../hooks/useItems";
-import MarketItemsTable from "../components/MarketItemTable";
 import { useState } from "react";
+import { Box, Grid, Typography } from "@mui/material";
+import { useResaleScan } from "../hooks/useResaleScan";
+import MarketItemsTable from "../components/MarketItemTable";
 import SteppedSlider from "../components/SteppedSlider";
+import { Loading } from "../components/Loading";
 
 const Resale = () => {
-  const { items } = useItems();
+  const { rows, error } = useResaleScan({ intervalMs: 1000 });
 
   const minuteRangeValues = [
     1, 2, 3, 5, 10, 30, 60, 120
@@ -26,7 +25,6 @@ const Resale = () => {
   const [maxBuyPrice, setMaxBuyPrice] = useState(priceRangeValues[initialMaxBuyPriceIndex]);
   const [maxTimeSinceLastUpdate, setMaxTimeSinceLastUpdate] = useState(minuteRangeValues[initialMaxTimeSinceLastUpdateIndex]);
 
-  const { rows, error } = useResaleScan(items, { intervalMs: 1000 });
 
   const handleMinProfitSliderValueChange = (newValue: number) => {
     setMinProfit(newValue);
@@ -40,7 +38,7 @@ const Resale = () => {
     setMaxTimeSinceLastUpdate(newValue);
   }
 
-  if (!items) return <Loading />;
+  if (!rows) return <Loading message="Loading resale opportunities..."/>;
 
   return (
     <Box>

@@ -6,6 +6,4 @@ const configuredApiUrl =
     ? import.meta.env.VITE_API_BASE_URL + '/api'
     : fallbackApiUrl;
 
-console.log("configuredApiUrl", configuredApiUrl)
-
 export const API_BASE_URL = configuredApiUrl.replace(/\/$/, "");

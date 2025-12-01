@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
 import {
   fetchItemPriceHistory,
   fetchItemVelocityHistory,
 } from "../lib/dotnetapi";
 import type { HistoryWindow, ItemHistoryPoint } from "../types/history";
+import { useState, useCallback, useEffect } from "react";
 
 interface ItemHistoryState {
   data: ItemHistoryPoint[];
@@ -17,12 +17,17 @@ type HistoryFetcher = (
   window: HistoryWindow
 ) => Promise<ItemHistoryPoint[]>;
 
-const useHistoryFetcher = (
+const getErrorMessage = (error: unknown) => {
+  if (!error) return null;
+  return error instanceof Error ? error.message : "Failed to load history";
+};
+
+const useHistoryQuery = (
   fetcher: HistoryFetcher,
   itemId: number | undefined,
-  window: HistoryWindow
+  window: HistoryWindow,
 ): ItemHistoryState => {
-  const [data, setData] = useState<ItemHistoryPoint[]>([]);
+ const [data, setData] = useState<ItemHistoryPoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +47,7 @@ const useHistoryFetcher = (
       if (e instanceof Error) {
         setError(e.message);
       } else {
-        setError("Failed to load history");
+        setError(getErrorMessage(e));
       }
     } finally {
       setLoading(false);
@@ -59,9 +64,9 @@ const useHistoryFetcher = (
 export const useItemPriceHistory = (
   itemId: number | undefined,
   window: HistoryWindow
-) => useHistoryFetcher(fetchItemPriceHistory, itemId, window);
+) => useHistoryQuery(fetchItemPriceHistory, itemId, window);
 
 export const useItemVelocityHistory = (
   itemId: number | undefined,
   window: HistoryWindow
-) => useHistoryFetcher(fetchItemVelocityHistory, itemId, window);
+) => useHistoryQuery(fetchItemVelocityHistory, itemId, window);

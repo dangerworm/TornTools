@@ -2,7 +2,7 @@ import { createContext, useContext } from "react";
 import type { DotNetUserDetails } from "../lib/dotnetapi";
 import type { TornUserProfile } from "../lib/tornapi";
 
-interface UserContextModel {
+export interface UserContextModel {
   apiKey: string | null;
   tornUserProfile: TornUserProfile | null;
   loadingTornUserProfile: boolean;

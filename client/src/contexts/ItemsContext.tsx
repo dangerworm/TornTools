@@ -1,14 +1,8 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
-import type { Item, ItemsMap } from "../types/items";
-import { fetchItems } from "../lib/dotnetapi";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { API_BASE_URL } from "../constants/ApiConstants";
-import { ItemsContext } from "../hooks/useItems";
+import { fetchItems } from "../lib/dotnetapi";
+import { ItemsContext, type ItemsContextModel } from "../hooks/useItems";
+import type { Item, ItemsMap } from "../types/items";
 
 const LOCAL_STORAGE_KEY_ITEMS = "torntools:items:v1";
 const LOCAL_STORAGE_KEY_ITEMS_TIME_SERVED = "torntools:items:v1:ts";
@@ -28,7 +22,33 @@ const normalizeItems = (resp: Item[]): ItemsMap => {
     }
   }
   return map;
-}
+};
+
+const getCachedItems = (ttlMs: number): ItemsMap | undefined => {
+  try {
+    const cached = localStorage.getItem(LOCAL_STORAGE_KEY_ITEMS);
+    const cachedAt = Number(
+      localStorage.getItem(LOCAL_STORAGE_KEY_ITEMS_TIME_SERVED) ?? 0
+    );
+    if (!cached || !cachedAt) return undefined;
+    if (Date.now() - cachedAt > ttlMs) return undefined;
+    return JSON.parse(cached) as ItemsMap;
+  } catch {
+    return undefined;
+  }
+};
+
+const persistItems = (items: ItemsMap) => {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY_ITEMS, JSON.stringify(items));
+    localStorage.setItem(
+      LOCAL_STORAGE_KEY_ITEMS_TIME_SERVED,
+      String(Date.now())
+    );
+  } catch {
+    // If localStorage is unavailable, skip persistence
+  }
+};
 
 type ItemsProviderProps = {
   children: ReactNode;
@@ -43,6 +63,20 @@ export const ItemsProvider = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (itemsById && Object.keys(itemsById).length > 0) {
+      return;
+    }
+
+    const itemsMap = getCachedItems(ttlMs);
+    if (itemsMap) {
+      setItemsById(itemsMap);
+      return;
+    }
+
+    void revalidate();
+  }, [itemsById, ttlMs]);
 
   const items = useMemo(
     () => Object.values(itemsById).sort((a, b) => a.name.localeCompare(b.name)),
@@ -77,15 +111,11 @@ export const ItemsProvider = ({
       });
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
 
-      const payload = await fetchItems().then((p) => p);
+      const payload = await fetchItems().then((data) => data);
 
       const map = normalizeItems(payload);
       setItemsById(map);
-      localStorage.setItem(LOCAL_STORAGE_KEY_ITEMS, JSON.stringify(map));
-      localStorage.setItem(
-        LOCAL_STORAGE_KEY_ITEMS_TIME_SERVED,
-        String(Date.now())
-      );
+      persistItems(map);
     } catch (e: unknown) {
       if (e instanceof Error) {
         setError(e.message);
@@ -100,13 +130,14 @@ export const ItemsProvider = ({
   const refresh = useMemo(() => async () => revalidate(), []);
 
   const contextValue = useMemo(
-    () => ({
-      items,
-      itemsById,
-      loading,
-      error,
-      refresh,
-    }),
+    () =>
+      ({
+        items,
+        itemsById,
+        loading,
+        error,
+        refresh,
+      } as ItemsContextModel),
     [items, itemsById, loading, error, refresh]
   );
 

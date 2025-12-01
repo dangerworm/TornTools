@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { fetchProfitableListings } from "../lib/dotnetapi";
-import type { ProfitableListing } from "../types/profitableListings";
+import { fetchForeignStockItems } from "../lib/dotnetapi";
+import type { ForeignStockItem } from "../types/foreignStockItems";
 
 export type RowStatus = "queued" | "fetching" | "cached" | "done" | "error";
 
@@ -8,12 +8,12 @@ interface Options {
   intervalMs?: number; // one call per interval (keeps us <100/min by default)
 }
 
-export function useResaleScan(
+export function useForeignMarketsScan(
   opts?: Options
 ) {
-  const { intervalMs = 1000 } = opts || {};
+  const { intervalMs = 60000 } = opts || {};
 
-  const [rows, setRows] = useState<ProfitableListing[]>([]);
+  const [rows, setRows] = useState<ForeignStockItem[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const timerRef = useRef<number | null>(null);
@@ -22,7 +22,7 @@ export function useResaleScan(
     setError(null);
 
     const tick = async () => {
-      fetchProfitableListings()
+      fetchForeignStockItems()
         .then(data => {
           setRows(data)
         })

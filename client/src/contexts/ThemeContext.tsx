@@ -11,7 +11,7 @@ import {
   createTheme,
   type PaletteMode,
 } from "@mui/material";
-import { ThemeSettingsContext } from "../hooks/useThemeSettings";
+import { ThemeSettingsContext, type ThemeSettingsContextModel } from "../hooks/useThemeSettings";
 import { useUser } from "../hooks/useUser";
 import {
   fetchThemes,
@@ -198,7 +198,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
       selectTheme,
       saveTheme,
       refreshThemes,
-    }),
+    } as ThemeSettingsContextModel),
     [
       availableThemes,
       selectedThemeId,

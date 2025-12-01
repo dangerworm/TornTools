@@ -1,7 +1,7 @@
 import { createContext, useContext } from "react";
 import type { Item, ItemsMap } from "../types/items";
 
-interface ItemsContextModel {
+export interface ItemsContextModel {
   items: Item[];
   itemsById: ItemsMap;
   loading: boolean;

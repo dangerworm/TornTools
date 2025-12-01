@@ -3,11 +3,13 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { ItemsProvider } from "./contexts/ItemsContext.tsx";
+
 import { UserProvider } from "./contexts/UserContext.tsx";
 import { ThemeProvider } from "./contexts/ThemeContext.tsx";
-import App from "./App.tsx";
+import { ItemsProvider } from "./contexts/ItemsContext.tsx";
 import { ForeignStockItemsProvider } from "./contexts/ForeignStockItemsContext.tsx";
+
+import App from "./App.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
