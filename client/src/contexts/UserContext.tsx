@@ -64,7 +64,6 @@ export const UserProvider = ({
   }, []);
 
   const clearAllUserData = useCallback(() => {
-    console.log("Clearing all user data");
     // Abort any in-flight Torn request
     if (abortRef.current) {
       abortRef.current.abort();
@@ -237,7 +236,7 @@ export const UserProvider = ({
 
     if (!ts || age > ttlMs) {
       // Cache too old or missing – start from a clean slate
-      console.log("User cache expired or missing, clearing all");
+      console.log("User cache expired or missing; clearing user data");
       clearAllUserData();
       return;
     }

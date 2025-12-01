@@ -56,7 +56,7 @@ export default function Layout() {
       {/* Spacer so content starts below the AppBar */}
       <Toolbar />
       <Divider />
-      <List>
+      <List sx={{ pt: 0 }}>
         {menu.map((item) => {
           if (item.requiresItems && (!items || items.length === 0)) {
             return null;
