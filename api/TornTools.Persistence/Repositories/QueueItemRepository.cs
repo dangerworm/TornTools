@@ -9,7 +9,7 @@ using TornTools.Persistence.Interfaces;
 
 namespace TornTools.Persistence.Repositories;
 public class QueueItemRepository(
-    ILogger<QueueItemRepository> logger, 
+    ILogger<QueueItemRepository> logger,
     TornToolsDbContext dbContext
 ) : RepositoryBase<QueueItemRepository>(logger, dbContext), IQueueItemRepository
 {
@@ -31,37 +31,26 @@ public class QueueItemRepository(
 
     public async Task CreateQueueItemsAsync(IEnumerable<QueueItemDto> itemDtos, CancellationToken stoppingToken)
     {
-        // Turn off auto-change detection while doing lots of work
-        var wasAutoDetect = DbContext.ChangeTracker.AutoDetectChangesEnabled;
-        DbContext.ChangeTracker.AutoDetectChangesEnabled = false;
+        var items = itemDtos.ToList();
 
-        try
+        for (int i = 0; i < items.Count; i += DatabaseConstants.BulkUpdateSize)
         {
-            var items = itemDtos.ToList();
+            var batch = items
+                .OrderBy(i => i.CreatedAt)
+                .Skip(i)
+                .Take(DatabaseConstants.BulkUpdateSize)
+                .ToList();
 
-            for (int i = 0; i < items.Count; i += DatabaseConstants.BulkUpdateSize)
+            var keys = batch.Select(b => b.Id).ToList();
+
+            foreach (var itemDto in batch)
             {
-                var batch = items
-                    .OrderBy(i => i.CreatedAt)
-                    .Skip(i)
-                    .Take(DatabaseConstants.BulkUpdateSize)
-                    .ToList();
-
-                var keys = batch.Select(b => b.Id).ToList();
-
-                foreach (var itemDto in batch)
-                {
-                    var newEntity = CreateEntityFromDto(itemDto);
-                    DbContext.QueueItems.Add(newEntity);
-                }
-
-                await DbContext.SaveChangesAsync(stoppingToken);
-                DbContext.ChangeTracker.Clear();
+                var newEntity = CreateEntityFromDto(itemDto);
+                DbContext.QueueItems.Add(newEntity);
             }
-        }
-        finally
-        {
-            DbContext.ChangeTracker.AutoDetectChangesEnabled = wasAutoDetect;
+
+            await DbContext.SaveChangesAsync(stoppingToken);
+            DbContext.ChangeTracker.Clear();
         }
     }
 
@@ -136,40 +125,30 @@ public class QueueItemRepository(
 
     public async Task RemoveQueueItemsAsync(CancellationToken stoppingToken, QueueStatus? statusToRemove = null)
     {
-        // Turn off auto-change detection while doing lots of work
-        var wasAutoDetect = DbContext.ChangeTracker.AutoDetectChangesEnabled;
-        DbContext.ChangeTracker.AutoDetectChangesEnabled = false;
-        try
+        while (true)
         {
-            while (true)
+            var completedItems = await DbContext.QueueItems
+                .Where(q => statusToRemove == null || q.ItemStatus == nameof(QueueStatus.Completed))
+                .Where(q => q.ItemStatus != nameof(QueueStatus.Failed))
+                .OrderBy(q => q.QueueIndex)
+                .Take(DatabaseConstants.BulkUpdateSize)
+                .ToListAsync(stoppingToken);
+
+            if (completedItems.Count == 0)
             {
-                var completedItems = await DbContext.QueueItems
-                    .Where(q => statusToRemove == null || q.ItemStatus == nameof(QueueStatus.Completed))
-                    .Where(q => q.ItemStatus != nameof(QueueStatus.Failed))
-                    .OrderBy(q => q.QueueIndex)
-                    .Take(DatabaseConstants.BulkUpdateSize)
-                    .ToListAsync(stoppingToken);
-
-                if (completedItems.Count == 0)
-                {
-                    break;
-                }
-
-                DbContext.QueueItems.RemoveRange(completedItems);
-                await DbContext.SaveChangesAsync(stoppingToken);
+                break;
             }
-        }
-        finally
-        {
-            DbContext.ChangeTracker.AutoDetectChangesEnabled = wasAutoDetect;
+
+            DbContext.QueueItems.RemoveRange(completedItems);
+            await DbContext.SaveChangesAsync(stoppingToken);
         }
     }
 
     public async Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken)
     {
-        var itemToRemove = await DbContext.QueueItems.FindAsync([id, stoppingToken], cancellationToken: stoppingToken) 
+        var itemToRemove = await DbContext.QueueItems.FindAsync([id, stoppingToken], cancellationToken: stoppingToken)
             ?? throw new Exception($"{nameof(QueueItemEntity)} with ID {id} not found.");
-        
+
         DbContext.QueueItems.Remove(itemToRemove);
         await DbContext.SaveChangesAsync(stoppingToken);
     }

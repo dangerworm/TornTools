@@ -36,74 +36,63 @@ public class ItemRepository(
 
     public async Task UpsertItemsAsync(IEnumerable<ItemDto> itemDtos, CancellationToken stoppingToken)
     {
-        // Turn off auto-change detection while doing lots of work
-        var wasAutoDetect = DbContext.ChangeTracker.AutoDetectChangesEnabled;
-        DbContext.ChangeTracker.AutoDetectChangesEnabled = false;
+        var items = itemDtos.ToList();
 
-        try
+        for (int i = 0; i < items.Count; i += DatabaseConstants.BulkUpdateSize)
         {
-            var items = itemDtos.ToList();
+            var batch = items
+                .OrderByDescending(i => i.ValueSellPrice)
+                .Skip(i)
+                .Take(DatabaseConstants.BulkUpdateSize)
+                .ToList();
 
-            for (int i = 0; i < items.Count; i += DatabaseConstants.BulkUpdateSize)
+            var keys = batch.Select(b => b.Id).ToList();
+
+            // Load existing entities for these keys in one go
+            var existing = await DbContext.Items
+                .Where(x => keys.Contains(x.Id))
+                .ToDictionaryAsync(x => x.Id, stoppingToken);
+
+            foreach (var itemDto in batch)
             {
-                var batch = items
-                    .OrderByDescending(i => i.ValueSellPrice)
-                    .Skip(i)
-                    .Take(DatabaseConstants.BulkUpdateSize)
-                    .ToList();
-
-                var keys = batch.Select(b => b.Id).ToList();
-
-                // Load existing entities for these keys in one go
-                var existing = await DbContext.Items
-                    .Where(x => keys.Contains(x.Id))
-                    .ToDictionaryAsync(x => x.Id, stoppingToken);
-
-                foreach (var itemDto in batch)
+                if (existing.TryGetValue(itemDto.Id, out var entity))
                 {
-                    if (existing.TryGetValue(itemDto.Id, out var entity))
-                    {
-                        entity.Name = itemDto.Name;
-                        entity.Description = itemDto.Description;
-                        entity.Effect = itemDto.Effect;
-                        entity.Requirement = itemDto.Requirement;
-                        entity.Image = itemDto.Image;
-                        entity.Type = itemDto.Type;
-                        entity.SubType = itemDto.SubType;
-                        entity.IsMasked = itemDto.IsMasked;
-                        entity.IsTradable = itemDto.IsTradable;
-                        entity.IsFoundInCity = itemDto.IsFoundInCity;
-                        entity.ValueVendorCountry = itemDto.ValueVendorCountry;
-                        entity.ValueVendorName = itemDto.ValueVendorName;
-                        entity.ValueBuyPrice = itemDto.ValueBuyPrice;
-                        entity.ValueSellPrice = itemDto.ValueSellPrice;
-                        entity.ValueMarketPrice = itemDto.ValueMarketPrice;
-                        entity.Circulation = itemDto.Circulation;
-                        entity.DetailsCategory = itemDto.DetailsCategory;
-                        entity.DetailsStealthLevel = itemDto.DetailsStealthLevel;
-                        entity.DetailsBaseStatsDamage = itemDto.DetailsBaseStatsDamage;
-                        entity.DetailsBaseStatsAccuracy = itemDto.DetailsBaseStatsAccuracy;
-                        entity.DetailsBaseStatsArmor = itemDto.DetailsBaseStatsArmor;
-                        entity.DetailsAmmoId = itemDto.DetailsAmmoId;
-                        entity.DetailsAmmoName = itemDto.DetailsAmmoName;
-                        entity.DetailsAmmoMagazineRounds = itemDto.DetailsAmmoMagazineRounds;
-                        entity.DetailsAmmoRateOfFireMinimum = itemDto.DetailsAmmoRateOfFireMinimum;
-                        entity.DetailsAmmoRateOfFireMaximum = itemDto.DetailsAmmoRateOfFireMaximum;
-                    }
-                    else
-                    {
-                        var newEntity = CreateEntityFromDto(itemDto);
-                        DbContext.Items.Add(newEntity);
-                    }
+                    entity.Name = itemDto.Name;
+                    entity.Description = itemDto.Description;
+                    entity.Effect = itemDto.Effect;
+                    entity.Requirement = itemDto.Requirement;
+                    entity.Image = itemDto.Image;
+                    entity.Type = itemDto.Type;
+                    entity.SubType = itemDto.SubType;
+                    entity.IsMasked = itemDto.IsMasked;
+                    entity.IsTradable = itemDto.IsTradable;
+                    entity.IsFoundInCity = itemDto.IsFoundInCity;
+                    entity.ValueVendorCountry = itemDto.ValueVendorCountry;
+                    entity.ValueVendorName = itemDto.ValueVendorName;
+                    entity.ValueBuyPrice = itemDto.ValueBuyPrice;
+                    entity.ValueSellPrice = itemDto.ValueSellPrice;
+                    entity.ValueMarketPrice = itemDto.ValueMarketPrice;
+                    entity.Circulation = itemDto.Circulation;
+                    entity.DetailsCategory = itemDto.DetailsCategory;
+                    entity.DetailsStealthLevel = itemDto.DetailsStealthLevel;
+                    entity.DetailsBaseStatsDamage = itemDto.DetailsBaseStatsDamage;
+                    entity.DetailsBaseStatsAccuracy = itemDto.DetailsBaseStatsAccuracy;
+                    entity.DetailsBaseStatsArmor = itemDto.DetailsBaseStatsArmor;
+                    entity.DetailsAmmoId = itemDto.DetailsAmmoId;
+                    entity.DetailsAmmoName = itemDto.DetailsAmmoName;
+                    entity.DetailsAmmoMagazineRounds = itemDto.DetailsAmmoMagazineRounds;
+                    entity.DetailsAmmoRateOfFireMinimum = itemDto.DetailsAmmoRateOfFireMinimum;
+                    entity.DetailsAmmoRateOfFireMaximum = itemDto.DetailsAmmoRateOfFireMaximum;
                 }
-
-                await DbContext.SaveChangesAsync(stoppingToken);
-                DbContext.ChangeTracker.Clear();
+                else
+                {
+                    var newEntity = CreateEntityFromDto(itemDto);
+                    DbContext.Items.Add(newEntity);
+                }
             }
-        }
-        finally
-        {
-            DbContext.ChangeTracker.AutoDetectChangesEnabled = wasAutoDetect;
+
+            await DbContext.SaveChangesAsync(stoppingToken);
+            DbContext.ChangeTracker.Clear();
         }
     }
 
