@@ -32,6 +32,7 @@ public class ItemDto
     public int? DetailsAmmoMagazineRounds { get; set; }
     public int? DetailsAmmoRateOfFireMinimum { get; set; }
     public int? DetailsAmmoRateOfFireMaximum { get; set; }
+    public required DateTime LastUpdated { get; set; }
 
     public ItemDto() { }
 
@@ -65,5 +66,6 @@ public class ItemDto
         DetailsAmmoMagazineRounds = item.Details?.Ammo?.MagazineRounds;
         DetailsAmmoRateOfFireMinimum = item.Details?.Ammo?.RateOfFire?.Minimum;
         DetailsAmmoRateOfFireMaximum = item.Details?.Ammo?.RateOfFire?.Maximum;
+        LastUpdated = DateTime.UtcNow;
     }
 }

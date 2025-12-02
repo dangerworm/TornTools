@@ -23,56 +23,45 @@ public class ForeignStockItemRepository(
 
     public async Task UpsertItemsAsync(IEnumerable<ForeignStockItemDto> itemDtos, CancellationToken stoppingToken)
     {
-        // Turn off auto-change detection while doing lots of work
-        var wasAutoDetect = DbContext.ChangeTracker.AutoDetectChangesEnabled;
-        DbContext.ChangeTracker.AutoDetectChangesEnabled = false;
+        var items = itemDtos.ToList();
 
-        try
+        for (int i = 0; i < items.Count; i += DatabaseConstants.BulkUpdateSize)
         {
-            var items = itemDtos.ToList();
+            var batch = items
+                .OrderByDescending(i => i.ItemId)
+                .Skip(i)
+                .Take(DatabaseConstants.BulkUpdateSize)
+                .ToList();
 
-            for (int i = 0; i < items.Count; i += DatabaseConstants.BulkUpdateSize)
+            var keys = batch.Select(i => i.ItemId).ToList();
+
+            // Load existing entities for these keys in one go
+            var existing = await DbContext.ForeignStockItems
+                .AsTracking()
+                .Where(fsi => keys.Contains(fsi.ItemId))
+                .ToDictionaryAsync(GetCompositeKey, stoppingToken);
+
+            foreach (var itemDto in batch)
             {
-                var batch = items
-                    .OrderByDescending(i => i.ItemId)
-                    .Skip(i)
-                    .Take(DatabaseConstants.BulkUpdateSize)
-                    .ToList();
-
-                var keys = batch.Select(i => i.ItemId).ToList();
-
-                // Load existing entities for these keys in one go
-                var existing = await DbContext.ForeignStockItems
-                    .AsTracking()
-                    .Where(fsi => keys.Contains(fsi.ItemId))
-                    .ToDictionaryAsync(GetCompositeKey, stoppingToken);
-
-                foreach (var itemDto in batch)
+                if (existing.TryGetValue(GetCompositeKey(itemDto), out var entity))
                 {
-                    if (existing.TryGetValue(GetCompositeKey(itemDto), out var entity))
-                    {
-                        entity.ItemId = itemDto.ItemId;
-                        entity.Country = itemDto.Country;
-                        entity.ItemName = itemDto.ItemName;
-                        entity.Quantity = itemDto.Quantity;
-                        entity.Cost = itemDto.Cost;
-                        entity.LastUpdated = itemDto.LastUpdated;
-                    }
-                    else
-                    {
-                        var newEntity = CreateEntityFromDto(itemDto);
-                        DbContext.ForeignStockItems.Add(newEntity);
-                    }
+                    entity.ItemId = itemDto.ItemId;
+                    entity.Country = itemDto.Country;
+                    entity.ItemName = itemDto.ItemName;
+                    entity.Quantity = itemDto.Quantity;
+                    entity.Cost = itemDto.Cost;
+                    entity.LastUpdated = itemDto.LastUpdated;
                 }
-
-                DbContext.ChangeTracker.DetectChanges();
-                await DbContext.SaveChangesAsync(stoppingToken);
-                DbContext.ChangeTracker.Clear();
+                else
+                {
+                    var newEntity = CreateEntityFromDto(itemDto);
+                    DbContext.ForeignStockItems.Add(newEntity);
+                }
             }
-        }
-        finally
-        {
-            DbContext.ChangeTracker.AutoDetectChangesEnabled = wasAutoDetect;
+
+            DbContext.ChangeTracker.DetectChanges();
+            await DbContext.SaveChangesAsync(stoppingToken);
+            DbContext.ChangeTracker.Clear();
         }
     }
 

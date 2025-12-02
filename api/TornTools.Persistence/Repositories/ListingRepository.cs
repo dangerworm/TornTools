@@ -23,37 +23,26 @@ public class ListingRepository(
 
     public async Task CreateListingsAsync(IEnumerable<ListingDto> listingDtos, CancellationToken stoppingToken)
     {
-        // Turn off auto-change detection while doing lots of work
-        var wasAutoDetect = DbContext.ChangeTracker.AutoDetectChangesEnabled;
-        DbContext.ChangeTracker.AutoDetectChangesEnabled = false;
+        var listings = listingDtos.ToList();
 
-        try
+        for (int i = 0; i < listings.Count; i += DatabaseConstants.BulkUpdateSize)
         {
-            var listings = listingDtos.ToList();
+            var batch = listings
+                .OrderBy(l => l.ListingPosition)
+                .Skip(i)
+                .Take(DatabaseConstants.BulkUpdateSize)
+                .ToList();
 
-            for (int i = 0; i < listings.Count; i += DatabaseConstants.BulkUpdateSize)
+            var keys = batch.Select(b => b.Id).ToList();
+
+            foreach (var itemDto in batch)
             {
-                var batch = listings
-                    .OrderBy(l => l.ListingPosition)    
-                    .Skip(i)
-                    .Take(DatabaseConstants.BulkUpdateSize)
-                    .ToList();
-                
-                var keys = batch.Select(b => b.Id).ToList();
-
-                foreach (var itemDto in batch)
-                {
-                    var newEntity = CreateEntityFromDto(itemDto);
-                    DbContext.Listings.Add(newEntity);
-                }
-
-                await DbContext.SaveChangesAsync(stoppingToken);
-                DbContext.ChangeTracker.Clear();
+                var newEntity = CreateEntityFromDto(itemDto);
+                DbContext.Listings.Add(newEntity);
             }
-        }
-        finally
-        {
-            DbContext.ChangeTracker.AutoDetectChangesEnabled = wasAutoDetect;
+
+            await DbContext.SaveChangesAsync(stoppingToken);
+            DbContext.ChangeTracker.Clear();
         }
     }
 

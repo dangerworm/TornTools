@@ -4,7 +4,7 @@ import Home from "./pages/Home";
 import SignIn from "./pages/SignIn";
 import Markets from "./pages/Markets";
 import ForeignMarkets from "./pages/ForeignMarkets";
-import LocalMarkets from "./pages/LocalMarkets";
+import CityMarkets from "./pages/CityMarkets";
 import ItemDetails from "./pages/ItemDetails";
 import Resale from "./pages/Resale";
 import Time from "./pages/Time";
@@ -21,8 +21,8 @@ function App() {
         <Route path="/favourites" element={<FavouriteMarkets />} />
         <Route path="/settings" element={<UserSettings />} />
         <Route path="/markets" element={<Markets />} />
+        <Route path="/city-markets" element={<CityMarkets />} />
         <Route path="/foreign-markets" element={<ForeignMarkets />} />
-        <Route path="/local-markets" element={<LocalMarkets />} />
         <Route path="/item/:itemId" element={<ItemDetails />} />
         <Route path="/resale" element={<Resale />} />
         <Route path="/time" element={<Time />} />

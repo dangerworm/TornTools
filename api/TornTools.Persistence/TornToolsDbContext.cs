@@ -60,6 +60,7 @@ public class TornToolsDbContext(
             e.Property(x => x.IsMasked).IsRequired();
             e.Property(x => x.IsTradable).IsRequired();
             e.Property(x => x.IsFoundInCity).IsRequired();
+            e.Property(x => x.LastUpdated).IsRequired();
         });
 
         modelBuilder.Entity<ItemMarketHistoryPointEntity>().HasNoKey();
