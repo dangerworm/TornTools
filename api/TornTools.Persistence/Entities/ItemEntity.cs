@@ -90,6 +90,9 @@ public class ItemEntity
     [Column("details_ammo_rate_of_fire_maximum")]
     public int? DetailsAmmoRateOfFireMaximum { get; set; }
 
+    [Column("last_updated")]
+    public required DateTime LastUpdated { get; set; }
+
     public ICollection<ItemChangeLogEntity> ChangeLogs { get; set; } = [];
     public ICollection<ForeignStockItemEntity> ForeignStockItems { get; set; } = [];
 
@@ -124,6 +127,7 @@ public class ItemEntity
             DetailsAmmoMagazineRounds = DetailsAmmoMagazineRounds,
             DetailsAmmoRateOfFireMinimum = DetailsAmmoRateOfFireMinimum,
             DetailsAmmoRateOfFireMaximum = DetailsAmmoRateOfFireMaximum,
+            LastUpdated = LastUpdated
         };
     }
 }

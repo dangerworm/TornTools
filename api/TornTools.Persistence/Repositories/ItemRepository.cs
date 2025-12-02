@@ -83,6 +83,7 @@ public class ItemRepository(
                     entity.DetailsAmmoMagazineRounds = itemDto.DetailsAmmoMagazineRounds;
                     entity.DetailsAmmoRateOfFireMinimum = itemDto.DetailsAmmoRateOfFireMinimum;
                     entity.DetailsAmmoRateOfFireMaximum = itemDto.DetailsAmmoRateOfFireMaximum;
+                    entity.LastUpdated = itemDto.LastUpdated;
                 }
                 else
                 {
@@ -172,7 +173,8 @@ public class ItemRepository(
             DetailsAmmoName = itemDto.DetailsAmmoName,
             DetailsAmmoMagazineRounds = itemDto.DetailsAmmoMagazineRounds,
             DetailsAmmoRateOfFireMinimum = itemDto.DetailsAmmoRateOfFireMinimum,
-            DetailsAmmoRateOfFireMaximum = itemDto.DetailsAmmoRateOfFireMaximum
+            DetailsAmmoRateOfFireMaximum = itemDto.DetailsAmmoRateOfFireMaximum,
+            LastUpdated = itemDto.LastUpdated
         };
     }
 }
