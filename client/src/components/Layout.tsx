@@ -11,16 +11,12 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import HomeIcon from "@mui/icons-material/Home";
-import Sell from "@mui/icons-material/Sell";
-import Assessment from "@mui/icons-material/Assessment";
-import AccessTimeFilled from "@mui/icons-material/AccessTimeFilled";
 import TopAppBar from "./TopAppBar";
 import Footer from "./Footer";
-import { DRAWER_WIDTH } from "../constants";
-import "../index.css";
+import { DRAWER_WIDTH, menuItems } from "../constants/Menu";
 import { useItems } from "../hooks/useItems";
 import { useMemo } from "react";
+import "../index.css";
 
 export default function Layout() {
   const { items } = useItems();
@@ -35,55 +31,27 @@ export default function Layout() {
       return (location.pathname === to || location.pathname.startsWith(`${to}/`));
     };
 
-    const menu = [
-      { label: "Home", to: "/", icon: <HomeIcon />, requiresItems: false },
-      {
-        label: "City Markets",
-        to: "/local-markets",
-        icon: <Assessment />,
-        requiresItems: true,
-      },
-      {
-        label: "Foreign Markets",
-        to: "/foreign-markets",
-        icon: <Assessment />,
-        requiresItems: true,
-      },
-      { 
-        label: "Resale", 
-        to: "/resale", 
-        icon: <Sell />, 
-        requiresItems: true,
-      },
-      {
-        label: "Time",
-        to: "/time",
-        icon: <AccessTimeFilled />,
-        requiresItems: false,
-      },
-    ];
-
     return (
       <div>
         {/* Spacer so content starts below the AppBar */}
         <Toolbar />
         <Divider />
         <List>
-          {menu.map((item) => {
+          {menuItems.map((item) => {
             if (item.requiresItems && (!items || items.length === 0)) {
               return null;
             }
 
             return (
               <ListItemButton
-                key={item.to}
+                key={item.address}
                 component={NavLink}
-                to={item.to}
-                selected={isActive(item.to)}
+                to={item.address}
+                selected={isActive(item.address)}
                 onClick={() => setMobileOpen(false)} // close temporary drawer after click
               >
                 <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.label} />
+                <ListItemText primary={item.title} />
               </ListItemButton>
             );
           })}

@@ -19,7 +19,7 @@ const Markets = () => {
           <Card variant="outlined" sx={{ height: "100%" }}>
             <CardContent>
               <Typography variant="h5" gutterBottom>
-                <Link to="/local-markets" className="no-underline">
+                <Link to="/city-markets" className="no-underline">
                   Local Markets
                 </Link>
               </Typography>

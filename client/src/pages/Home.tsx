@@ -9,6 +9,7 @@ import {
 import { Link } from "react-router";
 import { useItems } from "../hooks/useItems";
 import Loading from "../components/Loading";
+import { menuItems } from "../constants/Menu";
 
 const Home = () => {
   const { loading } = useItems();
@@ -31,82 +32,31 @@ const Home = () => {
         developers. Use at your own risk.
       </Typography>
 
-      <Divider sx={{ my: 2 }} />
-      {loading ? (
-        <Loading message="Loading items..." />
-      ) : (
-        <Alert severity="success">
-          Items loaded. You can now use the tools listed below. These can also
-          be accessed from the navigation menu.
-        </Alert>
-      )}
+      <Divider sx={{ mt: 3 }} />
+      {loading && <Loading message="Loading items..." />}
 
       {!loading && (
         <>
-          <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
+          <Typography gutterBottom sx={{ mt: 3 }} variant="h5" >
             Tools
           </Typography>
-          <Grid container spacing={4} sx={{ mt: 2 }}>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <Card variant="outlined" sx={{ height: "100%" }}>
-                <CardContent>
-                  <Typography variant="h5" gutterBottom>
-                    <Link to="/local-markets" className="no-underline">
-                      City Markets
-                    </Link>
-                  </Typography>
-                  <Typography variant="body1">
-                    View the item markets for Torn City, including price history
-                    and favourite items.
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 4 }}>
-              <Card variant="outlined" sx={{ height: "100%" }}>
-                <CardContent>
-                  <Typography variant="h5" gutterBottom>
-                    <Link to="/foreign-markets" className="no-underline">
-                      Foreign Markets
-                    </Link>
-                  </Typography>
-                  <Typography variant="body1">
-                    View markets from other countries around the world.
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 4 }}>
-              <Card variant="outlined" sx={{ height: "100%" }}>
-                <CardContent>
-                  <Typography variant="h5" gutterBottom>
-                    <Link to="/resale" className="no-underline">
-                      Resale Opportunities
-                    </Link>
-                  </Typography>
-                  <Typography variant="body1">
-                    Checks the market for profitable resale listings.
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 4 }}>
-              <Card variant="outlined" sx={{ height: "100%" }}>
-                <CardContent>
-                  <Typography variant="h5" gutterBottom>
-                    <Link to="/time" className="no-underline">
-                      Time Conversion
-                    </Link>
-                  </Typography>
-                  <Typography variant="body1">
-                    Convert between your local time and Torn City time (TCT).
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
+          <Grid container spacing={2} sx={{ mt: 2 }}>
+            {menuItems
+              .filter((item) => item.showOnHomePage)
+              .map((item) => (
+                <Grid key={item.address} size={{ xs: 12, md: 4 }}>
+                  <Card variant="outlined" sx={{ height: "100%" }}>
+                    <CardContent>
+                      <Typography variant="h5" gutterBottom>
+                        <Link to={item.address} className="no-underline">
+                          {item.title}
+                        </Link>
+                      </Typography>
+                      <Typography variant="body1">{item.subTitle}</Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
           </Grid>
         </>
       )}

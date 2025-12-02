@@ -13,7 +13,7 @@ import Loading from "../components/Loading";
 import LocalMarketItemsTable from "../components/LocalMarketItemsTable";
 import { isItemProfitable } from "../types/items";
 
-const LocalMarkets = () => {
+const CityMarkets = () => {
   const { items, refresh } = useItems();
 
   const [showProfitableOnly, setShowProfitableOnly] = useState(true);
@@ -34,7 +34,7 @@ const LocalMarkets = () => {
     if (!items) return [];
     return Array.from(
       new Set(items.map((i) => i.type).filter((type) => type))
-    ).sort();
+    ).sort() as string[];
   }, [items]);
 
   if (!items) return <Loading message="Loading items..." />;
@@ -65,7 +65,11 @@ const LocalMarkets = () => {
         <Chip
           label="All Item Types"
           variant={selectedItemTypes.length === 0 ? "filled" : "outlined"}
-          onClick={() => setSelectedItemTypes([])}
+          onClick={() => setSelectedItemTypes(prev => 
+            prev.length === 0
+              ? [...itemTypes] 
+              : []
+          )}
           sx={{ mb: 1, mr: 1 }}
         />
         {itemTypes.map((type) => (
@@ -73,11 +77,11 @@ const LocalMarkets = () => {
             key={type}
             label={type}
             color={"primary"}
-            variant={selectedItemTypes.includes(type!) ? "filled" : "outlined"}
+            variant={selectedItemTypes.includes(type) ? "filled" : "outlined"}
             onClick={() => {
               if (!type) return;
               setSelectedItemTypes((prev) =>
-                prev.includes(type!)
+                prev.includes(type)
                   ? prev.filter((t) => t !== type)
                   : [...prev, type]
               );
@@ -114,4 +118,4 @@ const LocalMarkets = () => {
   );
 };
 
-export default LocalMarkets;
+export default CityMarkets;
