@@ -32,8 +32,8 @@ const ForeignMarkets = () => {
       (row) =>
         (selectedItemTypes.length === 0 || selectedItemTypes.includes(row.item.type!)) &&
         (row.itemName.toLowerCase().includes(lowerSearchTerm) ||
-          row.item.type!.toLowerCase().includes(lowerSearchTerm) ||
-          row.item.subType!.toLowerCase().includes(lowerSearchTerm)),
+          row.item.type?.toLowerCase().includes(lowerSearchTerm) ||
+          row.item.subType?.toLowerCase().includes(lowerSearchTerm))
     )
   }, [rows, searchTerm, selectedItemTypes])
 
