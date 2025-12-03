@@ -35,8 +35,8 @@ const CityMarkets = () => {
     if (!items) return []
     return Array.from(
       new Set(items
-        .filter(i => !i.valueVendorCountry || i.valueVendorCountry === 'Torn')
-        .map((i) => i.type)
+        .filter(item => !item.valueVendorCountry || item.valueVendorCountry === 'Torn')
+        .map((item) => item.type)
         .filter((type) => type)))
         .sort() as string[]
   }, [items])
@@ -45,8 +45,8 @@ const CityMarkets = () => {
     if (!items) return []
     return Array.from(
       new Set(items
-        .filter(i => !i.valueVendorCountry || i.valueVendorCountry === 'Torn')
-        .map((i) => i.valueVendorName)
+        .filter(item => !item.valueVendorCountry || item.valueVendorCountry === 'Torn')
+        .map((item) => item.valueVendorName)
         .filter((vendor) => vendor)))
         .sort() as string[]
   }, [items])
@@ -133,7 +133,7 @@ const CityMarkets = () => {
         <Fragment key={country}>
           <Divider sx={{ mt: 2, mb: 4 }} />
 
-          <Box sx={{ mb: 4, width: '95%' }}>
+          <Box sx={{ mb: 4 }}>
             <Typography variant="h5" gutterBottom>
               {country?.replace('Torn', 'Torn City') ?? 'No Vendor'}
             </Typography>

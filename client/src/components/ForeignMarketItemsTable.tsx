@@ -7,17 +7,17 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-} from "@mui/material";
-import { useUser } from "../hooks/useUser";
-import { type ForeignStockItem } from "../types/foreignStockItems";
-import ForeignMarketItemsTableRow from "./ForeignMarketItemsTableRow";
+} from '@mui/material'
+import { useUser } from '../hooks/useUser'
+import { type ForeignStockItem } from '../types/foreignStockItems'
+import ForeignMarketItemsTableRow from './ForeignMarketItemsTableRow'
 
 interface ForeignMarketItemsTableProps {
-  items: ForeignStockItem[];
+  items: ForeignStockItem[]
 }
 
 const ForeignMarketItemsTable = ({ items }: ForeignMarketItemsTableProps) => {
-  const { dotNetUserDetails } = useUser();
+  const { dotNetUserDetails } = useUser()
 
   return (
     <>
@@ -26,8 +26,8 @@ const ForeignMarketItemsTable = ({ items }: ForeignMarketItemsTableProps) => {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Info</TableCell>
-                {dotNetUserDetails && <TableCell>Fav</TableCell>}
+                <TableCell align="center">Info</TableCell>
+                {dotNetUserDetails && <TableCell align="center">Fav</TableCell>}
                 <TableCell>Item</TableCell>
                 <TableCell>Type</TableCell>
                 <TableCell align="right">Buy Price</TableCell>
@@ -35,7 +35,7 @@ const ForeignMarketItemsTable = ({ items }: ForeignMarketItemsTableProps) => {
                 <TableCell align="right">Profit</TableCell>
                 <TableCell align="right">Available</TableCell>
                 <TableCell align="right">Last Updated</TableCell>
-                <TableCell align="right">Torn</TableCell>
+                <TableCell align="center">Torn</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -47,7 +47,7 @@ const ForeignMarketItemsTable = ({ items }: ForeignMarketItemsTableProps) => {
         </TableContainer>
       </Box>
     </>
-  );
-};
+  )
+}
 
-export default ForeignMarketItemsTable;
+export default ForeignMarketItemsTable

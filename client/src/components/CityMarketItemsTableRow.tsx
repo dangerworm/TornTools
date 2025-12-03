@@ -88,8 +88,8 @@ const CityMarketItemsTableRow = ({
             <img
               alt=""
               src={`https://www.torn.com/images/items/${item.id}/small.png`}
-              width={24}
-              height={24}
+              width={38}
+              height={19}
               style={{ borderRadius: 4 }}
               onError={(e) => {
                 ;(e.currentTarget as HTMLImageElement).style.display = 'none'
@@ -101,10 +101,6 @@ const CityMarketItemsTableRow = ({
 
         <TableCell align="left" onClick={() => navigate(`/item/${item.id}`)}>
           {item.type}
-        </TableCell>
-
-        <TableCell align="left" onClick={() => navigate(`/item/${item.id}`)}>
-          {item.subType ?? <span>&mdash;</span>}
         </TableCell>
 
         {showVendor && (
@@ -153,12 +149,8 @@ const CityMarketItemsTableRow = ({
           </TableCell>
         )}
 
-        <TableCell align="right" onClick={() => navigate(`/item/${item.id}`)}>
-          {getFormattedText('', item.circulation ?? 0, '')}
-        </TableCell>
-
         <TableCell
-          align="right"
+          align="center"
           onClick={() =>
             showVendor && item.valueVendorName && shopUrls.has(item.valueVendorName)
               ? openTornShopPage(item.valueVendorName)

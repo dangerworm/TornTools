@@ -47,7 +47,8 @@ const ForeignMarketItemsTableRow = ({
   return (
     <>
       <TableRow hover key={item.itemId}>
-        <TableCell>
+
+        <TableCell align="center">
           <IconButton
             aria-label="expand row"
             size="small"
@@ -56,9 +57,10 @@ const ForeignMarketItemsTableRow = ({
             {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
           </IconButton>
         </TableCell>
+
         {dotNetUserDetails && (
           <TableCell
-            align="left"
+            align="center"
             onClick={() => toggleFavouriteItemAsync(item.itemId)}
           >
             {dotNetUserDetails.favouriteItems?.includes(item.itemId) ? (
@@ -80,8 +82,8 @@ const ForeignMarketItemsTableRow = ({
             <img
               alt=""
               src={`https://www.torn.com/images/items/${item.itemId}/small.png`}
-              width={24}
-              height={24}
+              width={38}
+              height={19}
               style={{ borderRadius: 4 }}
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).style.display = "none";
@@ -163,7 +165,7 @@ const ForeignMarketItemsTableRow = ({
         </TableCell>
 
         <TableCell
-          align="right"
+          align="center"
           onClick={() => openTornMarketPage(item.itemId)}
         >
           <OpenInNew />
