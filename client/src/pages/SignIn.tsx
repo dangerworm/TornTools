@@ -1,6 +1,5 @@
 import {
   Alert,
-  Divider,
   Paper,
   TableContainer,
   Table,
@@ -12,9 +11,28 @@ import {
   Typography,
   Grid,
   Button,
-} from "@mui/material";
-import Loading from "../components/Loading";
-import { useUser } from "../hooks/useUser";
+  Box,
+  Dialog,
+  styled,
+  DialogTitle,
+  IconButton,
+  DialogContent,
+  Divider,
+  Link,
+} from '@mui/material'
+import CloseIcon from '@mui/icons-material/Close'
+import Loading from '../components/Loading'
+import { useUser } from '../hooks/useUser'
+import { useState } from 'react'
+
+const BootstrapDialog = styled(Dialog)(({ theme }) => ({
+  '& .MuiDialogContent-root': {
+    padding: theme.spacing(2),
+  },
+  '& .MuiDialogActions-root': {
+    padding: theme.spacing(1),
+  },
+}))
 
 const SignIn = () => {
   const {
@@ -24,141 +42,207 @@ const SignIn = () => {
     loadingTornUserProfile,
     errorTornUserProfile,
     confirmApiKeyAsync,
-  } = useUser();
+  } = useUser()
+
+  const [dialogOpen, setDialogOpen] = useState(false)
+
+  const dataStorageColor = (theme: any) => ({
+     color: theme.palette.mode === 'dark' ? 'red' : 'darkred'
+  })
+
+  const handleClose = () => {
+    setDialogOpen(false)
+  }
+
+  const handleSignIn = () => {
+    confirmApiKeyAsync()
+    setDialogOpen(false)
+  }
 
   return (
     <>
-      <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
-        Account Sign-In
-      </Typography>
+      <Box sx={{ width: '95%' }}>
+        <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
+          Account Sign-In
+        </Typography>
 
-      <Typography variant="body1" gutterBottom>
-        Adding your API key helps to make the system faster as your API key will
-        be used to fetch data from Torn. This means that market scans will be
-        quicker.
-      </Typography>
+        <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+          API key usage
+        </Typography>
 
-      <Typography variant="body1" gutterBottom>
-        Your API key will also be used to generate a user account for you on
-        this website. This will allow you to access additional features that are
-        not available to anonymous users. For example, you will be able to
-        'favourite' markets and save your preferences.
-      </Typography>
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Signing in gives you access to additional features like favourite markets, saved theme
+          preferences. It also powers features tailored to your personal Torn profile such as
+          automatic country selection when travelling, as well as planned features including
+          personalised alerts and notifications based on your actions here as well as in-game
+          activities.
+        </Alert>
 
-      <Divider sx={{ my: 2 }} />
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          However, signing in uses your API key and it will be added to a pool of keys used to fetch
+          data from Torn. This will increase the number of calls made to Torn using your API key and
+          will count towards the limit of 100 calls per minute dictated by the Torn Terms of
+          Service.
+        </Alert>
 
-      <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
-        API Key
-      </Typography>
+        <Alert severity="success" sx={{ mb: 2 }}>
+          Adding your key helps to populate market data faster, but also reduces the load on all
+          users' API limits and ensures that data is fetched more efficiently for everyone.
+        </Alert>
 
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+          How your data is used
+        </Typography>
+
+        <TableContainer component={Paper} sx={{ mt: 2 }}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Data Storage</TableCell>
+                <TableCell>Data Sharing</TableCell>
+                <TableCell>Purpose of Use</TableCell>
+                <TableCell>Key Storage & Sharing</TableCell>
+                <TableCell>Key Access Level</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              <TableRow>
+                <TableCell>Will the data be stored for any purpose?</TableCell>
+                <TableCell>Who can access the data besides the end user?</TableCell>
+                <TableCell>What is the stored data being used for?</TableCell>
+                <TableCell>Will the API key be stored securely and who can access it?</TableCell>
+                <TableCell>What key access level or specific selections are required?</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell sx={dataStorageColor}>Persistent - until account deletion</TableCell>
+                <TableCell sx={dataStorageColor}>General public</TableCell>
+                <TableCell sx={dataStorageColor}>Public community tools</TableCell>
+                <TableCell sx={dataStorageColor}>Stored/used only for automation</TableCell>
+                <TableCell sx={dataStorageColor}>Public</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </TableContainer>
+        <Button
+          onClick={() => setDialogOpen(true)}
+          sx={{ ml: 'auto', mr: 'auto', mt: 3, display: 'block' }}
+          variant="contained"
+        >
+          Sign in / Register
+        </Button>
+      </Box>
+
+      <BootstrapDialog
+        onClose={handleClose}
+        open={dialogOpen}
+        aria-labelledby="sign-in-register-title"
+        fullWidth
+        maxWidth="sm"
+        slotProps={{
+          paper: {
+            sx: {
+              alignSelf: 'flex-start',
+              marginTop: '6rem',
+            },
+          },
+        }}
+      >
+        <DialogTitle id="sign-in-register-title" sx={{ m: 0, p: 2 }}>
+          Sign In / Register
+        </DialogTitle>
+        <IconButton
+          aria-label="close"
+          onClick={handleClose}
+          sx={(theme) => ({
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: theme.palette.grey[500],
+          })}
+        >
+          <CloseIcon />
+        </IconButton>
+
+        <DialogContent dividers sx={{}}>
+          {apiKey && !loadingTornUserProfile && errorTornUserProfile && (
+            <Box sx={{ mb: 2 }}>
+              <Alert severity="error">{errorTornUserProfile}</Alert>
+            </Box>
+          )}
+
           <Typography variant="body1" gutterBottom>
             Enter your Torn API key here.
           </Typography>
-
-          <TextField
-            label="Torn API Key"
-            variant="outlined"
-            value={apiKey || ""}
-            onChange={(e) => setApiKey(e.target.value || null)}
-            sx={{ mt: 1 }}
-          />
-          <Typography variant="body2" gutterBottom sx={{ mt: 1 }}>
-            If you don't have an API key you can get one from your{" "}
-            <a
+          <Typography component={'p'} variant="body2" gutterBottom>
+            If you don't have an API key you can get one from your{' '}
+            <Link
               href="https://www.torn.com/preferences.php#tab=api?&step=addNewKey&title=dangerworm&#39;s tools&type=1"
               target="_blank"
               rel="noopener noreferrer"
+              sx={{ textDecoration: 'none' }}
             >
               Torn settings page
-            </a>
-            .
+            </Link>.
           </Typography>
-        </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
-          {!errorTornUserProfile && apiKey && (
-            <>
-              {loadingTornUserProfile ? (
-                <Loading message="Loading profile..." />
-              ) : (
-                <>
-                  {errorTornUserProfile && (
-                    <Alert severity="error" sx={{ mt: 2, width: "95%" }}>
-                      {errorTornUserProfile}
-                    </Alert>
-                  )}
+          <TextField
+            label="Torn API Key"
+            variant="outlined"
+            value={apiKey || ''}
+            onChange={(e) => setApiKey(e.target.value || null)}
+            sx={{ mt: 2 }}
+          />
 
-                  {!errorTornUserProfile && tornUserProfile && (
-                    <Alert severity="success" sx={{ width: "90%" }}>
-                      Profile loaded successfully.
-                      <Paper
-                        elevation={3}
-                        sx={{ p: 2, mt: 2, mb: 1, width: "fit-content" }}
-                      >
-                        <Typography variant="body1" gutterBottom>
-                          {tornUserProfile.name} [{tornUserProfile.id}]{" "}
-                        </Typography>
-                        <Typography variant="body2" gutterBottom>
-                          {tornUserProfile.gender}, level{" "}
-                          {tornUserProfile.level}
-                        </Typography>
-                        <Button variant="contained" sx={{ mt: 1 }} onClick={() => confirmApiKeyAsync()}>
-                          Add API key and sign in
-                        </Button>
-                      </Paper>
-                    </Alert>
-                  )}
-                </>
-              )}
-            </>
+          {loadingTornUserProfile && (
+            <Box sx={{ mt: 2 }}>
+              <Loading message="Loading profile..." />
+            </Box>
           )}
-        </Grid>
-      </Grid>
 
-      <TableContainer component={Paper} sx={{ mt: 2, width: "95%" }}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>Data Storage</TableCell>
-              <TableCell>Data Sharing</TableCell>
-              <TableCell>Purpose of Use</TableCell>
-              <TableCell>Key Storage & Sharing</TableCell>
-              <TableCell>Key Access Level</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <TableRow>
-              <TableCell>Will the data be stored for any purpose?</TableCell>
-              <TableCell>
-                Who can access the data besides the end user?
-              </TableCell>
-              <TableCell>What is the stored data being used for?</TableCell>
-              <TableCell>
-                Will the API key be stored securely and who can access it?
-              </TableCell>
-              <TableCell>
-                What key access level or specific selections are required?
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ color: "darkred" }}>
-                Persistent - until account deletion
-              </TableCell>
-              <TableCell sx={{ color: "darkred" }}>General public</TableCell>
-              <TableCell sx={{ color: "darkred" }}>
-                Public community tools
-              </TableCell>
-              <TableCell sx={{ color: "darkred" }}>
-                Stored/used only for automation
-              </TableCell>
-              <TableCell sx={{ color: "darkred" }}>Public</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </TableContainer>
+          {apiKey && !loadingTornUserProfile && !errorTornUserProfile && tornUserProfile && (
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Alert severity="success" sx={{ mt: 2, py: 2 }}>
+                  Loaded successfully!
+                </Alert>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Alert 
+                  severity="info" 
+                  sx={{ 
+                    mb: {
+                      xs: 0,
+                      sm: 0
+                    },
+                    mt: {
+                      xs: 0,
+                      sm: 2
+                    },
+                  }}
+                  >
+                  {tornUserProfile.name} [{tornUserProfile.id}]
+                  <br />
+                  {tornUserProfile.gender}, level {tornUserProfile.level}
+                </Alert>
+              </Grid>
+            </Grid>
+          )}
+
+          {apiKey && !loadingTornUserProfile && !errorTornUserProfile && tornUserProfile && (
+            <Box>
+              <Divider sx={{ mt: 2, mb: 3 }} />
+              <Typography variant="body1" gutterBottom>
+                Click the button below to add your API key. By doing so you agree to the usage terms
+                and that your data will be stored and used as described.
+              </Typography>
+              <Button fullWidth variant="contained" sx={{ mb: 1, mt: 2 }} onClick={() => handleSignIn()}>
+                Sign in
+              </Button>
+            </Box>
+          )}
+        </DialogContent>
+      </BootstrapDialog>
     </>
-  );
+  )
 }
 
-export default SignIn;
+export default SignIn

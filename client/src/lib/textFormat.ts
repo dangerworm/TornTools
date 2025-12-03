@@ -11,8 +11,6 @@ const getValueWithPrefix = (prefixUnit: PrefixUnit, value: number): string => {
 }
 
 const getValueWithSuffix = (value: number, suffixUnit: SuffixUnit): string => {
-  const outputValue = value.toLocaleString();
-
   if (suffixUnit === "minute" && value > 59) {
     const hours = Math.floor(value / 60);
     const suffix = hours === 1 ? "hour" : "hours";
@@ -24,16 +22,21 @@ const getValueWithSuffix = (value: number, suffixUnit: SuffixUnit): string => {
     return `${value} ${suffix}`;
   }
 
-  return `${outputValue}${suffixUnit}`;
+  if (suffixUnit === "%") {
+    const percentageValue = value.toFixed(1);
+    return `${percentageValue}${suffixUnit}`;
+  }
+
+  return `${value.toLocaleString()}${suffixUnit}`;
 }
 
 export const getFormattedText = (prefixUnit: PrefixUnit, value: number, suffixUnit: SuffixUnit): string => {
   if (prefixUnit === "" && suffixUnit === "") {
     return value.toLocaleString();
   }
-  
+
   let result = "";
-  
+
   if (prefixUnit !== "") {
     result += getValueWithPrefix(prefixUnit, value);
   }
