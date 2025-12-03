@@ -32,7 +32,8 @@ const ForeignMarkets = () => {
       (row) =>
         (selectedItemTypes.length === 0 || selectedItemTypes.includes(row.item.type!)) &&
         (row.itemName.toLowerCase().includes(lowerSearchTerm) ||
-         row.item.type!.toLowerCase().includes(lowerSearchTerm)),
+          row.item.type!.toLowerCase().includes(lowerSearchTerm) ||
+          row.item.subType!.toLowerCase().includes(lowerSearchTerm)),
     )
   }, [rows, searchTerm, selectedItemTypes])
 
@@ -58,18 +59,29 @@ const ForeignMarkets = () => {
       const destination = tornUserProfile.status.description.replace('Traveling to ', '')
       setSelectedCountries([destination])
     }
+    else if (
+      tornUserProfile.status.state === 'Abroad'
+    ) {
+      setSelectedCountries([tornUserProfile.status.description.substring(3)])
+    }
   }, [tornUserProfile])
 
   const countries = useMemo(() => {
     if (!rows) return []
-    return Array.from(new Set(rows.map((i) => i.country)))
-      .filter((country: string | undefined) => country && country !== 'Torn')
-      .sort()
+    return Array.from(
+      new Set(rows
+        .map((i) => i.country)))
+        .filter((country) => country && country !== 'Torn')
+        .sort() as string[]
   }, [rows])
 
   const itemTypes = useMemo(() => {
     if (!rows) return []
-    return Array.from(new Set(rows.map((i) => i.item.type).filter((type) => type))).sort()
+    return Array.from(
+      new Set(rows
+        .map((i) => i.item.type)
+        .filter((type) => type)))
+        .sort() as string[]
   }, [rows])
 
   const handleCountryFilterChange = (country: string) => {
@@ -142,13 +154,13 @@ const ForeignMarkets = () => {
         </Grid>
       </Box>
 
-      <Divider sx={{ mt: 1, mb: 2 }} />
+      <Divider sx={{ mt: 0, mb: 2 }} />
 
       <Box>
         <Chip
           label="All Item Types"
           variant={selectedItemTypes.length === 0 ? 'filled' : 'outlined'}
-          onClick={() => setSelectedItemTypes([])}
+          onClick={() => setSelectedItemTypes((prev) => (prev.length === 0 ? [...itemTypes] : []))}
           sx={{ mb: 1, mr: 1 }}
         />
         {itemTypes.map((type) => (
@@ -185,8 +197,9 @@ const ForeignMarkets = () => {
       </Box>
 
       {countries
-        .filter(
-          (country) => selectedCountries.length === 0 || selectedCountries.includes(country || ''),
+        .filter((country) =>
+          selectedCountries.length === 0 ||
+          selectedCountries.includes(country || '')
         )
         .map((country: string | undefined) => (
           <>

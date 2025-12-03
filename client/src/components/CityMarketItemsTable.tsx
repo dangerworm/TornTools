@@ -147,15 +147,6 @@ const CityMarketItemsTable = ({
                   handleRequestSort={handleRequestSort}
                 />
 
-                <TableSortCell<SortableItem>
-                  align="left"
-                  columnKey={'subType'}
-                  label="Subtype"
-                  orderBy={orderBy}
-                  orderDirection={orderDirection}
-                  handleRequestSort={handleRequestSort}
-                />
-
                 {showVendor && (
                   <TableSortCell<SortableItem>
                     align="left"
@@ -211,16 +202,7 @@ const CityMarketItemsTable = ({
                   />
                 )}
 
-                <TableSortCell<SortableItem>
-                  align="right"
-                  columnKey="circulation"
-                  label="Circulation"
-                  orderBy={orderBy}
-                  orderDirection={orderDirection}
-                  handleRequestSort={handleRequestSort}
-                />
-
-                <TableCell align="right">Torn</TableCell>
+                <TableCell align="center">Torn</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
