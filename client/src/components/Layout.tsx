@@ -36,7 +36,7 @@ export default function Layout() {
         {/* Spacer so content starts below the AppBar */}
         <Toolbar />
         <Divider />
-        <List>
+        <List sx={{ pt: 0.2 }}>
           {menuItems.map((item) => {
             if (item.requiresItems && (!items || items.length === 0)) {
               return null;
@@ -44,11 +44,11 @@ export default function Layout() {
 
             return (
               <ListItemButton
-                key={item.address}
                 component={NavLink}
-                to={item.address}
-                selected={isActive(item.address)}
+                key={item.address}
                 onClick={() => setMobileOpen(false)} // close temporary drawer after click
+                selected={isActive(item.address)}
+                to={item.address}
               >
                 <ListItemIcon>{item.icon}</ListItemIcon>
                 <ListItemText primary={item.title} />

@@ -31,6 +31,11 @@ export interface Item {
 
 export type ItemsMap = Record<number, Item>;
 
+export type SortableItem = Item & {
+  profit: number | null
+  profitPerCost: number | null
+}
+
 export const isItemProfitable = (item: Item): boolean => {
   return (
     item.isTradable &&  
