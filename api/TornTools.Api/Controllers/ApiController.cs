@@ -95,6 +95,7 @@ public class ApiController(
     }
 
     [HttpPost(Name = "PostUserDetails")]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> PostUserDetails([FromBody] UserDetailsInputModel userDetails)
@@ -116,6 +117,7 @@ public class ApiController(
     }
 
     [HttpPost(Name = "PostToggleUserFavourite")]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> PostToggleUserFavourite([FromBody] UserFavouriteInputModel userFavouriteModel)
@@ -137,10 +139,16 @@ public class ApiController(
     }
 
     [HttpGet(Name = "GetThemes")]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetThemes(long? userId, CancellationToken cancellationToken)
     {
+        if (userId is <= 0)
+        {
+            return BadRequest("User id must be a positive number when provided.");
+        }
+
         try
         {
             var themes = await _databaseService.GetThemesAsync(userId, cancellationToken);
@@ -158,6 +166,7 @@ public class ApiController(
     }
 
     [HttpPost(Name = "PostTheme")]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> PostTheme([FromBody] ThemeInputModel themeInput)
@@ -179,6 +188,7 @@ public class ApiController(
     }
 
     [HttpPost(Name = "PostUserThemeSelection")]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> PostUserThemeSelection([FromBody] UserThemeSelectionInputModel themeSelection)

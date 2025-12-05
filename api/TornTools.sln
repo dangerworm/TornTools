@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TornTools.Application", "To
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TornTools.Cron", "TornTools.Cron\TornTools.Cron.csproj", "{73BB3009-419E-4153-B8C6-9D16B0E0D7CC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TornTools.Api.Tests", "TornTools.Api.Tests\TornTools.Api.Tests.csproj", "{EAC31B89-21F1-4BF7-93FF-0D0505CEC546}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,11 +37,15 @@ Global
 		{22903D9E-834A-4399-9EB3-B1A9F5647CD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{22903D9E-834A-4399-9EB3-B1A9F5647CD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{22903D9E-834A-4399-9EB3-B1A9F5647CD3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{73BB3009-419E-4153-B8C6-9D16B0E0D7CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{73BB3009-419E-4153-B8C6-9D16B0E0D7CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{73BB3009-419E-4153-B8C6-9D16B0E0D7CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{73BB3009-419E-4153-B8C6-9D16B0E0D7CC}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
+                {73BB3009-419E-4153-B8C6-9D16B0E0D7CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+                {73BB3009-419E-4153-B8C6-9D16B0E0D7CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+                {73BB3009-419E-4153-B8C6-9D16B0E0D7CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+                {73BB3009-419E-4153-B8C6-9D16B0E0D7CC}.Release|Any CPU.Build.0 = Release|Any CPU
+                {EAC31B89-21F1-4BF7-93FF-0D0505CEC546}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+                {EAC31B89-21F1-4BF7-93FF-0D0505CEC546}.Debug|Any CPU.Build.0 = Debug|Any CPU
+                {EAC31B89-21F1-4BF7-93FF-0D0505CEC546}.Release|Any CPU.ActiveCfg = Release|Any CPU
+                {EAC31B89-21F1-4BF7-93FF-0D0505CEC546}.Release|Any CPU.Build.0 = Release|Any CPU
+        EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
