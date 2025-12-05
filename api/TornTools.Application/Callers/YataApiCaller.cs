@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
 using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
@@ -10,8 +10,9 @@ public class YataApiCaller(
     ILogger<YataApiCaller> logger,
     IApiCallHandlerResolver callHandlerResolver,
     IDatabaseService databaseService,
-    IHttpClientFactory httpClientFactory
-) : ApiCaller<YataApiCaller>(logger, callHandlerResolver, databaseService, httpClientFactory), IApiCaller
+    IHttpClientFactory httpClientFactory,
+    IMetricsCollector metricsCollector
+) : ApiCaller<YataApiCaller>(logger, callHandlerResolver, databaseService, httpClientFactory, metricsCollector), IApiCaller
 {
     public override IEnumerable<ApiCallType> CallTypes =>
     [
