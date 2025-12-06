@@ -1,7 +1,7 @@
 import { API_BASE_URL } from "../constants/ApiConstants";
 import type { ForeignStockItem } from "../types/foreignStockItems";
 import type { Item } from "../types/items";
-import type { HistoryResult, HistoryWindow, ItemHistoryPoint } from "../types/history";
+import type { HistoryResult, HistoryWindow } from "../types/history";
 import type { ProfitableListing } from "../types/profitableListings";
 import type { ThemeDefinition, ThemeInput } from "../types/themes";
 import type { TornUserProfile } from "./tornapi";

@@ -1,4 +1,4 @@
-import { Grid, Card, Typography, Chip } from '@mui/material'
+import { Card, Typography, Chip } from '@mui/material'
 import { getFormattedText } from '../lib/textFormat'
 
 interface InfoCardProps {

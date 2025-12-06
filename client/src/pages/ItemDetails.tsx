@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Box, Chip, Grid, List, ListItem, Typography, useTheme } from '@mui/material'
 import Favorite from '@mui/icons-material/Favorite'
@@ -11,7 +11,7 @@ import { useUser } from '../hooks/useUser'
 
 import InfoCard from '../components/InfoCard'
 import Chart from '../components/Chart'
-import { useWeav3rMarketplaceQuery } from '../hooks/useWeav3rMarketPlace'
+import { useWeav3rMarketplaceQuery } from '../hooks/useWeav3rListings'
 import Weav3rMarketTable from '../components/Weav3rListingTable'
 import { getFormattedText } from '../lib/textFormat'
 
