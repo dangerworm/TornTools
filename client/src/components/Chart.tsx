@@ -94,7 +94,7 @@ const Chart = ({
 
     if (numberOfTicks < 6) {
       tickDelta /= (6 - numberOfTicks)
-      tickDelta = Math.round(tickDelta)
+      tickDelta = Math.max(1, Math.round(tickDelta)) // Don't round to 0
 
       minTickValue = Math.floor(minValue / tickDelta) * tickDelta
       maxTickValue = Math.ceil(maxValue / tickDelta) * tickDelta
