@@ -7,3 +7,5 @@ const configuredApiUrl =
     : fallbackApiUrl;
 
 export const API_BASE_URL = configuredApiUrl.replace(/\/$/, "");
+
+export const WEAV3R_API_BASE_URL = 'https://weav3r.dev/api';

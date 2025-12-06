@@ -11,7 +11,7 @@ import {
 } from '@mui/material'
 import Loading from '../components/Loading'
 import CityMarketItemsTable from '../components/CityMarketItemsTable'
-import { isItemProfitable } from '../types/items'
+import { isItemProfitableOnMarket } from '../types/items'
 
 const CityMarkets = () => {
   const { items, refresh } = useItems()
@@ -142,7 +142,7 @@ const CityMarkets = () => {
               items={items.filter(
                 (i) =>
                   i.valueVendorCountry === country &&
-                  (!showProfitableOnly || isItemProfitable(i)) &&
+                  (!showProfitableOnly || isItemProfitableOnMarket(i)) &&
                   (selectedItemTypes.length === 0 || selectedItemTypes.includes(i.type!)) &&
                   (selectedVendors.length === 0 || (i.valueVendorName && selectedVendors.includes(i.valueVendorName))),
               )}

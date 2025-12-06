@@ -14,7 +14,7 @@ import {
 } from '@mui/material'
 import { useUser } from '../hooks/useUser'
 import { stableSort, getComparator, type SortOrder } from '../lib/comparisons'
-import { isItemProfitable, type Item, type SortableItem } from '../types/items'
+import { isItemProfitableOnMarket, type Item, type SortableItem } from '../types/items'
 import CityMarketItemsTableRow from './CityMarketItemsTableRow'
 import TableSortCell from './TableSortCell'
 
@@ -63,11 +63,11 @@ const CityMarketItemsTable = ({
       )
       .map((item) => {
         const profit =
-          showCityPrice && isItemProfitable(item) && item.valueBuyPrice && item.valueMarketPrice
+          showCityPrice && isItemProfitableOnMarket(item) && item.valueBuyPrice && item.valueMarketPrice
             ? item.valueMarketPrice - item.valueBuyPrice
             : null
         const profitPerCost =
-          showCityPrice && isItemProfitable(item) && item.valueBuyPrice && item.valueMarketPrice
+          showCityPrice && isItemProfitableOnMarket(item) && item.valueBuyPrice && item.valueMarketPrice
             ? (item.valueMarketPrice - item.valueBuyPrice) / item.valueBuyPrice
             : null
         return { ...item, profit, profitPerCost } as SortableItem
@@ -132,7 +132,7 @@ const CityMarketItemsTable = ({
                 <TableSortCell<SortableItem>
                   align="left"
                   columnKey={'name'}
-                  label="Item Name"
+                  label="Item"
                   orderBy={orderBy}
                   orderDirection={orderDirection}
                   handleRequestSort={handleRequestSort}

@@ -1,3 +1,4 @@
+import type { Weav3rMarketPlaceListing } from "./weav3r";
 
 export interface Item {
   id: number;
@@ -36,11 +37,20 @@ export type SortableItem = Item & {
   profitPerCost: number | null
 }
 
-export const isItemProfitable = (item: Item): boolean => {
+export const isItemProfitableOnMarket = (item: Item): boolean => {
   return (
     item.isTradable &&  
     !!item.valueBuyPrice &&
     !!item.valueMarketPrice &&
     item.valueMarketPrice > item.valueBuyPrice
+  );
+}
+
+export const isItemProfitableInBazaar = (item: Item, listing: Weav3rMarketPlaceListing): boolean => {
+  return (
+    item.isTradable &&  
+    !!item.valueBuyPrice &&
+    !!listing.price &&
+    listing.price > item.valueBuyPrice
   );
 }

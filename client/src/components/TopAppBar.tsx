@@ -1,5 +1,5 @@
-import { useState, type MouseEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, type MouseEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   AppBar,
   Toolbar,
@@ -9,60 +9,65 @@ import {
   Menu,
   MenuItem,
   Divider,
-} from "@mui/material";
+} from '@mui/material'
 import {
   AccountCircle,
   AccountCircleOutlined,
   DarkMode,
   LightMode,
   Menu as MenuIcon,
-} from "@mui/icons-material";
-import { useUser } from "../hooks/useUser";
-import { useThemeSettings } from "../hooks/useThemeSettings";
-import "../index.css";
-import ItemSearch from "./ItemSearch";
+} from '@mui/icons-material'
+import { useUser } from '../hooks/useUser'
+import { useThemeSettings } from '../hooks/useThemeSettings'
+import '../index.css'
+import ItemSearch from './ItemSearch'
+import { MAX_CONTENT_WIDTH } from '../constants/UiConstants'
 
 interface TopAppBarProps {
-  handleDrawerToggle: () => void;
+  handleDrawerToggle: () => void
 }
 
 function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
-  const navigate = useNavigate();
-  const { dotNetUserDetails, clearAllUserData } = useUser();
-  const { selectTheme, selectedThemeId } = useThemeSettings();
+  const navigate = useNavigate()
+  const { dotNetUserDetails, clearAllUserData } = useUser()
+  const { selectTheme, selectedThemeId } = useThemeSettings()
 
-  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null)
 
   const handleOpenMenu = (event: MouseEvent<HTMLElement>) => {
-    setMenuAnchor(event.currentTarget);
-  };
+    setMenuAnchor(event.currentTarget)
+  }
 
-  const handleCloseMenu = () => setMenuAnchor(null);
+  const handleCloseMenu = () => setMenuAnchor(null)
 
   const handleMenuNavigation = (path: string) => {
-    navigate(path);
-    handleCloseMenu();
-  };
+    navigate(path)
+    handleCloseMenu()
+  }
 
   const handleSignOut = () => {
-    clearAllUserData();
-    navigate("/");
-    handleCloseMenu();
-  };
+    clearAllUserData()
+    navigate('/')
+    handleCloseMenu()
+  }
 
   return (
     <AppBar
-      position="fixed"
-      sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+      position="relative"
+      sx={{
+        maxWidth: MAX_CONTENT_WIDTH,
+        mx: 'auto',
+        zIndex: (theme) => theme.zIndex.drawer + 1,
+      }}
     >
       <Toolbar sx={{ gap: 2 }}>
-        <Box sx={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
           {/* Hamburger only on small screens */}
           <IconButton
             color="inherit"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: "none" } }}
+            sx={{ mr: 2, display: { sm: 'none' } }}
             aria-label="open drawer"
           >
             <MenuIcon />
@@ -73,7 +78,7 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
             noWrap
             component="div"
             className="geo"
-            sx={{ display: { xs: "none", sm: "block" } }}
+            sx={{ display: { xs: 'none', sm: 'block' } }}
           >
             dangerworm's Torn Tools
           </Typography>
@@ -81,10 +86,10 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
 
         <Box
           sx={{
-            alignItems: "center",
-            display: "flex",
+            alignItems: 'center',
+            display: 'flex',
             flexGrow: 1,
-            justifyContent: { xs: "flex-start", sm: "center" },
+            justifyContent: { xs: 'flex-start', sm: 'center' },
             mr: { xs: 1, sm: 0 },
           }}
         >
@@ -92,29 +97,23 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
         </Box>
 
         {!dotNetUserDetails && (
-          <Box sx={{ ml: "auto" }}>
+          <Box sx={{ ml: 'auto' }}>
             <IconButton color="inherit" aria-label="colour mode toggle">
               {selectedThemeId === 2 ? (
-                <LightMode
-                  onClick={() => void selectTheme(1)}
-                  sx={{ fontSize: 32 }}
-                />
+                <LightMode onClick={() => void selectTheme(1)} sx={{ fontSize: 32 }} />
               ) : (
-                <DarkMode
-                  onClick={() => void selectTheme(2)}
-                  sx={{ fontSize: 32 }}
-                />
+                <DarkMode onClick={() => void selectTheme(2)} sx={{ fontSize: 32 }} />
               )}
             </IconButton>
           </Box>
         )}
 
-        <Box sx={{ ml: "auto" }}>
+        <Box sx={{ ml: 'auto' }}>
           <IconButton
             color="inherit"
             onClick={handleOpenMenu}
             aria-label="user menu"
-            aria-controls={menuAnchor ? "user-menu" : undefined}
+            aria-controls={menuAnchor ? 'user-menu' : undefined}
             aria-haspopup="true"
           >
             {dotNetUserDetails ? (
@@ -129,15 +128,15 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
               anchorEl={menuAnchor}
               open={Boolean(menuAnchor)}
               onClose={handleCloseMenu}
-              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-              transformOrigin={{ vertical: "top", horizontal: "right" }}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
               <MenuItem
                 disabled
                 sx={(theme) => ({
                   color: theme.palette.text.primary,
-                  opacity: "0.8 !important",
-                  cursor: "default",
+                  opacity: '0.8 !important',
+                  cursor: 'default',
                 })}
               >
                 <Typography variant="body2">
@@ -145,12 +144,10 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
                 </Typography>
               </MenuItem>
               <Divider sx={{ my: 0.5 }} />
-              <MenuItem onClick={() => handleMenuNavigation("/favourites")}>
+              <MenuItem onClick={() => handleMenuNavigation('/favourites')}>
                 Favourite markets
               </MenuItem>
-              <MenuItem onClick={() => handleMenuNavigation("/settings")}>
-                User settings
-              </MenuItem>
+              <MenuItem onClick={() => handleMenuNavigation('/settings')}>User settings</MenuItem>
               <MenuItem onClick={handleSignOut}>Sign out</MenuItem>
             </Menu>
           ) : (
@@ -159,18 +156,16 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
               anchorEl={menuAnchor}
               open={Boolean(menuAnchor)}
               onClose={handleCloseMenu}
-              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-              transformOrigin={{ vertical: "top", horizontal: "right" }}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
-              <MenuItem onClick={() => handleMenuNavigation("/signin")}>
-                Sign in
-              </MenuItem>
+              <MenuItem onClick={() => handleMenuNavigation('/signin')}>Sign in</MenuItem>
             </Menu>
           )}
         </Box>
       </Toolbar>
     </AppBar>
-  );
+  )
 }
 
-export default TopAppBar;
+export default TopAppBar

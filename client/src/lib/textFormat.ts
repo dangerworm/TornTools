@@ -3,11 +3,9 @@ export type PrefixUnit = "$" | "";
 export type SuffixUnit = "minute" | "%" | "x" | "";
 
 const getValueWithPrefix = (prefixUnit: PrefixUnit, value: number): string => {
-  const outputValue = value.toLocaleString();
-
   return value < 0
     ? `-${prefixUnit}${Math.abs(value).toLocaleString()}`
-    : `${prefixUnit}${outputValue}`;
+    : `${prefixUnit}${value.toLocaleString()}`;
 }
 
 const getValueWithSuffix = (value: number, suffixUnit: SuffixUnit): string => {
@@ -31,6 +29,8 @@ const getValueWithSuffix = (value: number, suffixUnit: SuffixUnit): string => {
 }
 
 export const getFormattedText = (prefixUnit: PrefixUnit, value: number, suffixUnit: SuffixUnit): string => {
+  value = Math.round(value);
+
   if (prefixUnit === "" && suffixUnit === "") {
     return value.toLocaleString();
   }
