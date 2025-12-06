@@ -8,7 +8,6 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Toolbar,
   Typography,
 } from "@mui/material";
 import TopAppBar from "./TopAppBar";
@@ -17,70 +16,79 @@ import { DRAWER_WIDTH, menuItems } from "../constants/Menu";
 import { useItems } from "../hooks/useItems";
 import { useMemo } from "react";
 import "../index.css";
+import { MAX_CONTENT_WIDTH } from "../constants/UiConstants";
 
 export default function Layout() {
-  const { items } = useItems();
-  const [mobileOpen, setMobileOpen] = React.useState(false);
-  const location = useLocation();
+  const { items } = useItems()
+  const [mobileOpen, setMobileOpen] = React.useState(false)
+  const location = useLocation()
 
-  const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
+  const handleDrawerToggle = () => setMobileOpen((prev) => !prev)
 
   const drawerContent = useMemo(() => {
     const isActive = (to: string) => {
-      if (to === "/") return location.pathname === "/";
-      return (location.pathname === to || location.pathname.startsWith(`${to}/`));
-    };
+      if (to === '/') return location.pathname === '/'
+      return location.pathname === to || location.pathname.startsWith(`${to}/`)
+    }
 
     return (
       <div>
-        {/* Spacer so content starts below the AppBar */}
-        <Toolbar />
         <Divider />
-        <List sx={{ pt: 0.2 }}>
+        <List>
           {menuItems.map((item) => {
-            if (item.requiresItems && (!items || items.length === 0)) {
-              return null;
-            }
+            if (item.requiresItems && (!items || items.length === 0)) return null
 
             return (
               <ListItemButton
                 component={NavLink}
                 key={item.address}
-                onClick={() => setMobileOpen(false)} // close temporary drawer after click
+                onClick={() => setMobileOpen(false)}
                 selected={isActive(item.address)}
                 to={item.address}
               >
                 <ListItemIcon>{item.icon}</ListItemIcon>
                 <ListItemText primary={item.title} />
               </ListItemButton>
-            );
+            )
           })}
         </List>
       </div>
-    );
-  }, [items, location.pathname]);
+    )
+  }, [items, location.pathname])
 
   return (
-    <Box sx={{ display: "flex" }}>
-      {/* Top AppBar */}
+    <Box sx={{ 
+      backgroundColor: (theme) => theme.palette.mode === 'light' 
+        ? theme.palette.grey[100] 
+        : theme.palette.grey[900],
+      display: 'flex', 
+      flexDirection: 'column',
+      justifyContent: 'center', 
+      minHeight: '100vh',  }}>
+
+      {/* App bar stays full-width at top, as normal */}
       <TopAppBar handleDrawerToggle={handleDrawerToggle} />
 
-      {/* Left drawer area (responsive) */}
+      {/* This is your centred 1200px layout pane */}
       <Box
-        component="nav"
-        aria-label="side navigation"
-        sx={{ width: { sm: DRAWER_WIDTH }, flexShrink: { sm: 0 } }}
+        sx={{
+          backgroundColor: (theme) => theme.palette.background.default,
+          display: 'flex',
+          maxWidth: MAX_CONTENT_WIDTH,
+          mx: 'auto',
+          width: '100%',
+        }}
       >
-        {/* Mobile: temporary drawer */}
+        {/* Mobile drawer (overlay – can stay viewport-anchored) */}
         <Drawer
           variant="temporary"
           open={mobileOpen}
           onClose={handleDrawerToggle}
-          ModalProps={{ keepMounted: true }} // better performance on mobile
+          ModalProps={{ keepMounted: true }}
           sx={{
-            display: { xs: "block", sm: "none" },
-            "& .MuiDrawer-paper": {
-              boxSizing: "border-box",
+            display: { xs: 'block', sm: 'none' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
               width: DRAWER_WIDTH,
             },
           }}
@@ -88,48 +96,48 @@ export default function Layout() {
           {drawerContent}
         </Drawer>
 
-        {/* Desktop: permanent drawer */}
+        {/* Desktop drawer: now behaves like a normal sidebar inside the 1200px box */}
         <Drawer
           variant="permanent"
           open
           sx={{
-            display: { xs: "none", sm: "block" },
-            "& .MuiDrawer-paper": {
-              boxSizing: "border-box",
+            display: { xs: 'none', sm: 'block' },
+            flexShrink: 0,
+            '& .MuiDrawer-paper': {
+              position: 'relative',          // 👈 key change
+              boxSizing: 'border-box',
               width: DRAWER_WIDTH,
             },
           }}
         >
           {drawerContent}
         </Drawer>
-      </Box>
 
-      {/* Main content */}
-      <Box
-        component="main"
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          flexGrow: 1,
-          minHeight: "100vh", // ensure full height
-          minWidth: `calc(100% - ${DRAWER_WIDTH}px)`, // prevent overflow
-          p: 3,
-          width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
-        }}
-      >
-        {/* Spacer to push content below AppBar */}
-        <Toolbar />
-        <Box sx={{ flexGrow: 1 }}>
-          <Typography variant="h3" gutterBottom className="passero-one">
-            dangerworm's Torn Tools
-          </Typography>
+        {/* Main content, sharing the same 1200px container */}
+        <Box
+          component="main"
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            flexGrow: 1,
+            minHeight: '100vh',
+            p: 3,
+          }}
+        >
 
-          <Divider sx={{ mb: 3 }} />
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography variant="h3" gutterBottom className="passero-one">
+              dangerworm&apos;s Torn Tools
+            </Typography>
 
-          <Outlet />
+            <Divider sx={{ mb: 3 }} />
+
+            <Outlet />
+          </Box>
+
+          <Footer />
         </Box>
-        <Footer />
       </Box>
     </Box>
-  );
+  )
 }

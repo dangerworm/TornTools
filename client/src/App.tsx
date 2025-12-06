@@ -1,16 +1,19 @@
-import { Routes, Route } from "react-router";
-import Layout from "./components/Layout";
-import Home from "./pages/Home";
-import SignIn from "./pages/SignIn";
-import Markets from "./pages/Markets";
-import ForeignMarkets from "./pages/ForeignMarkets";
-import CityMarkets from "./pages/CityMarkets";
-import ItemDetails from "./pages/ItemDetails";
-import Resale from "./pages/Resale";
-import Time from "./pages/Time";
-import FavouriteMarkets from "./pages/FavouriteMarkets";
-import UserSettings from "./pages/UserSettings";
-// import Trading from "./pages/Trading";
+import { Routes, Route } from 'react-router'
+
+import Layout from './components/Layout'
+
+import SignIn from './pages/SignIn'
+import FavouriteMarkets from './pages/FavouriteMarkets'
+import UserSettings from './pages/UserSettings'
+
+import Home from './pages/Home'
+
+import Markets from './pages/Markets'
+import CityMarkets from './pages/CityMarkets'
+import ForeignMarkets from './pages/ForeignMarkets'
+import ItemDetails from './pages/ItemDetails'
+import Resale from './pages/Resale'
+import Time from './pages/Time'
 
 function App() {
   return (
@@ -30,7 +33,7 @@ function App() {
         <Route path="*" element={<h1>Not Found</h1>} />
       </Route>
     </Routes>
-  );
+  )
 }
 
-export default App;
+export default App

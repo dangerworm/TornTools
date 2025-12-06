@@ -20,7 +20,7 @@ const Time = () => {
       </Typography>
 
       <Grid container spacing={4} sx={{ mt: 2 }}>
-        <Grid size={{ xs: 12, md: 6, xl: 4 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Card variant="outlined" sx={{ height: "100%" }}>
             <CardContent>
               <Typography variant="h5" gutterBottom>
@@ -31,7 +31,7 @@ const Time = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid size={{ xs: 12, md: 6, xl: 4 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Card variant="outlined" sx={{ height: "100%" }}>
             <CardContent>
               <Typography variant="h5" gutterBottom>

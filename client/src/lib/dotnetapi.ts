@@ -1,7 +1,7 @@
 import { API_BASE_URL } from "../constants/ApiConstants";
 import type { ForeignStockItem } from "../types/foreignStockItems";
 import type { Item } from "../types/items";
-import type { HistoryWindow, ItemHistoryPoint } from "../types/history";
+import type { HistoryResult, HistoryWindow } from "../types/history";
 import type { ProfitableListing } from "../types/profitableListings";
 import type { ThemeDefinition, ThemeInput } from "../types/themes";
 import type { TornUserProfile } from "./tornapi";
@@ -46,14 +46,14 @@ export async function fetchItems(): Promise<Item[]> {
 export async function fetchItemPriceHistory(
   itemId: number,
   window: HistoryWindow
-): Promise<ItemHistoryPoint[]> {
+): Promise<HistoryResult[]> {
   const url = `${URL_ITEM_HISTORY_BASE}/${itemId}/history/price?window=${encodeURIComponent(window)}`;
   const headers: Record<string, string> = {
     accept: "application/json",
   };
 
   const res = await fetch(url, { headers });
-  let data: ItemHistoryPoint[] = [];
+  let data: HistoryResult[] = [];
   try {
     data = await res.json();
   } catch {
@@ -65,14 +65,14 @@ export async function fetchItemPriceHistory(
 export async function fetchItemVelocityHistory(
   itemId: number,
   window: HistoryWindow
-): Promise<ItemHistoryPoint[]> {
+): Promise<HistoryResult[]> {
   const url = `${URL_ITEM_HISTORY_BASE}/${itemId}/history/velocity?window=${encodeURIComponent(window)}`;
   const headers: Record<string, string> = {
     accept: "application/json",
   };
 
   const res = await fetch(url, { headers });
-  let data: ItemHistoryPoint[] = [];
+  let data: HistoryResult[] = [];
   try {
     data = await res.json();
   } catch {
