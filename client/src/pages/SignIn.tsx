@@ -61,7 +61,7 @@ const SignIn = () => {
 
   return (
     <>
-      <Box sx={{ width: '95%' }}>
+      <Box>
         <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
           Account Sign-In
         </Typography>
@@ -234,7 +234,7 @@ const SignIn = () => {
                 Click the button below to add your API key. By doing so you agree to the usage terms
                 and that your data will be stored and used as described.
               </Typography>
-              <Button fullWidth variant="contained" sx={{ mb: 1, mt: 2 }} onClick={() => handleSignIn()}>
+              <Button fullWidth variant="contained" sx={{ my: 2 }} onClick={() => handleSignIn()}>
                 Sign in
               </Button>
             </Box>

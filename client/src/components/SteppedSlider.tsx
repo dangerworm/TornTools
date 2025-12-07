@@ -1,14 +1,14 @@
-import { Slider, Typography } from "@mui/material";
-import { useState } from "react";
-import { getFormattedText, type PrefixUnit, type SuffixUnit } from "../lib/textFormat";
+import { Grid, Slider, Typography } from '@mui/material'
+import { useState } from 'react'
+import { getFormattedText, type PrefixUnit, type SuffixUnit } from '../lib/textFormat'
 
 interface SteppedSliderProps {
-  initialValueIndex?: number;
-  label: string;
-  prefixUnit: PrefixUnit;
-  suffixUnit: SuffixUnit;
-  sliderValues: number[];
-  onValueChange: (newValue: number) => void;
+  initialValueIndex?: number
+  label: string
+  prefixUnit: PrefixUnit
+  suffixUnit: SuffixUnit
+  sliderValues: number[]
+  onValueChange: (newValue: number) => void
 }
 
 export default function SteppedSlider({
@@ -19,19 +19,17 @@ export default function SteppedSlider({
   prefixUnit,
   suffixUnit,
 }: SteppedSliderProps) {
-  const [sliderValueIndex, setSliderValueIndex] = useState(
-    initialValueIndex ?? 0
-  );
+  const [sliderValueIndex, setSliderValueIndex] = useState(initialValueIndex ?? 0)
 
   const handleSliderChange = (_: Event, newIndex: number) => {
-    setSliderValueIndex(newIndex);
-    onValueChange(sliderValues[newIndex]);
-  };
+    setSliderValueIndex(newIndex)
+    onValueChange(sliderValues[newIndex])
+  }
 
   return (
-    <>
+    <Grid size={{ xs: 12, sm: 8, md: 4 }} alignItems="center">
       <Typography gutterBottom>
-        <strong>{label}:</strong>{" "}
+        <strong>{label}:</strong>{' '}
         {getFormattedText(prefixUnit, sliderValues[sliderValueIndex], suffixUnit)}
       </Typography>
       <Slider
@@ -41,8 +39,8 @@ export default function SteppedSlider({
         min={0}
         step={1}
         valueLabelDisplay="off"
-        style={{ width: "80%" }}
+        sx={{ width: '95%' }}
       />
-    </>
-  );
+    </Grid>
+  )
 }

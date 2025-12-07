@@ -1,44 +1,43 @@
-import { useState } from "react";
-import { Box, Grid, Typography } from "@mui/material";
-import { useResaleScan } from "../hooks/useResaleScan";
-import MarketItemsTable from "../components/MarketItemTable";
-import SteppedSlider from "../components/SteppedSlider";
-import { Loading } from "../components/Loading";
+import { useState } from 'react'
+import { Box, Grid, Typography } from '@mui/material'
+import { useResaleScan } from '../hooks/useResaleScan'
+import ResaleItemsTable from '../components/ResaleItemsTable'
+import SteppedSlider from '../components/SteppedSlider'
+import { Loading } from '../components/Loading'
 
 const Resale = () => {
-  const { rows, error } = useResaleScan({ intervalMs: 1000 });
+  const { rows, error } = useResaleScan({ intervalMs: 1000 })
 
-  const minuteRangeValues = [
-    1, 2, 3, 5, 10, 30, 60, 120
-  ];
+  const minuteRangeValues = [1, 2, 3, 5, 10, 30, 60, 120]
 
   const priceRangeValues = [
-    1, 10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000,
-    5000000, 10000000, 50000000, 100000000, 500000000, 1000000000,
-  ];
+    1, 10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000,
+    50000000, 100000000, 500000000, 1000000000,
+  ]
 
-  const initialMinProfitIndex = 3; // 100
-  const initialMaxBuyPriceIndex = 17; // 1,000,000,000
-  const initialMaxTimeSinceLastUpdateIndex = 4; // 10 minutes
+  const initialMinProfitIndex = 3 // 100
+  const initialMaxBuyPriceIndex = 17 // 1,000,000,000
+  const initialMaxTimeSinceLastUpdateIndex = 4 // 10 minutes
 
-  const [minProfit, setMinProfit] = useState(priceRangeValues[initialMinProfitIndex]);
-  const [maxBuyPrice, setMaxBuyPrice] = useState(priceRangeValues[initialMaxBuyPriceIndex]);
-  const [maxTimeSinceLastUpdate, setMaxTimeSinceLastUpdate] = useState(minuteRangeValues[initialMaxTimeSinceLastUpdateIndex]);
-
+  const [minProfit, setMinProfit] = useState(priceRangeValues[initialMinProfitIndex])
+  const [maxBuyPrice, setMaxBuyPrice] = useState(priceRangeValues[initialMaxBuyPriceIndex])
+  const [maxTimeSinceLastUpdate, setMaxTimeSinceLastUpdate] = useState(
+    minuteRangeValues[initialMaxTimeSinceLastUpdateIndex],
+  )
 
   const handleMinProfitSliderValueChange = (newValue: number) => {
-    setMinProfit(newValue);
-  };
-
-  const handleMaxBuyPriceSliderValueChange = (newValue: number) => {
-    setMaxBuyPrice(newValue);
-  };
-    
-  const handleMaxTimeSinceLastUpdateSliderValueChange = (newValue: number) => {
-    setMaxTimeSinceLastUpdate(newValue);
+    setMinProfit(newValue)
   }
 
-  if (!rows) return <Loading message="Loading resale opportunities..."/>;
+  const handleMaxBuyPriceSliderValueChange = (newValue: number) => {
+    setMaxBuyPrice(newValue)
+  }
+
+  const handleMaxTimeSinceLastUpdateSliderValueChange = (newValue: number) => {
+    setMaxTimeSinceLastUpdate(newValue)
+  }
+
+  if (!rows) return <Loading message="Loading resale opportunities..." />
 
   return (
     <Box>
@@ -47,9 +46,8 @@ const Resale = () => {
       </Typography>
 
       <Typography variant="body1" gutterBottom>
-        This tool scans the market for profitable resale listings. It looks for
-        items being sold below the sell price in the city, allowing you to buy
-        low and sell high.
+        This tool scans the market for profitable resale listings. It looks for items being sold
+        below the sell price in the city, allowing you to buy low and sell high.
       </Typography>
 
       <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
@@ -57,39 +55,33 @@ const Resale = () => {
       </Typography>
 
       <Grid container spacing={2} alignItems="center">
-        <Grid size={{ xs: 12, sm: 6, md: 4 }} alignItems="center">
-          <SteppedSlider
-            label="Minimum Profit"
-            prefixUnit="$"
-            suffixUnit=""
-            sliderValues={priceRangeValues}
-            initialValueIndex={initialMinProfitIndex}
-            onValueChange={handleMinProfitSliderValueChange}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }} alignItems="center">
-          <SteppedSlider
-            label="Max Buy Price"
-            prefixUnit="$"
-            suffixUnit=""
-            sliderValues={priceRangeValues}
-            initialValueIndex={initialMaxBuyPriceIndex}
-            onValueChange={handleMaxBuyPriceSliderValueChange}
-          />
-        </Grid>
-         <Grid size={{ xs: 12, sm: 6, md: 4 }} alignItems="center">
-          <SteppedSlider
-            label="Max Time Since Last Update"
-            prefixUnit=""
-            suffixUnit="minute"
-            sliderValues={minuteRangeValues}
-            initialValueIndex={initialMaxTimeSinceLastUpdateIndex}
-            onValueChange={handleMaxTimeSinceLastUpdateSliderValueChange}
-          />
-        </Grid>
+        <SteppedSlider
+          label="Minimum Profit"
+          prefixUnit="$"
+          suffixUnit=""
+          sliderValues={priceRangeValues}
+          initialValueIndex={initialMinProfitIndex}
+          onValueChange={handleMinProfitSliderValueChange}
+        />
+        <SteppedSlider
+          label="Max Buy Price"
+          prefixUnit="$"
+          suffixUnit=""
+          sliderValues={priceRangeValues}
+          initialValueIndex={initialMaxBuyPriceIndex}
+          onValueChange={handleMaxBuyPriceSliderValueChange}
+        />
+        <SteppedSlider
+          label="Max Updated Time"
+          prefixUnit=""
+          suffixUnit="minute"
+          sliderValues={minuteRangeValues}
+          initialValueIndex={initialMaxTimeSinceLastUpdateIndex}
+          onValueChange={handleMaxTimeSinceLastUpdateSliderValueChange}
+        />
       </Grid>
 
-      <MarketItemsTable
+      <ResaleItemsTable
         rows={rows}
         minProfit={minProfit}
         maxBuyPrice={maxBuyPrice}
@@ -97,7 +89,7 @@ const Resale = () => {
         error={error}
       />
     </Box>
-  );
+  )
 }
 
-export default Resale;
+export default Resale
