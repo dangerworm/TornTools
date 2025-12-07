@@ -77,7 +77,7 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
               </Typography>
               {item?.circulation && (
                 <Typography
-                  component={'span'}
+                  component={'p'}
                   variant="body2"
                   color="text.secondary"
                   sx={{ ml: 2, mb: 1 }}
