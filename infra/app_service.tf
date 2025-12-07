@@ -1,8 +1,9 @@
-resource "azurerm_service_plan" "backend_plan" { 
+resource "azurerm_service_plan" "backend_plan" {
   name                = "${var.app_name}-${var.environment}-plan-back-end"
   location            = azurerm_resource_group.torntools_webapp_rg.location
   resource_group_name = azurerm_resource_group.torntools_webapp_rg.name
   os_type             = "Linux"
+  # Upgrade to a paid B1 plan to avoid free-tier memory throttling while keeping costs minimal for dev.
   sku_name            = var.sku_app_service
 }
 
@@ -13,7 +14,8 @@ resource "azurerm_linux_web_app" "backend_api" {
   service_plan_id     = azurerm_service_plan.backend_plan.id
 
   site_config {
-    always_on = false
+    # AlwaysOn keeps Hangfire and BackgroundService workers alive between HTTP requests.
+    always_on = true
     application_stack {
       dotnet_version = "9.0"
     }

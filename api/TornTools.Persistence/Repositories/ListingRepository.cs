@@ -48,13 +48,17 @@ public class ListingRepository(
 
     public async Task<IEnumerable<ListingDto>> GetAllListingsAsync(CancellationToken stoppingToken)
     {
-        var items = await DbContext.Listings.ToListAsync(stoppingToken);
+        // Read-only queries avoid EF change tracking to reduce memory pressure when loading large listing sets.
+        var items = await DbContext.Listings
+            .AsNoTracking()
+            .ToListAsync(stoppingToken);
         return items.Select(item => item.AsDto());
     }
 
     public async Task<IEnumerable<ListingDto>> GetListingsByItemIdAsync(int itemId, CancellationToken stoppingToken)
     {
         var listings = await DbContext.Listings
+            .AsNoTracking()
             .Where(l => l.ItemId == itemId)
             .ToListAsync(stoppingToken);
 
@@ -64,6 +68,7 @@ public class ListingRepository(
     public async Task<IEnumerable<ListingDto>> GetListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken)
     {
         var listings = await DbContext.Listings
+            .AsNoTracking()
             .Where(l => l.Source == source.ToString() && l.ItemId == itemId)
             .ToListAsync(stoppingToken);
 

@@ -50,7 +50,8 @@ variable "location" {
 variable "sku_app_service" {
   description = "SKU for App Service Plan (e.g., B1, S1)"
   type        = string
-  default     = "F1"
+  # Dev previously ran on the F1 free tier but hit memory quotas; default to B1 for paid AlwaysOn capacity while keeping costs low.
+  default     = "B1"
 }
 
 variable "sku_postgres" {
