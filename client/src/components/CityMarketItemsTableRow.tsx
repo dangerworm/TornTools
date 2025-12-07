@@ -61,7 +61,7 @@ const CityMarketItemsTableRow = ({
   return (
     <>
       <TableRow hover key={item.id}>
-        <TableCell>
+        <TableCell align='center'>
           <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
             {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
           </IconButton>
@@ -88,9 +88,9 @@ const CityMarketItemsTableRow = ({
             <img
               alt=""
               src={`https://www.torn.com/images/items/${item.id}/small.png`}
-              width={38}
+              width={46}
               height={19}
-              style={{ borderRadius: 4 }}
+              style={{ borderRadius: 4, paddingRight: 8 }}
               onError={(e) => {
                 ;(e.currentTarget as HTMLImageElement).style.display = 'none'
               }}
@@ -99,25 +99,29 @@ const CityMarketItemsTableRow = ({
           </Box>
         </TableCell>
 
-        <TableCell align="left" onClick={() => navigate(`/item/${item.id}`)}>
-          {item.type}
-        </TableCell>
-
-        {showVendor && (
+        {showVendor ? (
           <TableCell align="left" onClick={() => navigate(`/item/${item.id}`)}>
             {item.valueVendorName?.startsWith('the')
               ? item.valueVendorName.substring(4)
               : item.valueVendorName}
           </TableCell>
+        ) : (
+          <TableCell align="left" onClick={() => navigate(`/item/${item.id}`)}>
+            {item.type}
+          </TableCell>
         )}
 
-        {showCityPrice && (
+        {showCityPrice ? (
           <TableCell align="right" onClick={() => navigate(`/item/${item.id}`)}>
             {item.valueBuyPrice ? (
               <span>{getFormattedText('$', item.valueBuyPrice!, '')}</span>
             ) : (
               <span>&mdash;</span>
             )}
+          </TableCell>
+        ) : (
+           <TableCell align="left" onClick={() => navigate(`/item/${item.id}`)}>
+            {item.subType}
           </TableCell>
         )}
 
@@ -129,13 +133,17 @@ const CityMarketItemsTableRow = ({
           )}
         </TableCell>
 
-        {showCityPrice && (
+        {showCityPrice ? (
           <TableCell align="right" onClick={() => navigate(`/item/${item.id}`)}>
             {item.profit ? (
               <Chip color={'success'} label={getFormattedText('$', item.profit, '')} size="small" />
             ) : (
               <span>&mdash;</span>
             )}
+          </TableCell>
+        ) : (
+          <TableCell align="right" onClick={() => navigate(`/item/${item.id}`)}>
+            {getFormattedText("", item.circulation ?? 0, "")}
           </TableCell>
         )}
 

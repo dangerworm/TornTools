@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import {
   Alert,
   Box,
@@ -142,10 +142,10 @@ const ForeignMarkets = () => {
                 />
                 <Typography variant="caption">
                   {country?.split(' ').map((countryPart) => (
-                    <>
+                    <Fragment key={countryPart}>
                       {countryPart}
                       <br />
-                    </>
+                    </Fragment>
                   ))}
                 </Typography>
               </Box>
@@ -202,7 +202,7 @@ const ForeignMarkets = () => {
           selectedCountries.includes(country || '')
         )
         .map((country: string | undefined) => (
-          <>
+          <Fragment key={country}>
             {filteredItems.filter((i) => i.country === country).length > 0 && (
               <Box key={country} sx={{ mb: 4 }}>
                 <Divider sx={{ mt: 2, mb: 4 }} />
@@ -226,7 +226,7 @@ const ForeignMarkets = () => {
                 />
               </Box>
             )}
-          </>
+          </Fragment>
         ))}
     </Box>
   )

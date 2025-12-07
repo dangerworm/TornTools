@@ -67,7 +67,7 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
             color="inherit"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
+            sx={{ mr: 2, display: { md: 'none' } }}
             aria-label="open drawer"
           >
             <MenuIcon />
@@ -78,7 +78,7 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
             noWrap
             component="div"
             className="geo"
-            sx={{ display: { xs: 'none', sm: 'block' } }}
+            sx={{ display: { xs: 'none', md: 'block' } }}
           >
             dangerworm's Torn Tools
           </Typography>

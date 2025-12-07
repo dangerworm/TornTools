@@ -5,9 +5,8 @@ export default function Footer() {
     <Box
       component="footer"
       sx={{
-        py: 2,
-        px: 3,
-        mt: "auto",
+        mt: 3,
+        pt: 2,
         textAlign: "center",
         width: "100%",
         borderTop: (theme) => `1px solid ${theme.palette.divider}`,
@@ -24,7 +23,7 @@ export default function Footer() {
         </a>
         .
       </Typography>
-      <Typography variant="body2" gutterBottom color="text.secondary">
+      <Typography variant="body2" color="text.secondary">
         You can find this project's source code on{" "}
         <a
           href="https://github.com/dangerworm/TornTools"

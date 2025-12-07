@@ -32,7 +32,7 @@ const FavouriteMarkets = () => {
 
   if (!dotNetUserDetails) {
     return (
-      <Alert severity="info" sx={{ width: "95%" }}>
+      <Alert severity="info">
         Please sign in to see your favourite markets.
       </Alert>
     );
@@ -40,7 +40,7 @@ const FavouriteMarkets = () => {
 
   if (!dotNetUserDetails?.favouriteItems.length) {
     return (
-      <Alert severity="info" sx={{ width: "95%" }}>
+      <Alert severity="info">
         You have not saved any favourite markets yet. Use the heart icon in the
         markets tables to add favourites.
       </Alert>
@@ -56,7 +56,7 @@ const FavouriteMarkets = () => {
         Quickly jump back to the items you follow the most.
       </Typography>
 
-      <TableContainer component={Paper} sx={{ mt: 2, width: "95%" }}>
+      <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table size="small">
           <TableHead>
             <TableRow>
