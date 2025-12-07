@@ -148,7 +148,6 @@ const CityMarketItemsTable = ({
             }}
           />
         </Grid>
-        <Grid size={{ xs: 12, md: 8 }} sx={{ textAlign: 'right' }}></Grid>
       </Grid>
 
       <TableContainer component={Paper}>
@@ -265,6 +264,8 @@ const CityMarketItemsTable = ({
                   setRowsPerPage(parseInt(event.target.value, 10))
                   setPage(0)
                 }}
+                showFirstButton
+                showLastButton
               />
             </TableRow>
           </TableBody>

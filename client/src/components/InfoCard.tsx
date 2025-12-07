@@ -21,22 +21,22 @@ const InfoCard = ({ heading, isCurrency, isProfitable = false, value }: InfoCard
       <Typography gutterBottom sx={{ fontWeight: 'bold', fontSize: '1.2em' }}>
         {heading}
       </Typography>
-      <Typography gutterBottom sx={{ fontSize: '1.5em' }}>
-        {value ? (
-          isProfitable ? (
-            <Chip
-              color="success"
-              label={getFormattedText('$', value, '')}
-              size="medium"
-              sx={{ fontSize: '1em', mr: 1 }}
-            />
-          ) : (
-            getFormattedText(isCurrency ? '$' : '', value, '')
-          )
+      {value ? (
+        isProfitable ? (
+          <Chip
+            color="success"
+            label={getFormattedText('$', value, '')}
+            size="medium"
+            sx={{ fontSize: '1.5em', mr: 1 }}
+          />
         ) : (
-          <span>&mdash;</span>
-        )}
-      </Typography>
+          <Typography gutterBottom sx={{ fontSize: '1.5em' }}>
+            {getFormattedText(isCurrency ? '$' : '', value, '')}
+          </Typography>
+        )
+      ) : (
+        <span>&mdash;</span>
+      )}
     </Card>
   )
 }
