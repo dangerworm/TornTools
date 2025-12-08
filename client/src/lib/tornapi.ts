@@ -59,7 +59,7 @@ export async function fetchTornUserDetails(
     accept: "application/json",
     Authorization: `ApiKey ${apiKey}`
   };
-  const params = new URLSearchParams({ stripTags: "false", comment: "dangerworm's Torn Tools" });
+  const params = new URLSearchParams({ stripTags: "false", comment: "dangerworm's Tools" });
   const res = await fetch(`${url}?${params.toString()}`, { headers, signal });
   let data: TornUserBasicPayload = {};
   try {
@@ -82,7 +82,7 @@ export async function fetchTornKeyInfo(
     accept: "application/json",
     Authorization: `ApiKey ${apiKey}`
   };
-  const params = new URLSearchParams({ comment: "dangerworm's Torn Tools" });
+  const params = new URLSearchParams({ comment: "dangerworm's Tools" });
   const res = await fetch(`${url}?${params.toString()}`, { headers, signal });
   let data: TornKeyInfoPayload = {};
   try {

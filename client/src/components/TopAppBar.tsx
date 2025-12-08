@@ -80,7 +80,7 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
             className="geo"
             sx={{ display: { xs: 'none', md: 'block' } }}
           >
-            dangerworm's Torn Tools
+            dangerworm&apos;s Tools
           </Typography>
         </Box>
 

@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { useMemo, useState } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import {
   Box,
@@ -11,18 +11,19 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material'
+import { useItems } from '../hooks/useItems'
+import { useUser } from '../hooks/useUser'
+import { DRAWER_WIDTH, menuItems } from '../constants/Menu'
+import { MAX_CONTENT_WIDTH } from '../constants/UiConstants'
 import TopAppBar from './TopAppBar'
 import Footer from './Footer'
-import { DRAWER_WIDTH, menuItems } from '../constants/Menu'
-import { useItems } from '../hooks/useItems'
-import { useMemo } from 'react'
 import '../index.css'
-import { MAX_CONTENT_WIDTH } from '../constants/UiConstants'
 
 export default function Layout() {
   const { items } = useItems()
-  const [mobileOpen, setMobileOpen] = React.useState(false)
   const location = useLocation()
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const { dotNetUserDetails } = useUser()
 
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev)
 
@@ -37,26 +38,29 @@ export default function Layout() {
         <Toolbar sx={{ display: { xs: 'flex', md: 'none' } }} />
         <Divider />
         <List>
-          {menuItems.map((item) => {
-            if (item.requiresItems && (!items || items.length === 0)) return null
+          {menuItems
+            .filter((item) => !item.requiresItems || (item.requiresItems && items))
+            .filter((item) => !item.requiresLogin || (item.requiresLogin && dotNetUserDetails))
+            .map((item) => {
+              if (item.requiresItems && (!items || items.length === 0)) return null
 
-            return (
-              <ListItemButton
-                component={NavLink}
-                key={item.address}
-                onClick={() => setMobileOpen(false)}
-                selected={isActive(item.address)}
-                to={item.address}
-              >
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.title} />
-              </ListItemButton>
-            )
-          })}
+              return (
+                <ListItemButton
+                  component={NavLink}
+                  key={item.address}
+                  onClick={() => setMobileOpen(false)}
+                  selected={isActive(item.address)}
+                  to={item.address}
+                >
+                  <ListItemIcon>{item.icon}</ListItemIcon>
+                  <ListItemText primary={item.title} />
+                </ListItemButton>
+              )
+            })}
         </List>
       </Box>
     )
-  }, [items, location.pathname])
+  }, [dotNetUserDetails, items, location.pathname])
 
   return (
     <Box
@@ -118,14 +122,14 @@ export default function Layout() {
             display: 'flex',
             flexDirection: 'column',
             flexGrow: 1,
-            maxWidth: { xs: "100%", md: `calc(100% - ${DRAWER_WIDTH}px)` },
+            maxWidth: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` },
             minHeight: '100vh',
             p: 3,
           }}
         >
           <Box sx={{ flexGrow: 1 }}>
             <Typography variant="h3" gutterBottom className="passero-one">
-              dangerworm&apos;s Torn Tools
+              dangerworm&apos;s Tools
             </Typography>
 
             <Divider sx={{ mb: 3 }} />

@@ -1,4 +1,4 @@
-resource "azurerm_service_plan" "backend_plan" { 
+resource "azurerm_service_plan" "backend_plan" {
   name                = "${var.app_name}-${var.environment}-plan-back-end"
   location            = azurerm_resource_group.torntools_webapp_rg.location
   resource_group_name = azurerm_resource_group.torntools_webapp_rg.name
@@ -13,7 +13,7 @@ resource "azurerm_linux_web_app" "backend_api" {
   service_plan_id     = azurerm_service_plan.backend_plan.id
 
   site_config {
-    always_on = false
+    always_on = true
     application_stack {
       dotnet_version = "9.0"
     }

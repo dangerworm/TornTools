@@ -186,7 +186,7 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
           </Typography>
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid size={{ xs: 12, lg: 6 }}>
           <Chart
             chartType="area"
             dataColour={theme.palette.primary.main}
@@ -198,7 +198,7 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
           />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid size={{ xs: 12, lg: 6 }}>
           <Chart
             chartType="bar"
             dataColour={theme.palette.secondary.main}

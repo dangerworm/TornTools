@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { TableRow, TableCell, Box, Typography, Chip, IconButton, Collapse } from '@mui/material'
+import { TableRow, TableCell, Chip, IconButton, Collapse } from '@mui/material'
 import {
   Favorite,
   FavoriteBorder,
@@ -9,10 +10,10 @@ import {
   Storefront,
 } from '@mui/icons-material'
 import { useUser } from '../hooks/useUser'
-import { type SortableItem } from '../types/items'
-import { useState } from 'react'
-import ItemDetails from '../pages/ItemDetails'
 import { getFormattedText } from '../lib/textFormat'
+import ItemDetails from '../pages/ItemDetails'
+import { type SortableItem } from '../types/items'
+import ItemCell from './ItemCell'
 
 const shopUrls: Map<string, string> = new Map([
   ["Big Al's Gun Shop", 'https://www.torn.com/bigalgunshop.php'],
@@ -42,7 +43,7 @@ const openTornShopPage = (vendorName: string) => {
   }
 }
 
-interface LocalMarketItemsTableRowProps {
+interface CityMarketItemsTableRowProps {
   item: SortableItem
   showCityPrice: boolean
   showVendor: boolean
@@ -52,7 +53,7 @@ const CityMarketItemsTableRow = ({
   item,
   showCityPrice,
   showVendor,
-}: LocalMarketItemsTableRowProps) => {
+}: CityMarketItemsTableRowProps) => {
   const navigate = useNavigate()
   const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser()
 
@@ -78,25 +79,7 @@ const CityMarketItemsTableRow = ({
         )}
 
         <TableCell align="left" onClick={() => navigate(`/item/${item.id}`)}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-            }}
-          >
-            <img
-              alt=""
-              src={`https://www.torn.com/images/items/${item.id}/small.png`}
-              width={46}
-              height={19}
-              style={{ borderRadius: 4, paddingRight: 8 }}
-              onError={(e) => {
-                ;(e.currentTarget as HTMLImageElement).style.display = 'none'
-              }}
-            />
-            <Typography variant="body2">{item.name}</Typography>
-          </Box>
+          <ItemCell itemId={item.id} itemName={item?.name ?? `Item ${item.id}`} />
         </TableCell>
 
         {showVendor ? (

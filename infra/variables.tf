@@ -50,7 +50,7 @@ variable "location" {
 variable "sku_app_service" {
   description = "SKU for App Service Plan (e.g., B1, S1)"
   type        = string
-  default     = "F1"
+  default     = "B1"
 }
 
 variable "sku_postgres" {
