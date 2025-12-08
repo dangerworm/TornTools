@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { TableRow, TableCell, Box, Typography, IconButton, Collapse } from '@mui/material'
+import { TableRow, TableCell, IconButton, Collapse } from '@mui/material'
 import {
   Favorite,
   FavoriteBorder,
