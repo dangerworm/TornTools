@@ -100,6 +100,7 @@ public class ItemRepository(
     public async Task<IEnumerable<ItemDto>> GetAllItemsAsync(CancellationToken stoppingToken)
     {
         var items = await DbContext.Items
+            .AsNoTracking()
             .Where(i => i.Type != "Unused")
             .ToListAsync(stoppingToken);
 
@@ -114,6 +115,7 @@ public class ItemRepository(
     public async Task<IEnumerable<ProfitableListingDto>> GetProfitableItemsAsync(CancellationToken stoppingToken)
     {
         var items = await DbContext.ProfitableListings
+            .AsNoTracking()
             .OrderByDescending(x => x.Profit)
             .ToListAsync(stoppingToken);
 
@@ -123,6 +125,7 @@ public class ItemRepository(
     public async Task<IEnumerable<ItemDto>> GetMarketItemsAsync(CancellationToken stoppingToken)
     {
         var items = await DbContext.Items
+            .AsNoTracking()
             .Where(i => i.ValueMarketPrice != null)
             .ToListAsync(stoppingToken);
 
@@ -137,7 +140,10 @@ public class ItemRepository(
 
     private async Task<ItemEntity> GetItemByIdAsync(int id, CancellationToken stoppingToken)
     {
-        var item = await DbContext.Items.FindAsync([id, stoppingToken], stoppingToken);
+        var item = await DbContext.Items
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id, stoppingToken);
+
         return item is null
             ? throw new Exception($"{nameof(ItemEntity)} with ID {id} not found.")
             : item;
