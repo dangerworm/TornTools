@@ -1,9 +1,8 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   TableRow,
   TableCell,
-  Box,
-  Typography,
   Chip,
   IconButton,
   Collapse,
@@ -16,14 +15,14 @@ import {
   OpenInNew,
 } from "@mui/icons-material";
 import { useUser } from "../hooks/useUser";
-import { useState } from "react";
-import ItemDetails from "../pages/ItemDetails";
 import { getFormattedText } from "../lib/textFormat";
+import { timeAgo } from "../lib/time";
+import ItemDetails from "../pages/ItemDetails";
 import {
   isForeignStockItemProfitable,
   type ForeignStockItem,
 } from "../types/foreignStockItems";
-import { timeAgo } from "../lib/time";
+import ItemCell from "./ItemCell";
 
 const openTornMarketPage = (itemId: number) => {
   window.open(
@@ -72,25 +71,10 @@ const ForeignMarketItemsTableRow = ({
         )}
 
         <TableCell onClick={() => navigate(`/item/${item.itemId}`)}>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-            }}
-          >
-            <img
-              alt=""
-              src={`https://www.torn.com/images/items/${item.itemId}/small.png`}
-              width={38}
-              height={19}
-              style={{ borderRadius: 4 }}
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.display = "none";
-              }}
-            />
-            <Typography variant="body2">{item.itemName}</Typography>
-          </Box>
+          <ItemCell
+            itemId={item.itemId}
+            itemName={item.item?.name ?? `Item ${item.itemId}`}
+          />
         </TableCell>
 
         <TableCell onClick={() => navigate(`/item/${item.itemId}`)}>

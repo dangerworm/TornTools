@@ -55,7 +55,7 @@ const CustomTablePagination = styled(TablePagination)`
   }
 `
 
-interface LocalMarketItemsTableProps {
+interface CityMarketItemsTableProps {
   items: Item[]
   showCityPrice?: boolean
   showVendor?: boolean
@@ -65,7 +65,7 @@ const CityMarketItemsTable = ({
   items,
   showCityPrice = true,
   showVendor = true,
-}: LocalMarketItemsTableProps) => {
+}: CityMarketItemsTableProps) => {
   const isXs = useMediaQuery((theme: any) => theme.breakpoints.down('md'))
   const { dotNetUserDetails } = useUser()
 

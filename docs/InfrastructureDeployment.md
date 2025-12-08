@@ -1,6 +1,6 @@
-# Torn Tools Infrastructure
+# Infrastructure
 
-Welcome! This guide will help you set up and manage the cloud infrastructure for Torn Tools using Terraform and Azure. It is designed for users with little or no DevOps experience. Follow each section in order, and you'll have your infrastructure running smoothly.
+Welcome! This guide will help you set up and manage the cloud infrastructure for dangerworm's Tools using Terraform and Azure. It is designed for users with little or no DevOps experience. Follow each section in order, and you'll have your infrastructure running smoothly.
 
 ---
 

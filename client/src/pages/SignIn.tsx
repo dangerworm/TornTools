@@ -19,6 +19,7 @@ import {
   DialogContent,
   Divider,
   Link,
+  AlertTitle,
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import Loading from '../components/Loading'
@@ -47,7 +48,7 @@ const SignIn = () => {
   const [dialogOpen, setDialogOpen] = useState(false)
 
   const dataStorageColor = (theme: any) => ({
-     color: theme.palette.mode === 'dark' ? 'red' : 'darkred'
+    color: theme.palette.mode === 'dark' ? 'red' : 'darkred',
   })
 
   const handleClose = () => {
@@ -71,23 +72,40 @@ const SignIn = () => {
         </Typography>
 
         <Alert severity="info" sx={{ mb: 2 }}>
-          Signing in gives you access to additional features like favourite markets, saved theme
-          preferences. It also powers features tailored to your personal Torn profile such as
-          automatic country selection when travelling, as well as planned features including
-          personalised alerts and notifications based on your actions here as well as in-game
-          activities.
+          <AlertTitle>Why sign in?</AlertTitle>
+          <Typography variant="body2" gutterBottom>
+            Signing in gives you access to additional features like favourite markets, resale
+            listings, saved theme preferences, and others. It also powers features tailored to your
+            personal Torn profile such as automatic country selection when travelling, and in the
+            future (when I get around to it) personalised alerts and notifications based on your
+            actions here as well as in-game activities.
+          </Typography>
         </Alert>
 
         <Alert severity="warning" sx={{ mb: 2 }}>
-          However, signing in uses your API key and it will be added to a pool of keys used to fetch
-          data from Torn. This will increase the number of calls made to Torn using your API key and
-          will count towards the limit of 100 calls per minute dictated by the Torn Terms of
-          Service.
+          <AlertTitle>API key sharing notice</AlertTitle>
+          <Typography variant="body2" gutterBottom>
+            However, signing in requires you to share your API key. It will be added to a pool of
+            keys used to fetch data from Torn. This will increase the number of calls made to Torn
+            using your API key and will count towards the limit of 100 calls per minute dictated by
+            the{' '}
+            <Link
+              href="https://wiki.torn.com/wiki/API#:~:text=Each%20user%20can%20make%20up,or%20invalid%20keys%20upon%20error."
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Torn API Terms of Service
+            </Link>
+            .
+          </Typography>
         </Alert>
 
         <Alert severity="success" sx={{ mb: 2 }}>
-          Adding your key helps to populate market data faster, but also reduces the load on all
-          users' API limits and ensures that data is fetched more efficiently for everyone.
+          <AlertTitle>Benefits of Sharing Your API Key</AlertTitle>
+          <Typography variant="body2" gutterBottom>
+            Adding your key helps to populate market data faster and reduces the load on all users'
+            API limits. This ensures that data is fetched more efficiently for everyone.
+          </Typography>
         </Alert>
 
         <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
@@ -182,7 +200,8 @@ const SignIn = () => {
               sx={{ textDecoration: 'none' }}
             >
               Torn settings page
-            </Link>.
+            </Link>
+            .
           </Typography>
           <TextField
             label="Torn API Key"
@@ -190,6 +209,7 @@ const SignIn = () => {
             value={apiKey || ''}
             onChange={(e) => setApiKey(e.target.value || null)}
             sx={{ mt: 2 }}
+            type={'password'}
           />
 
           {loadingTornUserProfile && (
@@ -206,19 +226,19 @@ const SignIn = () => {
                 </Alert>
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <Alert 
-                  severity="info" 
-                  sx={{ 
+                <Alert
+                  severity="info"
+                  sx={{
                     mb: {
                       xs: 0,
-                      sm: 0
+                      sm: 0,
                     },
                     mt: {
                       xs: 0,
-                      sm: 2
+                      sm: 2,
                     },
                   }}
-                  >
+                >
                   {tornUserProfile.name} [{tornUserProfile.id}]
                   <br />
                   {tornUserProfile.gender}, level {tornUserProfile.level}

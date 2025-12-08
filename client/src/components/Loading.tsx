@@ -6,7 +6,7 @@ interface LoadingProps {
   width?: string;
 }
 
-export function Loading({ message = "Loading...", width = "100%" }: LoadingProps) {
+const Loading = ({ message = "Loading...", width = "100%" }: LoadingProps) => {
   return (
     <Box sx={{ alignItems: 'center', display: 'flex', gap: 2, justifyContent: 'center', p: 2, width }}>
       <CircularProgress />

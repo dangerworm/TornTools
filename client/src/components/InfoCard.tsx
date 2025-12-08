@@ -35,7 +35,9 @@ const InfoCard = ({ heading, isCurrency, isProfitable = false, value }: InfoCard
           </Typography>
         )
       ) : (
-        <span>&mdash;</span>
+        <Typography gutterBottom sx={{ fontSize: '1.5em' }}>
+          <span>&mdash;</span>
+        </Typography>
       )}
     </Card>
   )

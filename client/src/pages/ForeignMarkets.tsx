@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import {
   Alert,
+  AlertTitle,
   Box,
   Chip,
   Divider,
@@ -58,30 +59,23 @@ const ForeignMarkets = () => {
     ) {
       const destination = tornUserProfile.status.description.replace('Traveling to ', '')
       setSelectedCountries([destination])
-    }
-    else if (
-      tornUserProfile.status.state === 'Abroad'
-    ) {
+    } else if (tornUserProfile.status.state === 'Abroad') {
       setSelectedCountries([tornUserProfile.status.description.substring(3)])
     }
   }, [tornUserProfile])
 
   const countries = useMemo(() => {
     if (!rows) return []
-    return Array.from(
-      new Set(rows
-        .map((i) => i.country)))
-        .filter((country) => country && country !== 'Torn')
-        .sort() as string[]
+    return Array.from(new Set(rows.map((i) => i.country)))
+      .filter((country) => country && country !== 'Torn')
+      .sort() as string[]
   }, [rows])
 
   const itemTypes = useMemo(() => {
     if (!rows) return []
     return Array.from(
-      new Set(rows
-        .map((i) => i.item.type)
-        .filter((type) => type)))
-        .sort() as string[]
+      new Set(rows.map((i) => i.item.type).filter((type) => type)),
+    ).sort() as string[]
   }, [rows])
 
   const handleCountryFilterChange = (country: string) => {
@@ -95,7 +89,16 @@ const ForeignMarkets = () => {
   }
 
   if (!rows) return <Loading message="Loading foreign markets..." />
-  if (error) return <Alert severity="error">{error}</Alert>
+  if (error) {
+    return (
+      <Alert severity="error" sx={{ mb: 2 }}>
+        <AlertTitle>Error</AlertTitle>
+        <Typography variant="body2" gutterBottom>
+          {error}
+        </Typography>
+      </Alert>
+    )
+  }
 
   return (
     <Box>
@@ -197,9 +200,8 @@ const ForeignMarkets = () => {
       </Box>
 
       {countries
-        .filter((country) =>
-          selectedCountries.length === 0 ||
-          selectedCountries.includes(country || '')
+        .filter(
+          (country) => selectedCountries.length === 0 || selectedCountries.includes(country || ''),
         )
         .map((country: string | undefined) => (
           <Fragment key={country}>

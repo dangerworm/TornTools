@@ -11,14 +11,14 @@ interface SteppedSliderProps {
   onValueChange: (newValue: number) => void
 }
 
-export default function SteppedSlider({
+const SteppedSlider = ({
   sliderValues,
   initialValueIndex,
   onValueChange,
   label,
   prefixUnit,
   suffixUnit,
-}: SteppedSliderProps) {
+}: SteppedSliderProps) => {
   const [sliderValueIndex, setSliderValueIndex] = useState(initialValueIndex ?? 0)
 
   const handleSliderChange = (_: Event, newIndex: number) => {
@@ -44,3 +44,5 @@ export default function SteppedSlider({
     </Grid>
   )
 }
+
+export default SteppedSlider
