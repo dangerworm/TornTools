@@ -4,10 +4,10 @@ export interface Weav3rMarketplacePayload {
   market_price: number;
   bazaar_average: number;
   total_listings: string;
-  listings: Weav3rMarketPlaceListing[];
+  listings: Weav3rMarketplaceListing[];
 }
 
-export interface Weav3rMarketPlaceListing {
+export interface Weav3rMarketplaceListing {
   item_id: number;
   player_id: number;
   player_name: string;

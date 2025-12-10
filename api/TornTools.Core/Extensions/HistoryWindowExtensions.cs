@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using TornTools.Core.Enums;
 
 namespace TornTools.Core.Extensions;
@@ -9,14 +7,13 @@ public static class HistoryWindowExtensions
     private static readonly Dictionary<HistoryWindow, (TimeSpan Range, TimeSpan Bucket)> WindowConfigurations =
         new()
         {
-            { HistoryWindow.Minutes30, (TimeSpan.FromMinutes(30), TimeSpan.FromMinutes(5)) },
-            { HistoryWindow.Hour1, (TimeSpan.FromHours(1), TimeSpan.FromMinutes(5)) },
-            { HistoryWindow.Hours4, (TimeSpan.FromHours(4), TimeSpan.FromMinutes(15)) },
+            { HistoryWindow.Hour1, (TimeSpan.FromHours(1), TimeSpan.FromMinutes(2)) },
+            { HistoryWindow.Hours4, (TimeSpan.FromHours(4), TimeSpan.FromMinutes(10)) },
             { HistoryWindow.Day1, (TimeSpan.FromDays(1), TimeSpan.FromHours(1)) },
-            { HistoryWindow.Week1, (TimeSpan.FromDays(7), TimeSpan.FromHours(1)) },
-            { HistoryWindow.Month1, (TimeSpan.FromDays(30), TimeSpan.FromHours(1)) },
-            { HistoryWindow.Months3, (TimeSpan.FromDays(90), TimeSpan.FromDays(1)) },
-            { HistoryWindow.Year1, (TimeSpan.FromDays(365), TimeSpan.FromDays(1)) }
+            { HistoryWindow.Week1, (TimeSpan.FromDays(7), TimeSpan.FromHours(6)) },
+            { HistoryWindow.Month1, (TimeSpan.FromDays(30), TimeSpan.FromDays(1)) },
+            { HistoryWindow.Months3, (TimeSpan.FromDays(90), TimeSpan.FromDays(3)) },
+            { HistoryWindow.Year1, (TimeSpan.FromDays(365), TimeSpan.FromDays(7)) }
         };
 
     public static HistoryWindow Default => HistoryWindow.Day1;

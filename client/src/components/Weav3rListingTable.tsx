@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   Box,
-  Grid,
   Paper,
   Table,
   TableBody,
@@ -57,7 +56,7 @@ interface Weav3rMarketTableProps {
 }
 
 const Weav3rMarketTable = ({ payload }: Weav3rMarketTableProps) => {
-  const isXs = useMediaQuery((theme: any) => theme.breakpoints.down('md'))
+  const isSmallScreen = useMediaQuery((theme: any) => theme.breakpoints.down('md'))
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [searchTerm, setSearchTerm] = useState('')
@@ -99,23 +98,19 @@ const Weav3rMarketTable = ({ payload }: Weav3rMarketTableProps) => {
   return (
     <>
       <Box>
-        <Grid container spacing={2} sx={{ mb: 1 }}>
-          <Grid size={{ xs: 12, md: 4 }} sx={{ textAlign: 'left' }}>
-            <TextField
-              fullWidth={isXs ? true : false}
-              label="Search"
-              variant="outlined"
-              size="small"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              sx={{
-                mb: { xs: 0, md: 1 },
-                mt: 1,
-                minWidth: { md: '500px' },
-              }}
-            />
-          </Grid>
-        </Grid>
+        <TextField
+          fullWidth={isSmallScreen ? true : false}
+          label="Search"
+          variant="outlined"
+          size="small"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          sx={{
+            mb: { xs: 0, md: 2 },
+            mt: -1,
+            minWidth: { md: '500px' },
+          }}
+        />
 
         <TableContainer component={Paper}>
           <Table size="small">

@@ -1,5 +1,13 @@
 import { useMemo, useState } from 'react'
-import { Alert, Card, CardContent, CardHeader, ToggleButton, Typography } from '@mui/material'
+import {
+  Alert,
+  Card,
+  CardContent,
+  CardHeader,
+  ToggleButton,
+  Typography,
+  useMediaQuery,
+} from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import {
@@ -15,24 +23,13 @@ import {
 } from 'recharts'
 import type { NameType, Payload } from 'recharts/types/component/DefaultTooltipContent'
 import { getFormattedText, type PrefixUnit, type SuffixUnit } from '../lib/textFormat'
-import { HISTORY_WINDOWS, type HistoryWindow, type ItemHistoryPoint } from '../types/history'
+import {
+  HISTORY_WINDOWS_SMALL,
+  HISTORY_WINDOWS_LARGE,
+  type HistoryWindow,
+  type ItemHistoryPoint,
+} from '../types/history'
 import Loading from './Loading'
-
-const renderWindowToggle = (selected: HistoryWindow, onChange: (window: HistoryWindow) => void) => (
-  <ToggleButtonGroup
-    exclusive
-    size="small"
-    value={selected}
-    color="primary"
-    onChange={(_, value) => value && onChange(value)}
-  >
-    {HISTORY_WINDOWS.map((window) => (
-      <ToggleButton key={window.value} value={window.value}>
-        {window.label}
-      </ToggleButton>
-    ))}
-  </ToggleButtonGroup>
-)
 
 interface ChartProps {
   chartType: 'area' | 'bar'
@@ -64,6 +61,7 @@ const Chart = ({
   title,
   yAxisLabel,
 }: ChartProps) => {
+  const isSmallScreen = useMediaQuery((theme: any) => theme.breakpoints.down('lg'))
   const theme = useTheme()
 
   const [timeWindow, setTimeWindow] = useState<HistoryWindow>('1w')
@@ -85,7 +83,7 @@ const Chart = ({
     while (maxValue >= Math.pow(10, powers + 1)) {
       powers += 1
     }
-    
+
     let tickDelta = Math.pow(10, powers)
     let minTickValue = Math.floor(minValue / tickDelta) * tickDelta
     let maxTickValue = Math.ceil(maxValue / tickDelta) * tickDelta
@@ -93,7 +91,7 @@ const Chart = ({
     const numberOfTicks = (maxTickValue - minTickValue) / tickDelta
 
     if (numberOfTicks < 6) {
-      tickDelta /= (6 - numberOfTicks)
+      tickDelta /= 6 - numberOfTicks
       tickDelta = Math.max(1, Math.round(tickDelta)) // Don't round to 0
 
       minTickValue = Math.floor(minValue / tickDelta) * tickDelta
@@ -102,26 +100,23 @@ const Chart = ({
 
     const ticks = []
     for (
-      let i = Math.max(0, minTickValue - tickDelta); 
-      i <= maxTickValue + (tickDelta === 1 || maxTickValue - maxValue > (tickDelta / 2)
-        ? 0 
-        : tickDelta); 
+      let i = Math.max(0, minTickValue - tickDelta);
+      i <=
+      maxTickValue + (tickDelta === 1 || maxTickValue - maxValue > tickDelta / 2 ? 0 : tickDelta);
       i += tickDelta
     ) {
       ticks.push(i)
-    };
+    }
     return ticks
   }, [data])
 
   const timestampFormatter = useMemo(() => {
-    if (timeWindow === '30m' || timeWindow === '1h' || timeWindow === '4h') {
+    if (timeWindow === '1h' || timeWindow === '4h' || timeWindow === '1d') {
       return new Intl.DateTimeFormat(undefined, {
         hour: 'numeric',
         minute: '2-digit',
       })
-    }
-
-    if (timeWindow === '1d') {
+    } else {
       return new Intl.DateTimeFormat(undefined, {
         day: 'numeric',
         month: 'short',
@@ -129,21 +124,6 @@ const Chart = ({
         minute: '2-digit',
       })
     }
-
-    if (timeWindow === '1w' || timeWindow === '1m') {
-      return new Intl.DateTimeFormat(undefined, {
-        day: 'numeric',
-        month: 'short',
-        hour: 'numeric',
-        minute: '2-digit',
-      })
-    }
-
-    return new Intl.DateTimeFormat(undefined, {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    })
   }, [timeWindow])
 
   const formatTimestamp = useMemo(
@@ -180,13 +160,32 @@ const Chart = ({
           color: '#fff',
         }}
       >
-        <div>{formatTimestamp(label!)}</div>
+        <div>Time: {formatTimestamp(label!)}</div>
         <div>
           {valueLabel ?? 'Value'}: {formatValue(value!)}
         </div>
       </div>
     )
   }
+
+  const renderWindowToggle = (
+    selected: HistoryWindow,
+    onChange: (window: HistoryWindow) => void,
+  ) => (
+    <ToggleButtonGroup
+      exclusive
+      size="small"
+      value={selected}
+      color="primary"
+      onChange={(_, value) => value && onChange(value)}
+    >
+      {(isSmallScreen ? HISTORY_WINDOWS_SMALL : HISTORY_WINDOWS_LARGE).map((window) => (
+        <ToggleButton key={window.value} value={window.value}>
+          {window.label}
+        </ToggleButton>
+      ))}
+    </ToggleButtonGroup>
+  )
 
   return (
     <Card elevation={2} sx={{ backgroundColor: 'background.paper', height: '100%' }}>
@@ -210,8 +209,7 @@ const Chart = ({
                 <AreaChart
                   data={data}
                   margin={{
-                    left: Math.max(...data.map((p) => p.value)).toLocaleString().length,
-                    right: 10,
+                    left: data[data.length - 1].toLocaleString().length / 4,
                     top: 10,
                   }}
                 >
@@ -251,7 +249,12 @@ const Chart = ({
 
             {chartType === 'bar' && (
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={data} margin={{ top: 10, right: 10, left: 20 }}>
+                <BarChart
+                  data={data}
+                  margin={{
+                    top: 10,
+                  }}
+                >
                   <CartesianGrid stroke={gridColor} strokeDasharray="3 3" />
                   <XAxis
                     dataKey="timestamp"
@@ -276,7 +279,7 @@ const Chart = ({
                     ticks={ticks}
                   />
                   <Tooltip content={CustomTooltip} />
-                  <Bar dataKey="value" fill={dataColour} radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="value" fill={dataColour} maxBarSize={40} radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}

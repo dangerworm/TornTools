@@ -66,7 +66,7 @@ const CityMarketItemsTable = ({
   showCityPrice = true,
   showVendor = true,
 }: CityMarketItemsTableProps) => {
-  const isXs = useMediaQuery((theme: any) => theme.breakpoints.down('md'))
+  const isSmallScreen = useMediaQuery((theme: any) => theme.breakpoints.down('md'))
   const { dotNetUserDetails } = useUser()
 
   const [page, setPage] = useState(0)
@@ -135,7 +135,7 @@ const CityMarketItemsTable = ({
       <Grid container spacing={2} sx={{ mb: 1 }}>
         <Grid size={{ xs: 12, md: 4 }} sx={{ textAlign: 'left' }}>
           <TextField
-            fullWidth={isXs ? true : false}
+            fullWidth={isSmallScreen ? true : false}
             label="Search"
             variant="outlined"
             size="small"

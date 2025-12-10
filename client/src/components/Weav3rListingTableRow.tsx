@@ -1,13 +1,13 @@
 import { TableRow, TableCell, Typography } from '@mui/material'
 import { getFormattedText } from '../lib/textFormat'
-import type { Weav3rMarketPlaceListing } from '../types/weav3r'
+import type { Weav3rMarketplaceListing } from '../types/weav3r'
 
 const openPlayerBazaarPage = (playerId: number) => {
   window.open(`https://www.torn.com/bazaar.php?userId=${playerId}#/`, '_blank')
 }
 
 interface WeaverListingTableRowProps {
-  item: Weav3rMarketPlaceListing
+  item: Weav3rMarketplaceListing
 }
 
 const WeaverListingTableRow = ({ item }: WeaverListingTableRowProps) => {

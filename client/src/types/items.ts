@@ -1,4 +1,4 @@
-import type { Weav3rMarketPlaceListing } from "./weav3r";
+import type { Weav3rMarketplaceListing } from "./weav3r";
 
 export interface Item {
   id: number;
@@ -46,7 +46,7 @@ export const isItemProfitableOnMarket = (item: Item): boolean => {
   );
 }
 
-export const isItemProfitableInBazaar = (item: Item, listing: Weav3rMarketPlaceListing): boolean => {
+export const isItemProfitableInBazaar = (item: Item, listing: Weav3rMarketplaceListing): boolean => {
   return (
     item.isTradable &&  
     !!item.valueBuyPrice &&

@@ -71,16 +71,39 @@ ORDER BY ""Bucket""";
     {
         var (range, bucket) = window.ToWindowConfiguration();
         var bucketSeconds = bucket.TotalSeconds;
-        var cutoffDate = DateTime.UtcNow.Subtract(range);
 
-        return await DbContext.Set<ItemMarketHistoryPointEntity>()
+        var cutoffDate = DateTime.UtcNow.Subtract(range);
+        var now = DateTime.UtcNow;
+
+        var history = await DbContext.Set<ItemMarketHistoryPointEntity>()
             .FromSqlRaw(
                 ItemMarketHistoryPointQuery,
                 new NpgsqlParameter("bucket", bucketSeconds),
                 new NpgsqlParameter("cutoffDate", cutoffDate),
                 new NpgsqlParameter("itemId", itemId)
             )
-            .ToListAsync(stoppingToken);
+            .ToDictionaryAsync(h => h.Bucket, h => h, stoppingToken);
+
+        // Align cutoff and now to the same bucket grid as SQL
+        var earliestDataPoint = history.Count != 0 ? history.Select(h => h.Value.Bucket).Min() : cutoffDate;
+        var firstBucketTime = FloorToBucketUtc(new List<DateTime>([cutoffDate, earliestDataPoint]).Max(), bucketSeconds);
+        var lastBucketTime = FloorToBucketUtc(now, bucketSeconds);
+
+        var totalBuckets = (int)((lastBucketTime - firstBucketTime).TotalSeconds / bucketSeconds) + 1;
+        return Enumerable.Range(0, totalBuckets)
+            .Select(i =>
+            {
+                var bucketTime = firstBucketTime.AddSeconds(i * bucketSeconds);
+
+                return history.TryGetValue(bucketTime, out var point)
+                    ? point
+                    : new ItemMarketHistoryPointEntity
+                    {
+                        Bucket = bucketTime,
+                        AveragePrice = 0,
+                        Count = 0
+                    };
+            });
     }
 
     private static ItemChangeLogEntity CreateEntityFromDto(ItemChangeLogDto itemDto)
@@ -93,5 +116,20 @@ ORDER BY ""Bucket""";
             ChangeTime = itemDto.ChangeTime,
             NewPrice = itemDto.NewPrice
         };
+    }
+
+    private static DateTime FloorToBucketUtc(DateTime utc, double bucketSeconds)
+    {
+        if (utc.Kind != DateTimeKind.Utc)
+        {
+            utc = utc.ToUniversalTime();
+        }
+
+        var epoch = DateTime.UnixEpoch; // 1970-01-01T00:00:00Z
+        var totalSeconds = (long)(utc - epoch).TotalSeconds;
+        var bucketSize = (long)bucketSeconds;
+
+        var flooredSeconds = (totalSeconds / bucketSize) * bucketSize;
+        return epoch.AddSeconds(flooredSeconds);
     }
 }
