@@ -6,14 +6,15 @@ import type { Weav3rMarketplaceListing } from '../types/weav3r'
 
 interface ItemDetailsInfoCardsProps {
   item: Item,
+  inlineView?: boolean
   firstBazaarListing?: Weav3rMarketplaceListing
 }
 
-const ItemDetailsInfoCards = ({ item, firstBazaarListing }: ItemDetailsInfoCardsProps) => {
+const ItemDetailsInfoCards = ({ item, inlineView = false, firstBazaarListing }: ItemDetailsInfoCardsProps) => {
   const bazaarDataAvailable = firstBazaarListing !== undefined
 
   return (
-    <Grid container spacing={2}>
+    <Grid container spacing={2} sx={{ mt: inlineView ? 2 : 0 }}>
       <Grid size={{ xs: 6, md: bazaarDataAvailable ? 3 : 4 }}>
         <InfoCard heading="City Buy Price" isCurrency={true} value={item?.valueBuyPrice} />
       </Grid>

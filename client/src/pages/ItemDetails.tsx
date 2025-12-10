@@ -21,6 +21,7 @@ import ItemDetailsDescription from '../components/ItemDetailsDescription'
 import ItemDetailsInfoCards from '../components/ItemDetailsInfoCards'
 import Weav3rMarketTable from '../components/Weav3rListingTable'
 import { type Item } from '../types/items'
+import ItemDetailsArmourStats from '../components/ItemDetailsArmourStats'
 
 interface ItemDetailsProps {
   inputItem?: Item
@@ -64,12 +65,20 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
 
   return (
     <Box>
-      <ItemDetailsHeader item={item} inlineView={inlineView} />
-      <ItemDetailsWeaponStats item={item} />
-      <ItemDetailsDescription item={item} />
+      {!inlineView && (
+        <>
+          <ItemDetailsHeader item={item} inlineView={inlineView} />
+
+          {item.type === 'Weapon' && <ItemDetailsWeaponStats item={item} />}
+          {item.type === 'Armor' && <ItemDetailsArmourStats item={item} />}
+
+          <ItemDetailsDescription item={item} />
+        </>
+      )}
 
       <ItemDetailsInfoCards
         item={item}
+        inlineView={inlineView}
         firstBazaarListing={bazaarDataAvailable ? data.listings[0] : undefined}
       />
 
