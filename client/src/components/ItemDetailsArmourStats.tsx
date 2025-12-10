@@ -1,12 +1,4 @@
 import { alpha, Box, Grid, Typography, useTheme } from '@mui/material'
-import {
-  SportsKabaddi as SportsKabaddiIcon,
-  TrackChanges as TrackChangesIcon,
-  Whatshot as WhatshotIcon,
-  VisibilityOff as VisibilityOffIcon,
-  Adjust as AdjustIcon,
-  BubbleChart as BubbleChartIcon,
-} from '@mui/icons-material'
 import { type Item } from '../types/items'
 import ShieldIcon from '@mui/icons-material/Shield'
 
@@ -17,39 +9,6 @@ interface ItemDetailsArmourStatsProps {
 const ItemDetailsArmourStats = ({ item }: ItemDetailsArmourStatsProps) => {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
-
-  const weaponStats = [
-    {
-      icon: <SportsKabaddiIcon />,
-      label: 'Base Damage',
-      value: item.detailsBaseStatsDamage,
-    },
-    {
-      icon: <TrackChangesIcon />,
-      label: 'Base Accuracy',
-      value: item.detailsBaseStatsAccuracy,
-    },
-    {
-      icon: <WhatshotIcon />,
-      label: 'Rate of Fire',
-      value: `${item.detailsAmmoRateOfFireMinimum}-${item.detailsAmmoRateOfFireMaximum} RPM`,
-    },
-    {
-      icon: <VisibilityOffIcon />,
-      label: 'Stealth Level',
-      value: item.detailsStealthLevel,
-    },
-    {
-      icon: <AdjustIcon />,
-      label: 'Caliber',
-      value: item.detailsAmmoName,
-    },
-    {
-      icon: <BubbleChartIcon />,
-      label: 'Ammo',
-      value: item.detailsAmmoMagazineRounds,
-    },
-  ]
 
   return (
     <Box>
