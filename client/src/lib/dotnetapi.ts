@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "../constants/ApiConstants";
+import { API_BASE_URL } from "../constants/apiConstants";
 import type { ForeignStockItem } from "../types/foreignStockItems";
 import type { Item } from "../types/items";
 import type { HistoryResult, HistoryWindow } from "../types/history";

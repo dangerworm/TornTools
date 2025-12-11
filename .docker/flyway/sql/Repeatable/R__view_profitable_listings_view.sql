@@ -26,7 +26,7 @@ FROM
   JOIN public.listings l ON l.item_id = i.id
 WHERE
   i.id <> 335
-	AND l.price < i.value_sell_price
+	AND (l.price < i.value_sell_price OR l.price < i.value_market_price)
 GROUP BY
   i.name,
   i.value_sell_price,

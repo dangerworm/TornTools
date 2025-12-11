@@ -21,7 +21,7 @@ import { useUser } from '../hooks/useUser'
 import { useThemeSettings } from '../hooks/useThemeSettings'
 import '../index.css'
 import ItemSearch from './ItemSearch'
-import { MAX_CONTENT_WIDTH } from '../constants/UiConstants'
+import { MAX_CONTENT_WIDTH } from '../constants/uiConstants'
 
 interface TopAppBarProps {
   handleDrawerToggle: () => void

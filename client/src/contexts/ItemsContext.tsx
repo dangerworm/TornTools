@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { API_BASE_URL } from "../constants/ApiConstants";
+import { API_BASE_URL } from "../constants/apiConstants";
 import { fetchItems } from "../lib/dotnetapi";
 import { ItemsContext, type ItemsContextModel } from "../hooks/useItems";
 import type { Item, ItemsMap } from "../types/items";

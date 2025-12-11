@@ -46,7 +46,9 @@ const ResaleItemsTable = ({
 
   const filteredRows = useMemo(() => rows.filter(
     (r) =>
-      (minProfit === 0 || saleOutlet === 'city' ? r.cityProfit >= minProfit : r.marketProfit(taxType) >= minProfit) &&
+      (saleOutlet === 'city' 
+        ? minProfit === 0 || r.cityProfit >= minProfit 
+        : minProfit === 0 || r.marketProfit(taxType) >= minProfit) &&
       r.maxPrice <= maxBuyPrice &&
       getSecondsSinceLastUpdate(r.lastUpdated) <= maxTimeSinceLastUpdate * 60,
   ), [rows, minProfit, maxBuyPrice, maxTimeSinceLastUpdate, saleOutlet, taxType]);

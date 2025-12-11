@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import { Alert, AlertTitle, Card, CardContent, Divider, Grid, Typography } from '@mui/material'
 import Loading from '../components/Loading'
-import { menuItems } from '../constants/Menu'
+import { menuItems } from '../components/Menu'
 import { useItems } from '../hooks/useItems'
 import { useUser } from '../hooks/useUser'
 import { useMemo } from 'react'

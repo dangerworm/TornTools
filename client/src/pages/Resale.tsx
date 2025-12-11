@@ -4,7 +4,7 @@ import { Alert, AlertTitle, Box, Divider, Grid, Typography } from '@mui/material
 import Loading from '../components/Loading'
 import ResaleItemsTable from '../components/ResaleItemsTable'
 import SteppedSlider from '../components/SteppedSlider'
-import { menuItems } from '../constants/Menu'
+import { menuItems } from '../components/Menu'
 import { useResaleScan } from '../hooks/useResaleScan'
 import { useUser } from '../hooks/useUser'
 import type { SaleOutlet, TaxType } from '../types/markets'
