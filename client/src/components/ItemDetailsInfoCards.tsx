@@ -38,7 +38,8 @@ const ItemDetailsInfoCards = ({ item, inlineView = false, firstBazaarListing }: 
         <InfoCard
           heading="Market Price"
           isCurrency={true}
-          isProfitable={isItemProfitableOnMarket(item)}
+          isProfitable={isItemProfitableOnMarket(item, 0.05)}
+          taxType={0.05}
           value={item?.valueMarketPrice}
         />
       </Grid>
