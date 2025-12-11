@@ -103,7 +103,7 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
               />
             </Grid>
 
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid size={{ xs: 12, sm: 6 }} sx={{ mt: { xs: 4, sm: 0 } }}>
               <Typography variant="h6" sx={{ mt: -1 }}>
                 Changes Over Time
               </Typography>

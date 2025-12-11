@@ -9,7 +9,6 @@ import {
   ListItemIcon,
   ListItemText,
   Toolbar,
-  Typography,
 } from '@mui/material'
 import { useItems } from '../hooks/useItems'
 import { useUser } from '../hooks/useUser'
