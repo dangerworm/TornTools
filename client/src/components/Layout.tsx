@@ -128,12 +128,6 @@ export default function Layout() {
           }}
         >
           <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="h3" gutterBottom className="passero-one">
-              dangerworm&apos;s Tools
-            </Typography>
-
-            <Divider sx={{ mb: 3 }} />
-
             <Outlet />
           </Box>
 

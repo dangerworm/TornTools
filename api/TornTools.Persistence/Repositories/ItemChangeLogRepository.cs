@@ -37,6 +37,7 @@ ORDER BY ""Bucket""";
     {
         var cutoffDate = DateTime.UtcNow.AddHours(-timeWindowHours);
         var changeLogs = await DbContext.ItemChangeLogs
+            .AsNoTracking()
             .Where(cl => cl.ChangeTime >= cutoffDate)
             .ToListAsync(stoppingToken);
 

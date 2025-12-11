@@ -21,6 +21,12 @@ const Home = () => {
 
   return (
     <>
+      <Typography variant="h3" gutterBottom className="passero-one">
+        dangerworm&apos;s Tools
+      </Typography>
+
+      <Divider sx={{ mb: 3 }} />
+
       <Typography variant="body1" gutterBottom>
         This website hosts a collection of tools for the game{' '}
         <a href="https://www.torn.com/index.php" target="_blank" rel="noopener noreferrer">

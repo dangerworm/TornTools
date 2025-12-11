@@ -18,7 +18,7 @@ import {
 
 import { useUser } from '../hooks/useUser'
 import { stableSort, getComparator, type SortOrder } from '../lib/comparisons'
-import { isItemProfitableOnMarket, type Item, type SortableItem } from '../types/items'
+import { type Item, type SortableItem } from '../types/items'
 import CityMarketItemsTableRow from './CityMarketItemsTableRow'
 import TableSortCell from './TableSortCell'
 
@@ -59,12 +59,14 @@ interface CityMarketItemsTableProps {
   items: Item[]
   showCityPrice?: boolean
   showVendor?: boolean
+  taxType: number
 }
 
 const CityMarketItemsTable = ({
   items,
   showCityPrice = true,
   showVendor = true,
+  taxType,
 }: CityMarketItemsTableProps) => {
   const isSmallScreen = useMediaQuery((theme: any) => theme.breakpoints.down('md'))
   const { dotNetUserDetails } = useUser()
@@ -98,21 +100,19 @@ const CityMarketItemsTable = ({
       .map((item) => {
         const profit =
           showCityPrice &&
-          isItemProfitableOnMarket(item) &&
           item.valueBuyPrice &&
           item.valueMarketPrice
-            ? item.valueMarketPrice - item.valueBuyPrice
+            ? (item.valueMarketPrice * (1 - taxType)) - item.valueBuyPrice
             : null
         const profitPerCost =
           showCityPrice &&
-          isItemProfitableOnMarket(item) &&
           item.valueBuyPrice &&
           item.valueMarketPrice
-            ? (item.valueMarketPrice - item.valueBuyPrice) / item.valueBuyPrice
+            ? ((item.valueMarketPrice * (1 - taxType)) - item.valueBuyPrice) / item.valueBuyPrice
             : null
         return { ...item, profit, profitPerCost } as SortableItem
       })
-  }, [items, searchTerm])
+  }, [items, searchTerm, taxType, showCityPrice])
 
   const sortedItems = useMemo(
     () => stableSort(filteredItems, getComparator(orderDirection, orderBy)),

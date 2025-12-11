@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { fetchProfitableListings } from "../lib/dotnetapi";
-import type { ProfitableListing } from "../types/profitableListings";
+import type { ProfitableListing, ProfitableListingResponse } from "../types/profitableListings";
 
 export type RowStatus = "queued" | "fetching" | "cached" | "done" | "error";
 
-interface Options {
+interface ResaleScanOptions {
   intervalMs?: number; // one call per interval (keeps us <100/min by default)
 }
 
 export function useResaleScan(
-  opts?: Options
+  opts?: ResaleScanOptions
 ) {
-  const { intervalMs = 1000 } = opts || {};
+  const { intervalMs = 5000 } = opts || {};
 
   const [rows, setRows] = useState<ProfitableListing[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -23,8 +23,13 @@ export function useResaleScan(
 
     const tick = async () => {
       fetchProfitableListings()
-        .then(data => {
-          setRows(data)
+        .then((data: ProfitableListingResponse[]) => {
+          const newRows = data.map(listing => ({
+            ...listing,
+            cityProfit: (listing.cityPrice * listing.quantity) - listing.totalCost,
+            marketProfit: (tax: number) => (listing.marketPrice * listing.quantity * (1 - tax)) - listing.totalCost,
+          } as ProfitableListing));
+          setRows(newRows)
         })
         .catch(err => {
           setError(err.message);

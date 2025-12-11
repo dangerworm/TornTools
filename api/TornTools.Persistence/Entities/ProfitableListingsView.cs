@@ -17,14 +17,17 @@ public class ProfitableListingView
     [Column("max_price")]
     public long MaxPrice { get; set; }
 
-    [Column("sell_price")]
-    public long SellPrice { get; set; }
-
     [Column("quantity")]
     public int Quantity { get; set; }
 
-    [Column("profit")]
-    public long Profit { get; set; }
+    [Column("total_cost")]
+    public long TotalCost { get; set; }
+
+    [Column("city_price")]
+    public long CityPrice { get; set; }
+
+    [Column("market_price")]
+    public long MarketPrice { get; set; }
 
     [Column("last_updated")]
     public DateTime LastUpdated { get; set; }
@@ -37,9 +40,10 @@ public class ProfitableListingView
             Name = Name,
             MinPrice = MinPrice,
             MaxPrice = MaxPrice,
-            SellPrice = SellPrice,
             Quantity = Quantity,
-            Profit = Profit,
+            TotalCost = TotalCost,
+            CityPrice = CityPrice,
+            MarketPrice = MarketPrice,
             LastUpdated = LastUpdated
         };
     }

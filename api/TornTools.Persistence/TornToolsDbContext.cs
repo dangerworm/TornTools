@@ -82,7 +82,6 @@ public class TornToolsDbContext(
         modelBuilder.Entity<QueueItemEntity>(e =>
         {
             e.HasKey(x => x.Id);
-
             e.HasIndex(x => new { x.ItemStatus, x.NextAttemptAt, x.CreatedAt });
 
             e.Property(x => x.QueueIndex)

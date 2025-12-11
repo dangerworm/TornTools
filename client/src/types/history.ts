@@ -1,3 +1,5 @@
+import type { LabelValue } from "./common";
+
 export type HistoryWindow =
   | "1h"
   | "4h"
@@ -18,7 +20,7 @@ export interface ItemHistoryPoint {
   value: number;
 }
 
-export const HISTORY_WINDOWS_SMALL: { label: string; value: HistoryWindow }[] = [
+export const HISTORY_WINDOWS_SMALL: LabelValue[] = [
   { label: "1h", value: "1h" },
   { label: "4h", value: "4h" },
   { label: "1d", value: "1d" },
@@ -28,7 +30,7 @@ export const HISTORY_WINDOWS_SMALL: { label: string; value: HistoryWindow }[] = 
   { label: "1y", value: "1y" },
 ];
 
-export const HISTORY_WINDOWS_LARGE: { label: string; value: HistoryWindow }[] = [
+export const HISTORY_WINDOWS_LARGE: LabelValue[] = [
   { label: "1 hr", value: "1h" },
   { label: "4 hrs", value: "4h" },
   { label: "1 day", value: "1d" },

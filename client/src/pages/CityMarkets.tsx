@@ -7,18 +7,23 @@ import {
   Divider,
   FormControlLabel,
   FormGroup,
+  Grid,
   Typography,
 } from '@mui/material'
 import Loading from '../components/Loading'
 import CityMarketItemsTable from '../components/CityMarketItemsTable'
 import { isItemProfitableOnMarket } from '../types/items'
+import OptionGroup from '../components/OptionGroup'
+import { taxTypeOptions } from '../types/common'
+import type { TaxType } from '../types/markets'
 
 const CityMarkets = () => {
   const { items, refresh } = useItems()
 
-  const [showProfitableOnly, setShowProfitableOnly] = useState(true)
   const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>([])
   const [selectedVendors, setSelectedVendors] = useState<string[]>([])
+  const [showProfitableOnly, setShowProfitableOnly] = useState(true)
+  const [taxType, setTaxType] = useState<TaxType>(0.05)
 
   useEffect(() => {
     refresh()
@@ -34,22 +39,41 @@ const CityMarkets = () => {
   const itemTypes = useMemo(() => {
     if (!items) return []
     return Array.from(
-      new Set(items
-        .filter(item => !item.valueVendorCountry || item.valueVendorCountry === 'Torn')
-        .map((item) => item.type)
-        .filter((type) => type)))
-        .sort() as string[]
+      new Set(
+        items
+          .filter((item) => !item.valueVendorCountry || item.valueVendorCountry === 'Torn')
+          .map((item) => item.type)
+          .filter((type) => type),
+      ),
+    ).sort() as string[]
   }, [items])
 
   const vendors = useMemo(() => {
     if (!items) return []
     return Array.from(
-      new Set(items
-        .filter(item => !item.valueVendorCountry || item.valueVendorCountry === 'Torn')
-        .map((item) => item.valueVendorName)
-        .filter((vendor) => vendor)))
-        .sort() as string[]
+      new Set(
+        items
+          .filter((item) => !item.valueVendorCountry || item.valueVendorCountry === 'Torn')
+          .map((item) => item.valueVendorName)
+          .filter((vendor) => vendor),
+      ),
+    ).sort() as string[]
   }, [items])
+
+  const filteredItems = useMemo(() => {
+    if (!items) return []
+    return items.filter(
+      (i) =>
+        (!showProfitableOnly || isItemProfitableOnMarket(i, taxType)) &&
+        (selectedItemTypes.length === 0 || selectedItemTypes.includes(i.type!)) &&
+        (selectedVendors.length === 0 ||
+          (i.valueVendorName && selectedVendors.includes(i.valueVendorName))),
+    )
+  }, [items, showProfitableOnly, selectedItemTypes, selectedVendors, taxType])
+
+  const handleTaxTypeChange = (_: React.MouseEvent<HTMLElement>, newTaxType: string | number) => {
+    setTaxType(newTaxType as TaxType)
+  }
 
   if (!items) return <Loading message="Loading items..." />
 
@@ -59,16 +83,18 @@ const CityMarkets = () => {
         City Markets
       </Typography>
 
-      <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>
+      <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
         Filters
       </Typography>
 
-      <Divider sx={{ my: 2 }} />
-
-      <Box>
+      <Box sx={{ mt: 2 }}>
         <Chip
           label="All Item Types"
-          variant={selectedItemTypes.length === 0 ? 'filled' : 'outlined'}
+          variant={
+            selectedItemTypes.length === 0 || selectedItemTypes.length === itemTypes.length
+              ? 'filled'
+              : 'outlined'
+          }
           onClick={() => setSelectedItemTypes((prev) => (prev.length === 0 ? [...itemTypes] : []))}
           sx={{ mb: 1, mr: 1 }}
         />
@@ -89,19 +115,21 @@ const CityMarkets = () => {
         ))}
       </Box>
 
-      <Divider sx={{ mt: 1, mb: 2 }} />
-
-      <Box>
+      <Box sx={{ mt: 2 }}>
         <Chip
           label="All Vendors"
-          variant={selectedVendors.length === 0 ? 'filled' : 'outlined'}
+          variant={
+            selectedVendors.length === 0 || selectedVendors.length === vendors.length
+              ? 'filled'
+              : 'outlined'
+          }
           onClick={() => setSelectedVendors((prev) => (prev.length === 0 ? [...vendors] : []))}
           sx={{ mb: 1, mr: 1 }}
         />
         {vendors.map((vendor) => (
           <Chip
             key={vendor}
-            label={vendor.replace('the ', '')  }
+            label={vendor.replace('the ', '')}
             color={'primary'}
             variant={selectedVendors.includes(vendor) ? 'filled' : 'outlined'}
             onClick={() => {
@@ -117,17 +145,35 @@ const CityMarkets = () => {
 
       <Divider sx={{ mt: 1, mb: 2 }} />
 
-      <FormGroup>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={showProfitableOnly}
-              onChange={() => setShowProfitableOnly(!showProfitableOnly)}
+      <Typography variant="h6" gutterBottom>
+        Options
+      </Typography>
+
+      <Grid container spacing={2} alignItems="top">
+        <Grid size={{ xs: 12, sm: "auto" }} sx={{ minWidth: '22em' }}>
+          <OptionGroup
+            options={taxTypeOptions}
+            selectedOption={taxType}
+            title={'Market tax'}
+            titleInline={true}
+            handleOptionChange={handleTaxTypeChange}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6 }} sx={{ mt: "-2px"}}>
+          <FormGroup>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={showProfitableOnly}
+                  onChange={() => setShowProfitableOnly(!showProfitableOnly)}
+                />
+              }
+              label="Show Profitable Items Only"
             />
-          }
-          label="Show Profitable Items Only"
-        />
-      </FormGroup>
+          </FormGroup>
+        </Grid>
+      </Grid>
 
       {countries.map((country: string | undefined) => (
         <Fragment key={country}>
@@ -139,15 +185,10 @@ const CityMarkets = () => {
             </Typography>
 
             <CityMarketItemsTable
-              items={items.filter(
-                (i) =>
-                  i.valueVendorCountry === country &&
-                  (!showProfitableOnly || isItemProfitableOnMarket(i)) &&
-                  (selectedItemTypes.length === 0 || selectedItemTypes.includes(i.type!)) &&
-                  (selectedVendors.length === 0 || (i.valueVendorName && selectedVendors.includes(i.valueVendorName))),
-              )}
+              items={filteredItems.filter((i) => i.valueVendorCountry === country)}
               showCityPrice={!!country}
               showVendor={!!country}
+              taxType={taxType}
             />
           </Box>
         </Fragment>

@@ -116,7 +116,6 @@ public class ItemRepository(
     {
         var items = await DbContext.ProfitableListings
             .AsNoTracking()
-            .OrderByDescending(x => x.Profit)
             .ToListAsync(stoppingToken);
 
         return items.Select(item => item.AsDto());

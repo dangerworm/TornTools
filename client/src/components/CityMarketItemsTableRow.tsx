@@ -62,7 +62,7 @@ const CityMarketItemsTableRow = ({
   return (
     <>
       <TableRow hover key={item.id}>
-        <TableCell align='center'>
+        <TableCell align="center">
           <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
             {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
           </IconButton>
@@ -103,7 +103,7 @@ const CityMarketItemsTableRow = ({
             )}
           </TableCell>
         ) : (
-           <TableCell align="left" onClick={() => navigate(`/item/${item.id}`)}>
+          <TableCell align="left" onClick={() => navigate(`/item/${item.id}`)}>
             {item.subType}
           </TableCell>
         )}
@@ -118,24 +118,28 @@ const CityMarketItemsTableRow = ({
 
         {showCityPrice ? (
           <TableCell align="right" onClick={() => navigate(`/item/${item.id}`)}>
-            {item.profit ? (
+            {!item.profit && item.profit !== 0 ? (
+              <span>&mdash;</span>
+            ) : item.profit >= 0 ? (
               <Chip color={'success'} label={getFormattedText('$', item.profit, '')} size="small" />
             ) : (
-              <span>&mdash;</span>
+              <Chip color={'error'} label={getFormattedText('$', item.profit, '')} size="small" />
             )}
           </TableCell>
         ) : (
           <TableCell align="right" onClick={() => navigate(`/item/${item.id}`)}>
-            {getFormattedText("", item.circulation ?? 0, "")}
+            {getFormattedText('', item.circulation ?? 0, '')}
           </TableCell>
         )}
 
         {showCityPrice && (
           <TableCell align="right" onClick={() => navigate(`/item/${item.id}`)}>
-            {item.profitPerCost ? (
-              getFormattedText('', item.profitPerCost * 100, '%')
-            ) : (
+            {!item.profitPerCost && item.profitPerCost !== 0 ? (
               <span>&mdash;</span>
+            ) : item.profitPerCost! >= 0 ? (
+              <span>{getFormattedText('', item.profitPerCost * 100, '%')}</span>
+            ) : (
+              <span>{getFormattedText('', item.profitPerCost * 100, '%')}</span>
             )}
           </TableCell>
         )}
