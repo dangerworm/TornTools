@@ -1,22 +1,25 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { Alert, AlertTitle, Box, Grid, Typography } from '@mui/material'
+import { Alert, AlertTitle, Box, Divider, Grid, Typography } from '@mui/material'
 import Loading from '../components/Loading'
 import ResaleItemsTable from '../components/ResaleItemsTable'
 import SteppedSlider from '../components/SteppedSlider'
-import { menuItems } from '../constants/Menu'
+import { menuItems } from '../components/Menu'
 import { useResaleScan } from '../hooks/useResaleScan'
 import { useUser } from '../hooks/useUser'
+import type { SaleOutlet, TaxType } from '../types/markets'
+import OptionGroup from '../components/OptionGroup'
+import { saleOutletOptions, taxTypeOptions } from '../types/common'
 
 const Resale = () => {
-  const { rows, error } = useResaleScan({ intervalMs: 1000 })
+  const { rows, error } = useResaleScan({ intervalMs: 5000 })
   const { dotNetUserDetails } = useUser()
 
   const minuteRangeValues = [1, 2, 3, 5, 10, 30, 60, 120]
 
   const priceRangeValues = [
-    1, 10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000,
-    50000000, 100000000, 500000000, 1000000000,
+    0, 1, 10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000,
+    50000000, 100000000, 500000000, 1000000000, 50000000000, 100000000000,
   ]
 
   const initialMinProfitIndex = 3 // 100
@@ -29,6 +32,9 @@ const Resale = () => {
     minuteRangeValues[initialMaxTimeSinceLastUpdateIndex],
   )
 
+  const [saleOutlet, setSaleOutlet] = useState<SaleOutlet>('city')
+  const [taxType, setTaxType] = useState<TaxType>(0.05)
+
   const handleMinProfitSliderValueChange = (newValue: number) => {
     setMinProfit(newValue)
   }
@@ -39,6 +45,17 @@ const Resale = () => {
 
   const handleMaxTimeSinceLastUpdateSliderValueChange = (newValue: number) => {
     setMaxTimeSinceLastUpdate(newValue)
+  }
+
+  const handleSaleOutletChange = (
+    _: React.MouseEvent<HTMLElement>,
+    newSaleOutlet: string | number,
+  ) => {
+    setSaleOutlet(newSaleOutlet as SaleOutlet)
+  }
+
+  const handleTaxTypeChange = (_: React.MouseEvent<HTMLElement>, newTaxType: string | number) => {
+    setTaxType(newTaxType as TaxType)
   }
 
   if (!rows) return <Loading message="Loading resale opportunities..." />
@@ -53,7 +70,7 @@ const Resale = () => {
         <Typography variant="h4" gutterBottom>
           Resale Opportunities
         </Typography>
-        
+
         <Alert severity="warning" sx={{ mb: 2 }}>
           <AlertTitle>Login required</AlertTitle>
           <Typography variant="body2" gutterBottom>
@@ -120,12 +137,44 @@ const Resale = () => {
         />
       </Grid>
 
+      <Divider sx={{ my: 2 }} />
+
+      <Typography variant="h6" gutterBottom>
+        Options
+      </Typography>
+
+      <Grid container spacing={2} alignItems="center">
+        <Grid size={{ xs: 12, sm: 4, md: 3 }} sx={{ minWidth: '12em' }}>
+          <OptionGroup
+            options={saleOutletOptions}
+            selectedOption={saleOutlet}
+            title={'Sale outlet'}
+            handleOptionChange={handleSaleOutletChange}
+          />
+        </Grid>
+
+        {saleOutlet === 'market' && (
+          <Grid size={{ xs: 12, sm: 4, md: 3 }} sx={{ minWidth: '16em' }}>
+            <OptionGroup
+              options={taxTypeOptions}
+              selectedOption={taxType}
+              title={'Market tax'}
+              handleOptionChange={handleTaxTypeChange}
+            />
+          </Grid>
+        )}
+      </Grid>
+
+      <Divider sx={{ my: 2 }} />
+
       <ResaleItemsTable
-        rows={rows}
-        minProfit={minProfit}
+        error={error}
         maxBuyPrice={maxBuyPrice}
         maxTimeSinceLastUpdate={maxTimeSinceLastUpdate}
-        error={error}
+        minProfit={minProfit}
+        rows={rows}
+        saleOutlet={saleOutlet}
+        taxType={saleOutlet !== 'market' ? 0 : taxType}
       />
     </Box>
   )

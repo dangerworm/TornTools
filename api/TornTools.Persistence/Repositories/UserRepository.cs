@@ -114,6 +114,7 @@ public class UserRepository(
     public async Task<IEnumerable<ThemeDto>> GetThemesAsync(long? userId, CancellationToken stoppingToken)
     {
         return await DbContext.Themes
+            .AsNoTracking()
             .Where(t => t.UserId == null || t.UserId == userId)
             .OrderBy(t => t.Name)
             .Select(t => t.AsDto())

@@ -1,30 +1,32 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Chip, rgbToHex, TableCell, TableRow } from '@mui/material'
-import {
-  Favorite,
-  FavoriteBorder,
-  OpenInNew,
-} from '@mui/icons-material'
+import { Favorite, FavoriteBorder, OpenInNew } from '@mui/icons-material'
 import { useThemeSettings } from '../hooks/useThemeSettings'
 import { useUser } from '../hooks/useUser'
 import { getFormattedText } from '../lib/textFormat'
 import { getSecondsSinceLastUpdate, timeAgo } from '../lib/time'
 import type { ProfitableListing } from '../types/profitableListings'
 import ItemCell from './ItemCell'
+import type { SaleOutlet, TaxType } from '../types/markets'
+import { useMemo } from 'react'
 
 const MotionTableRow = motion.create(TableRow)
 
 interface ResaleItemsTableRowProps {
   isNew: boolean
   row: ProfitableListing
+  saleOutlet: SaleOutlet
+  taxType: TaxType
 }
 
-const ResaleItemsTableRow = ({ isNew, row }: ResaleItemsTableRowProps) => {
+const ResaleItemsTableRow = ({ isNew, row, saleOutlet, taxType }: ResaleItemsTableRowProps) => {
   const navigate = useNavigate()
   const { availableThemes, selectedThemeId } = useThemeSettings()
 
   const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser()
+
+  const marketProfit = useMemo(() => row.marketProfit(taxType), [row, taxType])
 
   const rowColor = (lastUpdated: Date): string => {
     const diffSeconds = getSecondsSinceLastUpdate(lastUpdated)
@@ -85,7 +87,8 @@ const ResaleItemsTableRow = ({ isNew, row }: ResaleItemsTableRowProps) => {
         onClick={() => openTornMarketPage(row.itemId)}
         style={{ color: rgbToHex(rowColor(row.lastUpdated)) }}
       >
-        {getFormattedText('$', row.sellPrice, '')}
+        {saleOutlet === 'city' && getFormattedText('$', row.cityPrice, '')}
+        {saleOutlet === 'market' && getFormattedText('$', row.marketPrice, '')}
       </TableCell>
 
       <TableCell
@@ -101,7 +104,19 @@ const ResaleItemsTableRow = ({ isNew, row }: ResaleItemsTableRowProps) => {
         onClick={() => openTornMarketPage(row.itemId)}
         style={{ color: rgbToHex(rowColor(row.lastUpdated)) }}
       >
-        <Chip label={getFormattedText('$', row.profit, '')} color={'success'} size="small" />
+        {saleOutlet === 'city' && (
+          <Chip
+            label={getFormattedText('$', row.cityProfit * (1 - taxType), '')}
+            color={'success'}
+            size="small"
+          />
+        )}
+        {saleOutlet === 'market' &&
+          (marketProfit >= 0 ? (
+            <Chip label={getFormattedText('$', marketProfit, '')} color={'success'} size="small" />
+          ) : (
+            <Chip label={getFormattedText('$', marketProfit, '')} color={'error'} size="small" />
+          ))}
       </TableCell>
 
       <TableCell align="right" style={{ color: rgbToHex(rowColor(row.lastUpdated)) }}>

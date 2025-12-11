@@ -1,4 +1,4 @@
-import { WEAV3R_API_BASE_URL } from "../constants/ApiConstants";
+import { WEAV3R_API_BASE_URL } from "../constants/apiConstants";
 import type { Weav3rMarketplacePayload } from "../types/weav3r";
 
 const URL_MARKETPLACE = `${WEAV3R_API_BASE_URL}/marketplace`;

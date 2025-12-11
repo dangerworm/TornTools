@@ -33,16 +33,16 @@ export interface Item {
 export type ItemsMap = Record<number, Item>;
 
 export type SortableItem = Item & {
-  profit: number | null
-  profitPerCost: number | null
+  profit: number
+  profitPerCost: number
 }
 
-export const isItemProfitableOnMarket = (item: Item): boolean => {
+export const isItemProfitableOnMarket = (item: Item, taxType: number): boolean => {
   return (
     item.isTradable &&  
     !!item.valueBuyPrice &&
     !!item.valueMarketPrice &&
-    item.valueMarketPrice > item.valueBuyPrice
+    (item.valueMarketPrice * (1 - taxType)) > item.valueBuyPrice
   );
 }
 

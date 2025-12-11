@@ -1,7 +1,7 @@
 import type { ProfitableListing } from "../types/profitableListings";
 
 export const generateAutoBuyScript = (row: ProfitableListing): string => {
-  const lowestPrice = Math.max(Math.floor(row.minPrice * 0.6), row.sellPrice);
+  const lowestPrice = Math.max(Math.floor(row.minPrice * 0.6), row.marketPrice);
 
   const script = `let lastText = "";
 const checkInterval = 200; // ms

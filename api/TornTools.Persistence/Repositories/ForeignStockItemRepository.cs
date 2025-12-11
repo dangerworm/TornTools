@@ -15,6 +15,7 @@ public class ForeignStockItemRepository(
     public async Task<IEnumerable<ForeignStockItemDto>> GetItemsAsync(CancellationToken stoppingToken)
     {
         var items = await DbContext.ForeignStockItems
+            .AsNoTracking()
             .Include(fsi => fsi.Item)
             .ToListAsync(stoppingToken);
 

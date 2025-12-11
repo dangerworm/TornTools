@@ -1,35 +1,32 @@
-import { useNavigate } from "react-router-dom";
-import { Autocomplete, TextField, Box, Typography, createFilterOptions } from "@mui/material";
-import { useItems } from "../hooks/useItems";
+import { useNavigate } from 'react-router-dom'
+import { Autocomplete, TextField, Box, Typography, createFilterOptions } from '@mui/material'
+import { useItems } from '../hooks/useItems'
 
 const ItemSearch = () => {
-    const { itemsById, items } = useItems();
-    const navigate = useNavigate();
+  const { itemsById, items } = useItems()
+  const navigate = useNavigate()
 
-    
-  type ItemOption = { label: string; id: number };
-  const filter = createFilterOptions<ItemOption>();
-  
+  const filter = createFilterOptions<{ label: string; value: number }>()
+
   return (
     <Autocomplete
       disablePortal
       fullWidth
-      options={items.map((i) => ({ label: i.name, id: i.id }))}
+      options={items.map((i) => ({ label: `#${i.id}: ${i.name}`, value: i.id }))}
       filterOptions={(options, state) => {
-        const filtered = filter(options, state);
-        return state.inputValue.length < 3 ? [] : filtered;
+        const filtered = filter(options, state)
+        return state.inputValue.length < 3 ? [] : filtered
       }}
       noOptionsText="Please enter an item name"
-      onChange={(_, value) => {
-        if (value && itemsById[value.id]) {
-          navigate(`/item/${value.id}`);
+      onChange={(_, option) => {
+        if (option && itemsById[option.value]) {
+          navigate(`/item/${option.value}`)
         }
       }}
       slotProps={{
         listbox: {
           sx: {
-            bgcolor: (theme) =>
-              theme.palette.mode === "dark" ? "#333" : "#fff",
+            bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#333' : '#fff'),
             borderRadius: 1,
             m: 0,
             p: 0,
@@ -38,48 +35,37 @@ const ItemSearch = () => {
         paper: {
           sx: (theme) => ({
             bgcolor: theme.palette.background.paper,
-            border: `1px solid ${
-              theme.palette.mode === "dark" ? "#555" : "#ccc"
-            }`,
+            border: `1px solid ${theme.palette.mode === 'dark' ? '#555' : '#ccc'}`,
             color: theme.palette.text.primary,
             m: 0,
             p: 0,
-            scrollbarColor:
-              theme.palette.mode === "dark" ? "#555 #333" : "#ccc #fff",
+            scrollbarColor: theme.palette.mode === 'dark' ? '#555 #333' : '#ccc #fff',
           }),
         },
       }}
       sx={(theme) => ({
         borderRadius: 1,
-        backgroundColor:
-          theme.palette.mode === "dark"
-            ? theme.palette.background.paper
-            : "#fff",
+        backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
         maxWidth: { xs: 450 },
       })}
       renderInput={(params) => (
-        <TextField
-          {...params}
-          placeholder="Search items..."
-          size="small"
-          variant="outlined"
-        />
+        <TextField {...params} placeholder="Search items..." size="small" variant="outlined" />
       )}
       renderOption={(props, option) => (
         <Box
           component="li"
           {...props}
           sx={{
-            alignItems: "center",
-            display: "flex",
+            alignItems: 'center',
+            display: 'flex',
           }}
         >
           <Box
             sx={{
-              border: "1px solid #888",
+              border: '1px solid #888',
               borderRadius: 2,
-              display: "flex",
-              justifyContent: "center",
+              display: 'flex',
+              justifyContent: 'center',
               ml: -1,
               height: 40,
               width: 40,
@@ -87,15 +73,15 @@ const ItemSearch = () => {
           >
             <img
               alt=""
-              src={`https://www.torn.com/images/items/${option.id}/small.png`}
+              src={`https://www.torn.com/images/items/${option.value}/small.png`}
               style={{
-                marginTop: "auto",
-                marginBottom: "auto",
+                marginTop: 'auto',
+                marginBottom: 'auto',
                 height: 19,
                 width: 38,
               }}
               onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.display = "none";
+                ;(e.currentTarget as HTMLImageElement).style.display = 'none'
               }}
             />
           </Box>
@@ -104,18 +90,14 @@ const ItemSearch = () => {
             <Typography variant="body2" sx={{ fontWeight: 500, m: 0 }}>
               {option.label}
             </Typography>
-            <Typography
-              component="p"
-              variant="caption"
-              sx={{ color: "text.secondary", mt: -0.2 }}
-            >
-              {itemsById[option.id]?.type}
+            <Typography component="p" variant="caption" sx={{ color: 'text.secondary', mt: -0.2 }}>
+              {itemsById[option.value]?.type}
             </Typography>
           </Box>
         </Box>
       )}
     />
-  );
-};
+  )
+}
 
-export default ItemSearch;
+export default ItemSearch

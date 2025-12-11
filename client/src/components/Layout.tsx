@@ -9,12 +9,11 @@ import {
   ListItemIcon,
   ListItemText,
   Toolbar,
-  Typography,
 } from '@mui/material'
 import { useItems } from '../hooks/useItems'
 import { useUser } from '../hooks/useUser'
-import { DRAWER_WIDTH, menuItems } from '../constants/Menu'
-import { MAX_CONTENT_WIDTH } from '../constants/UiConstants'
+import { DRAWER_WIDTH, menuItems } from './Menu'
+import { MAX_CONTENT_WIDTH } from '../constants/uiConstants'
 import TopAppBar from './TopAppBar'
 import Footer from './Footer'
 import '../index.css'
@@ -128,12 +127,6 @@ export default function Layout() {
           }}
         >
           <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="h3" gutterBottom className="passero-one">
-              dangerworm&apos;s Tools
-            </Typography>
-
-            <Divider sx={{ mb: 3 }} />
-
             <Outlet />
           </Box>
 

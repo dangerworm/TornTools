@@ -6,8 +6,11 @@ public class ProfitableListingDto
     public string Name { get; set; } = null!;
     public long MinPrice { get; set; }
     public long MaxPrice { get; set; }
-    public long SellPrice { get; set; }
     public int Quantity { get; set; }
-    public long Profit { get; set; }
+    public long TotalCost { get; set; }
+    public long CityPrice { get; set; }
+    public long MarketPrice { get; set; }
     public DateTime LastUpdated { get; set; }
+
+    public long Profit => (CityPrice * Quantity) - TotalCost;
 }
