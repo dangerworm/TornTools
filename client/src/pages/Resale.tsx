@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { Alert, AlertTitle, Box, Divider, Grid, Typography } from '@mui/material'
 import Loading from '../components/Loading'
@@ -57,6 +57,11 @@ const Resale = () => {
   const handleTaxTypeChange = (_: React.MouseEvent<HTMLElement>, newTaxType: string | number) => {
     setTaxType(newTaxType as TaxType)
   }
+
+  const sortedRows = useMemo(() => saleOutlet === 'city'
+    ? rows.sort((a, b) => b.cityProfit - a.cityProfit) 
+    : rows.sort((a, b) => b.marketProfit(taxType) - a.marketProfit(taxType)),
+  [rows, saleOutlet])
 
   if (!rows) return <Loading message="Loading resale opportunities..." />
 
@@ -172,7 +177,7 @@ const Resale = () => {
         maxBuyPrice={maxBuyPrice}
         maxTimeSinceLastUpdate={maxTimeSinceLastUpdate}
         minProfit={minProfit}
-        rows={rows}
+        rows={sortedRows}
         saleOutlet={saleOutlet}
         taxType={saleOutlet !== 'market' ? 0 : taxType}
       />

@@ -24,7 +24,7 @@ public class ProfitableListingView
     public long TotalCost { get; set; }
 
     [Column("city_price")]
-    public long CityPrice { get; set; }
+    public long? CityPrice { get; set; }
 
     [Column("market_price")]
     public long MarketPrice { get; set; }

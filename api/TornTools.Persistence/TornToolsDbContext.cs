@@ -1,5 +1,4 @@
-﻿using System.Net.NetworkInformation;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using TornTools.Persistence.Entities;
 using TornTools.Persistence.Interfaces;
 
