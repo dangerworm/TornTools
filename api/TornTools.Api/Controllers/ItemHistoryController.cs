@@ -20,6 +20,11 @@ public class ItemHistoryController(
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetPriceHistory(int itemId, [FromQuery] string? window, CancellationToken cancellationToken)
     {
+        if (itemId <= 0)
+        {
+            return BadRequest("Item id must be a positive number.");
+        }
+
         if (!HistoryWindowExtensions.TryParse(window, out var historyWindow))
         {
             return BadRequest("Invalid time window specified.");
@@ -46,6 +51,11 @@ public class ItemHistoryController(
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetVelocityHistory(int itemId, [FromQuery] string? window, CancellationToken cancellationToken)
     {
+        if (itemId <= 0)
+        {
+            return BadRequest("Item id must be a positive number.");
+        }
+
         if (!HistoryWindowExtensions.TryParse(window, out var historyWindow))
         {
             return BadRequest("Invalid time window specified.");
