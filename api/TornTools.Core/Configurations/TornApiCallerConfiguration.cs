@@ -2,5 +2,5 @@
 
 public class TornApiCallerConfiguration
 {
-    public required int MaxCallsPerMinute { get; set; }
+    public required int MaxCallsPerMinute { get; set; } = 30;
 }

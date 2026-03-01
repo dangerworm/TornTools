@@ -1,13 +1,11 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-
-using Hangfire;
+﻿using Hangfire;
 using Hangfire.PostgreSql;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using TornTools.Core.Configurations;
+using TornTools.Core.Constants;
 using TornTools.Cron.Interfaces;
 using TornTools.Cron.Schedulers;
-using TornTools.Core.Constants;
-using TornTools.Core.Configurations;
-using TornTools.Cron.Processors;
 
 namespace TornTools.Cron;
 
