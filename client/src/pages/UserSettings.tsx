@@ -57,7 +57,7 @@ const UserSettings = () => {
 
   return (
     <Box>
-      <Typography variant="h5" gutterBottom>
+      <Typography variant="h4" gutterBottom>
         User Settings
       </Typography>
 

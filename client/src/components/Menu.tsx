@@ -1,7 +1,9 @@
-import HomeIcon from "@mui/icons-material/Home";
-import Sell from "@mui/icons-material/Sell";
-import Assessment from "@mui/icons-material/Assessment";
 import AccessTimeFilled from "@mui/icons-material/AccessTimeFilled";
+import HomeIcon from "@mui/icons-material/Home";
+import LanguageIcon from '@mui/icons-material/Language';
+import LocationCityIcon from '@mui/icons-material/LocationCity';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import SellIcon from "@mui/icons-material/Sell";
 
 export const DRAWER_WIDTH = 240; // px
 
@@ -27,7 +29,7 @@ export const menuItems: MenuItem[] = [
   },
   {
     address: "/city-markets",
-    icon: <Assessment />,
+    icon: <LocationCityIcon />,
     requiresItems: true,
     requiresLogin: false,
     showOnHomePage: true,
@@ -36,7 +38,7 @@ export const menuItems: MenuItem[] = [
   },
   {
     address: "/foreign-markets",
-    icon: <Assessment />,
+    icon: <LanguageIcon />,
     requiresItems: true,
     requiresLogin: false,
     showOnHomePage: true,
@@ -44,8 +46,17 @@ export const menuItems: MenuItem[] = [
     title: "Foreign Markets",
   },
   {
+    address: "/settings",
+    icon: <FavoriteIcon />,
+    requiresItems: true,
+    requiresLogin: true,
+    showOnHomePage: true,
+    subTitle: "Shows only the markets you have marked as favourites.",
+    title: "My Favourites",
+  },
+  {
     address: "/resale",
-    icon: <Sell />,
+    icon: <SellIcon />,
     requiresItems: true,
     requiresLogin: true,
     showOnHomePage: true,

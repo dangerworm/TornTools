@@ -6,7 +6,7 @@ resource "azurerm_postgresql_flexible_server" "db_server" {
   administrator_password = azurerm_key_vault_secret.db_password.value
   sku_name               = var.sku_postgres
   storage_mb             = 32768
-  version                = "14"
+  version                = "18"
   zone                   = "1"
 
   authentication {
