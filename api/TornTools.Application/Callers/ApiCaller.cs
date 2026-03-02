@@ -28,8 +28,11 @@ public abstract class ApiCaller<TCaller>(
             queueItem.EndpointUrl
         );
 
+        // Authorization header
+        await AddAuthorizationHeader(requestMessage, stoppingToken);
+
         // Headers (optional)
-        await AddNextApiKeyToHeaders(requestMessage, queueItem, stoppingToken);
+        await AddQueueItemHeaders(requestMessage, queueItem, stoppingToken);
 
         // Body for non-GET/HEAD
         AddBody(queueItem, requestMessage);
@@ -78,7 +81,7 @@ public abstract class ApiCaller<TCaller>(
         return Task.CompletedTask; 
     }
 
-    protected virtual async Task AddNextApiKeyToHeaders(HttpRequestMessage requestMessage, QueueItemDto queueItem, CancellationToken stoppingToken)
+    protected virtual async Task AddQueueItemHeaders(HttpRequestMessage requestMessage, QueueItemDto queueItem, CancellationToken stoppingToken)
     {
         if (queueItem.HeadersJson is not null)
         {

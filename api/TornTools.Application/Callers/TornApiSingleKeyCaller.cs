@@ -19,12 +19,6 @@ public class TornApiSingleKeyCaller(
 
     protected override string ClientName => TornApiConstants.ClientName;
 
-    protected override async Task AddAuthorizationHeader(HttpRequestMessage requestMessage, CancellationToken stoppingToken)
-    {
-        var apiKey = await DatabaseService.GetKnownWorkingApiKeyAsync(stoppingToken);
-        requestMessage.Headers.TryAddWithoutValidation("Authorization", $"Bearer {apiKey}");
-    }
-
     Task<bool> IApiCaller.CallAsync(QueueItemDto queueItemDto, IApiCallHandler handler, CancellationToken stoppingToken)
     {
         return CallAsync(queueItemDto, handler, stoppingToken);

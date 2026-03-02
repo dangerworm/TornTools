@@ -2,7 +2,6 @@
 using Hangfire;
 using Hangfire.Storage;
 using Microsoft.Extensions.Logging;
-using TornTools.Application.Callers;
 using TornTools.Application.Handlers;
 using TornTools.Application.Interfaces;
 using TornTools.Core.Constants;
@@ -23,7 +22,8 @@ public class ApiJobScheduler(
     private readonly IApiCallerResolver _callerResolver = callerResolver ?? throw new ArgumentNullException(nameof(callerResolver));
     private readonly IApiCallHandlerResolver _callHandlerResolver = callHandlerResolver ?? throw new ArgumentNullException(nameof(callHandlerResolver));
     private readonly IDatabaseService _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
-    private static readonly string[] excludedUsernames = ["dangeworm"];
+    
+    private const string Dangerworm = "dangerworm";
 
     public void RegisterRecurringJobs()
     {
@@ -43,7 +43,10 @@ public class ApiJobScheduler(
         RecurringJob.AddOrUpdate(
             nameof(CheckForExpiredKeys),
             () => CheckForExpiredKeys(),
-            "* * * * *" // At minute 30 past every 3rd hour.
+            "0 1 */30 * * *" // At second 1 past every 30th minute from 0 through 59.
+            // This is intentionally offset from the other jobs to reduce chance of
+            // overlapping API calls when the key check triggers calls to update items
+            // for users with expired keys.
         );
 
         RecurringJob.AddOrUpdate(
@@ -78,24 +81,39 @@ public class ApiJobScheduler(
             return;
         }
 
-        var users = await _databaseService.GetUsersAsync(excludedUsernames, CancellationToken.None);
+        var users = await _databaseService.GetUsersAsync([Dangerworm], CancellationToken.None);
+        var dangerworm  = users.FirstOrDefault(u => u.Name.Equals(Dangerworm, StringComparison.OrdinalIgnoreCase));
+        if (dangerworm is null)
+        {
+            _logger.LogError("Could not find {Username} to use key for expired key checks.", Dangerworm);
+            return;
+        }
+
+        users = users.Except([dangerworm!]).ToList();
 
         foreach (var user in users)
         {
-            var item = new QueueItemDto
-            {
-                CallType = ApiCallType.TornKeyInfo,
-                EndpointUrl = TornApiConstants.KeyInfo
-            };
-
             if (user.Id is null)
             {
                 _logger.LogWarning("User {Username} has no ID. Skipping API key check.", user.Name);
                 continue;
             }
 
-            keyHandler.SetUserId(user.Id.Value);
+             if (string.IsNullOrEmpty(user.ApiKey))
+            {
+                _logger.LogWarning("User {Username} has no API key. Marking as unavailable.", user.Name);
+                await _databaseService.MarkKeyUnavailableAsync(user.Id!.Value, CancellationToken.None);
+                continue;
+            }
 
+            var item = new QueueItemDto
+            {
+                CallType = ApiCallType.TornKeyInfo,
+                EndpointUrl = TornApiConstants.KeyInfo,
+                HeadersJson = new Dictionary<string, string> { ["Authorization"] = $"ApiKey {dangerworm.ApiKey}" }
+            };
+
+            keyHandler.SetUserId(user.Id.Value);
             await caller.CallAsync(item, keyHandler, CancellationToken.None);
         }
     }
@@ -139,7 +157,7 @@ public class ApiJobScheduler(
             {
                 _logger.LogError(
                     "Expected handler for {CallType} to be of type {ExpectedType}, but got {ActualType}. Aborting job.",
-                    ApiCallType.TornKeyInfo,
+                    ApiCallType.YataForeignStock,
                     typeof(YataStocksApiCallHandler).Name,
                     callHandler.GetType().Name
                 );
