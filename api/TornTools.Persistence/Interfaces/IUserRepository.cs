@@ -4,8 +4,7 @@ namespace TornTools.Persistence.Interfaces;
 
 public interface IUserRepository
 {
-    Task<List<UserDto>> GetUsersAsync(IEnumerable<string> excludedUsernames, CancellationToken stoppingToken);
-    Task<UserDto?> GetUserByUsernameAsync(string username, CancellationToken stoppingToken);
+    Task<List<UserDto>> GetUsersAsync(CancellationToken stoppingToken);
     Task<int> GetApiKeyCountAsync(CancellationToken stoppingToken);
     Task<string> GetNextApiKeyAsync(CancellationToken stoppingToken);
     Task MarkKeyUnavailableAsync(long userId, CancellationToken stoppingToken);

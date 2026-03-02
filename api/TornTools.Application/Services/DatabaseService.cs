@@ -178,20 +178,14 @@ public class DatabaseService(
         return _queueItemRepository.RemoveQueueItemAsync(id, stoppingToken);
     }
 
-    public Task<List<UserDto>> GetUsersAsync(IEnumerable<string> excludedUsernames, CancellationToken stoppingToken)
+    public Task<List<UserDto>> GetUsersAsync(CancellationToken stoppingToken)
     {
-        return _userRepository.GetUsersAsync(excludedUsernames, stoppingToken);
+        return _userRepository.GetUsersAsync(stoppingToken);
     }
 
     public Task<int> GetApiKeyCountAsync(CancellationToken stoppingToken)
     {
         return _userRepository.GetApiKeyCountAsync(stoppingToken);
-    }
-
-    public async Task<string> GetKnownWorkingApiKeyAsync(CancellationToken stoppingToken)
-    {
-        var user = await _userRepository.GetUserByUsernameAsync("dangerworm", stoppingToken);
-        return user?.ApiKey ?? string.Empty;
     }
 
     public Task<string> GetNextApiKeyAsync(CancellationToken stoppingToken)

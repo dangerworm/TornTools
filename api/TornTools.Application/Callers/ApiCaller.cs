@@ -6,6 +6,7 @@ using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Enums;
 
 namespace TornTools.Application.Callers;
+
 public abstract class ApiCaller<TCaller>(
     ILogger<TCaller> logger,
     IDatabaseService databaseService,
@@ -28,13 +29,13 @@ public abstract class ApiCaller<TCaller>(
             queueItem.EndpointUrl
         );
 
-        // Authorization header
-        await AddAuthorizationHeader(requestMessage, stoppingToken);
+        if (queueItem.HeadersJson is null || !queueItem.HeadersJson.ContainsKey("Authorization"))
+        {
+            await AddAuthorizationHeader(requestMessage, stoppingToken);
+        }
 
-        // Headers (optional)
         await AddQueueItemHeaders(requestMessage, queueItem, stoppingToken);
 
-        // Body for non-GET/HEAD
         AddBody(queueItem, requestMessage);
 
         try
@@ -65,20 +66,20 @@ public abstract class ApiCaller<TCaller>(
                 : "unknown key";
 
             Logger.LogError(
-                ex, 
-                "API call for {QueueItem} {Id} using {ApiKey} failed.", 
-                nameof(QueueItemDto), 
-                queueItem.Id, 
+                ex,
+                "API call for {QueueItem} {Id} using {ApiKey} failed.",
+                nameof(QueueItemDto),
+                queueItem.Id,
                 apiKey
             );
-            
+
             return false;
         }
     }
 
     protected virtual Task AddAuthorizationHeader(HttpRequestMessage requestMessage, CancellationToken stoppingToken)
     {
-        return Task.CompletedTask; 
+        return Task.CompletedTask;
     }
 
     protected virtual async Task AddQueueItemHeaders(HttpRequestMessage requestMessage, QueueItemDto queueItem, CancellationToken stoppingToken)

@@ -23,8 +23,6 @@ public class ApiJobScheduler(
     private readonly IApiCallHandlerResolver _callHandlerResolver = callHandlerResolver ?? throw new ArgumentNullException(nameof(callHandlerResolver));
     private readonly IDatabaseService _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
     
-    private const string Dangerworm = "dangerworm";
-
     public void RegisterRecurringJobs()
     {
         using var connection = JobStorage.Current.GetConnection();
@@ -43,10 +41,9 @@ public class ApiJobScheduler(
         RecurringJob.AddOrUpdate(
             nameof(CheckForExpiredKeys),
             () => CheckForExpiredKeys(),
-            "0 1 */30 * * *" // At second 1 past every 30th minute from 0 through 59.
-            // This is intentionally offset from the other jobs to reduce chance of
-            // overlapping API calls when the key check triggers calls to update items
-            // for users with expired keys.
+            "0/30 * * * *"  // At minute 0 past every 30th minute from 0 through 59. This is
+                            // intentionally offset from the other jobs to reduce chance of
+                            // overlapping API calls.
         );
 
         RecurringJob.AddOrUpdate(
@@ -81,16 +78,7 @@ public class ApiJobScheduler(
             return;
         }
 
-        var users = await _databaseService.GetUsersAsync([Dangerworm], CancellationToken.None);
-        var dangerworm  = users.FirstOrDefault(u => u.Name.Equals(Dangerworm, StringComparison.OrdinalIgnoreCase));
-        if (dangerworm is null)
-        {
-            _logger.LogError("Could not find {Username} to use key for expired key checks.", Dangerworm);
-            return;
-        }
-
-        users = users.Except([dangerworm!]).ToList();
-
+        var users = await _databaseService.GetUsersAsync(CancellationToken.None);
         foreach (var user in users)
         {
             if (user.Id is null)
@@ -102,7 +90,7 @@ public class ApiJobScheduler(
              if (string.IsNullOrEmpty(user.ApiKey))
             {
                 _logger.LogWarning("User {Username} has no API key. Marking as unavailable.", user.Name);
-                await _databaseService.MarkKeyUnavailableAsync(user.Id!.Value, CancellationToken.None);
+                await _databaseService.MarkKeyUnavailableAsync(user.Id.Value, CancellationToken.None);
                 continue;
             }
 
@@ -110,7 +98,7 @@ public class ApiJobScheduler(
             {
                 CallType = ApiCallType.TornKeyInfo,
                 EndpointUrl = TornApiConstants.KeyInfo,
-                HeadersJson = new Dictionary<string, string> { ["Authorization"] = $"ApiKey {dangerworm.ApiKey}" }
+                HeadersJson = new Dictionary<string, string> { ["Authorization"] = $"ApiKey {user.ApiKey}" }
             };
 
             keyHandler.SetUserId(user.Id.Value);

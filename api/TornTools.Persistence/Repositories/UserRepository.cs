@@ -5,25 +5,17 @@ using TornTools.Persistence.Entities;
 using TornTools.Persistence.Interfaces;
 
 namespace TornTools.Persistence.Repositories;
+
 public class UserRepository(
     ILogger<UserRepository> logger,
     TornToolsDbContext dbContext
 ) : RepositoryBase<UserRepository>(logger, dbContext), IUserRepository
 {
-    public Task<List<UserDto>> GetUsersAsync(IEnumerable<string> excludedUsernames, CancellationToken stoppingToken)
+    public Task<List<UserDto>> GetUsersAsync(CancellationToken stoppingToken)
     {
         return DbContext.Users
-            .Where(u => !excludedUsernames.Contains(u.Name))
             .Select(u => u.AsDto())
             .ToListAsync(stoppingToken);
-    }
-
-    public async Task<UserDto?> GetUserByUsernameAsync(string username, CancellationToken stoppingToken)
-    {
-        var user = await DbContext.Users
-            .FirstOrDefaultAsync(u => u.Name == username, stoppingToken);
-
-        return user?.AsDto();
     }
 
     public Task<int> GetApiKeyCountAsync(CancellationToken stoppingToken)
@@ -36,7 +28,12 @@ public class UserRepository(
         var user = await DbContext.Users
             .Where(u => u.KeyAvailable && !string.IsNullOrEmpty(u.ApiKey))
             .OrderBy(u => u.ApiKeyLastUsed == null ? DateTime.MinValue : u.ApiKeyLastUsed)
-            .FirstAsync(stoppingToken);
+            .FirstOrDefaultAsync(stoppingToken);
+
+        if (user == null)
+        {
+            throw new InvalidOperationException("No available API keys found.");
+        }
 
         user.ApiKeyLastUsed = DateTime.UtcNow;
 
@@ -49,7 +46,7 @@ public class UserRepository(
     {
         var user = await DbContext.Users
             .FirstOrDefaultAsync(u => u.Id == userId, stoppingToken);
-        
+
         if (user is not null)
         {
             user.KeyAvailable = false;
