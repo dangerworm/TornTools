@@ -14,16 +14,21 @@ public class ItemChangeLogRepository(
     TornToolsDbContext dbContext
 ) : RepositoryBase<ItemChangeLogRepository>(logger, dbContext), IItemChangeLogRepository
 {
-    private const string ItemMarketHistoryPointQuery = @"SELECT
-    to_timestamp(
-        floor(extract(epoch from ""change_time"") / @bucket) * @bucket
-    ) AS ""Bucket"",
-    AVG(""new_price"") AS ""AveragePrice"",
-    COUNT(*) AS ""Count""
-FROM ""public"".""item_change_logs""
-WHERE ""change_time"" > @cutoffDate AND ""item_id"" = @itemId
-GROUP BY ""Bucket""
-ORDER BY ""Bucket""";
+    private const string ItemMarketHistoryPointQuery = """
+    SELECT
+      to_timestamp(
+        floor(extract(epoch from "change_time") / @bucket) * @bucket
+      ) AS "Bucket",
+      AVG("new_price") AS "AveragePrice",
+      COUNT(*) AS "Count"
+    FROM "public"."item_change_logs"
+    WHERE
+      "item_id" = @itemId
+      AND "change_time" >= @windowStart
+      AND "change_time" <  @windowEnd
+    GROUP BY "Bucket"
+    ORDER BY "Bucket";
+    """;
 
     public async Task<ItemChangeLogDto> CreateItemChangeLogAsync(ItemChangeLogDto itemChangeLogDto, CancellationToken stoppingToken)
     {
@@ -73,21 +78,23 @@ ORDER BY ""Bucket""";
         var (range, bucket) = window.ToWindowConfiguration();
         var bucketSeconds = bucket.TotalSeconds;
 
-        var cutoffDate = DateTime.UtcNow.Subtract(range);
-        var now = DateTime.UtcNow;
+        var cutoffDate = DateTimeOffset.UtcNow.Subtract(range);
+        var now = DateTimeOffset.UtcNow;
 
         var history = await DbContext.Set<ItemMarketHistoryPointEntity>()
             .FromSqlRaw(
                 ItemMarketHistoryPointQuery,
                 new NpgsqlParameter("bucket", bucketSeconds),
-                new NpgsqlParameter("cutoffDate", cutoffDate),
+                new NpgsqlParameter("windowStart", cutoffDate),
+                new NpgsqlParameter("windowEnd", now),
                 new NpgsqlParameter("itemId", itemId)
             )
+            .AsNoTracking()
             .ToDictionaryAsync(h => h.Bucket, h => h, stoppingToken);
 
         // Align cutoff and now to the same bucket grid as SQL
         var earliestDataPoint = history.Count != 0 ? history.Select(h => h.Value.Bucket).Min() : cutoffDate;
-        var firstBucketTime = FloorToBucketUtc(new List<DateTime>([cutoffDate, earliestDataPoint]).Max(), bucketSeconds);
+        var firstBucketTime = FloorToBucketUtc(new List<DateTimeOffset> { cutoffDate, earliestDataPoint }.Max(), bucketSeconds);
         var lastBucketTime = FloorToBucketUtc(now, bucketSeconds);
 
         var totalBuckets = (int)((lastBucketTime - firstBucketTime).TotalSeconds / bucketSeconds) + 1;
@@ -119,14 +126,14 @@ ORDER BY ""Bucket""";
         };
     }
 
-    private static DateTime FloorToBucketUtc(DateTime utc, double bucketSeconds)
+    private static DateTimeOffset FloorToBucketUtc(DateTimeOffset utc, double bucketSeconds)
     {
-        if (utc.Kind != DateTimeKind.Utc)
+        if (utc.Offset != TimeSpan.Zero)
         {
             utc = utc.ToUniversalTime();
         }
 
-        var epoch = DateTime.UnixEpoch; // 1970-01-01T00:00:00Z
+        var epoch = DateTimeOffset.UnixEpoch; // 1970-01-01T00:00:00Z
         var totalSeconds = (long)(utc - epoch).TotalSeconds;
         var bucketSize = (long)bucketSeconds;
 
