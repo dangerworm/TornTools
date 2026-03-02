@@ -1,9 +1,6 @@
 name: Build Full Stack (development)
 
 on:
-  push:
-    branches:
-      - development
   pull_request:
     branches:
       - development
