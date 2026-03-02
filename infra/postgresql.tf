@@ -29,6 +29,21 @@ resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_azure_service
   end_ip_address   = "0.0.0.0"
 }
 
+resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_developer_ip" {
+  name             = "AllowDeveloperIP"
+  server_id        = azurerm_postgresql_flexible_server.db_server.id
+  start_ip_address = var.developer_ip
+  end_ip_address   = var.developer_ip
+}
+
+resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_app_service_ips" {
+  for_each         = toset(var.app_service_outbound_ips)
+  name             = "AllowAppService-${replace(each.value, ".", "-")}"
+  server_id        = azurerm_postgresql_flexible_server.db_server.id
+  start_ip_address = each.value
+  end_ip_address   = each.value
+}
+
 resource "azurerm_monitor_diagnostic_setting" "pg_diagnostic" {
   name                       = "${var.app_name}-${var.environment}-pg-diag"
   target_resource_id         = azurerm_postgresql_flexible_server.db_server.id
