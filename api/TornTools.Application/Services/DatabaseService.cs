@@ -188,12 +188,6 @@ public class DatabaseService(
         return _userRepository.GetApiKeyCountAsync(stoppingToken);
     }
 
-    public async Task<string> GetKnownWorkingApiKeyAsync(CancellationToken stoppingToken)
-    {
-        var user = await _userRepository.GetUserByUsernameAsync("dangerworm", stoppingToken);
-        return user?.ApiKey ?? string.Empty;
-    }
-
     public Task<string> GetNextApiKeyAsync(CancellationToken stoppingToken)
     {
         return _userRepository.GetNextApiKeyAsync(stoppingToken);
