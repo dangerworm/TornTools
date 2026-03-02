@@ -20,7 +20,9 @@ public class UserRepository(
 
     public Task<int> GetApiKeyCountAsync(CancellationToken stoppingToken)
     {
-        return DbContext.Users.CountAsync(stoppingToken);
+        return DbContext.Users
+            .Where(u => u.KeyAvailable && !string.IsNullOrEmpty(u.ApiKey))
+            .CountAsync(stoppingToken);
     }
 
     public async Task<string> GetNextApiKeyAsync(CancellationToken stoppingToken)
