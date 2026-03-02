@@ -69,6 +69,10 @@ jobs:
     environment: ${{ needs.setup.outputs.github_env_name }}
     env:
       ENV_DISPLAY_NAME: ${{ needs.setup.outputs.tf_env_name }}
+      ARM_CLIENT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
+      ARM_CLIENT_SECRET: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}
+      ARM_SUBSCRIPTION_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
+      ARM_TENANT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
     outputs:
       postgres_connection_string: ${{ steps.get_terraform_outputs.outputs.postgres_connection_string }}
       api_url: ${{ steps.get_terraform_outputs.outputs.api_url }}
@@ -92,21 +96,12 @@ jobs:
           secrets: "TF-VAR-SUBSCRIPTION-ID, TF-VAR-GITHUB-ACTIONS-OBJECT-ID, TF-VAR-GITHUB-ACTIONS-TENANT-ID, TF-VAR-DB-ADMIN-PASSWORD, TF-VAR-DEVELOPER-IP, TF-VAR-APP-SERVICE-OUTBOUND-IPS"
 
       - name: Terraform Init
-        env:
-          ARM_CLIENT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
-          ARM_CLIENT_SECRET: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}
-          ARM_SUBSCRIPTION_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
-          ARM_TENANT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
         run: terraform init -backend-config=backend.${{ env.ENV_DISPLAY_NAME }}.config
         working-directory: infra
 
       - name: Terraform Plan (with lock retry)
         id: plan
         env:
-          ARM_CLIENT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
-          ARM_CLIENT_SECRET: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}
-          ARM_SUBSCRIPTION_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
-          ARM_TENANT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
           TF_VAR_app_name: "torntools"
           TF_VAR_app_service_outbound_ips: ${{ steps.kv_secrets.outputs['TF-VAR-APP-SERVICE-OUTBOUND-IPS'] }}
           TF_VAR_db_admin_password: ${{ steps.kv_secrets.outputs['TF-VAR-DB-ADMIN-PASSWORD'] }}
@@ -117,51 +112,12 @@ jobs:
           TF_VAR_github_actions_tenant_id: ${{ steps.kv_secrets.outputs['TF-VAR-GITHUB-ACTIONS-TENANT-ID'] }}
           TF_VAR_subscription_id: ${{ steps.kv_secrets.outputs['TF-VAR-SUBSCRIPTION-ID'] }}
           TF_VAR_tfstate_storage_account_name: "torntoolsstoretfstate"
-        run: |
-          echo "📐 Running terraform plan..."
-          set +e
-          terraform plan -no-color -out=tfplan 2>&1 | tee plan_output.txt
-          exit_code=$?
-          set -e
-
-          if grep -q "Error acquiring the state lock" plan_output.txt; then
-            echo "🔒 State lock detected. Attempting to force unlock..."
-            LOCK_ID=$(grep -A1 "Lock Info:" plan_output.txt | grep "ID:" | awk '{print $2}')
-            if [ -z "$LOCK_ID" ]; then
-              echo "❌ Could not determine lock ID. Aborting unlock."
-              cat plan_output.txt
-              exit 1
-            fi
-            echo "🔓 Lock ID: $LOCK_ID. Unlocking..."
-            terraform force-unlock -force "$LOCK_ID"
-
-            echo "🔁 Retrying terraform plan..."
-            terraform plan -no-color -out=tfplan 2>&1 | tee plan_output.txt
-            exit_code=$?
-          fi
-
-          if [ "$exit_code" -ne 0 ]; then
-            echo "❌ Terraform plan failed:"
-            cat plan_output.txt
-            exit $exit_code
-          fi
-
-          if grep -q 'No changes. Your infrastructure matches the configuration.' plan_output.txt; then
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-            echo "✅ No changes detected in infrastructure."
-          else
-            echo "has_changes=true" >> $GITHUB_OUTPUT
-            echo "🚧 Changes detected — proceeding with apply."
-          fi
+        run: bash scripts/terraform-plan.sh
         working-directory: infra
 
       - name: Terraform Apply
         if: steps.plan.outputs.has_changes == 'true'
         env:
-          ARM_CLIENT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
-          ARM_CLIENT_SECRET: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}
-          ARM_SUBSCRIPTION_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
-          ARM_TENANT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
           TF_VAR_app_name: "torntools"
           TF_VAR_app_service_outbound_ips: ${{ steps.kv_secrets.outputs['TF-VAR-APP-SERVICE-OUTBOUND-IPS'] }}
           TF_VAR_db_admin_password: ${{ steps.kv_secrets.outputs['TF-VAR-DB-ADMIN-PASSWORD'] }}
