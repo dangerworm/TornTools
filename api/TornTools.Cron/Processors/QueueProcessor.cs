@@ -53,10 +53,11 @@ public class QueueProcessor(
                 var itemId = queueItem.Id.Value;
 
                 // Process
+                IApiCaller caller;
                 var success = false;
                 try
                 {
-                    var caller = callerResolver.GetCaller(queueItem.CallType);
+                    caller = callerResolver.GetCaller(queueItem.CallType);
                     success = await caller.CallAsync(queueItem, stoppingToken);
                 }
                 catch (Exception ex)

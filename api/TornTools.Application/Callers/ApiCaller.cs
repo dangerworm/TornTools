@@ -57,7 +57,21 @@ public abstract class ApiCaller<TCaller>(
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "API call for {QueueItem} {Id} failed.", nameof(QueueItemDto), queueItem.Id);
+            var hasAuthHeaders = requestMessage.Headers.TryGetValues("Authorization", out var authHeaders);
+            var authHeader = authHeaders?.FirstOrDefault();
+
+            var apiKey = authHeader is not null && authHeader.StartsWith("ApiKey ", StringComparison.OrdinalIgnoreCase)
+                ? $"key {authHeader.Replace("ApiKey", "").Trim()}"
+                : "unknown key";
+
+            Logger.LogError(
+                ex, 
+                "API call for {QueueItem} {Id} using key {ApiKey} failed.", 
+                nameof(QueueItemDto), 
+                queueItem.Id, 
+                apiKey
+            );
+            
             return false;
         }
     }
