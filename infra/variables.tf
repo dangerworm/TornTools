@@ -3,10 +3,20 @@ variable "app_name" {
   type        = string
 }
 
+variable "app_service_outbound_ips" {
+  description = "List of outbound IPs for the App Service"
+  type        = list(string)
+}
+
 variable "db_admin_password" { 
   description = "Admin password for PostgreSQL"
   type        = string
   sensitive   = true
+}
+
+variable "developer_ip" {
+  description = "Developer's public IP address for local DB access"
+  type        = string
 }
 
 variable "enable_local_user_access" {
