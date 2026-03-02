@@ -178,6 +178,11 @@ public class DatabaseService(
         return _queueItemRepository.RemoveQueueItemAsync(id, stoppingToken);
     }
 
+    public Task<List<UserDto>> GetUsersAsync(CancellationToken stoppingToken)
+    {
+        return _userRepository.GetUsersAsync(stoppingToken);
+    }
+
     public Task<int> GetApiKeyCountAsync(CancellationToken stoppingToken)
     {
         return _userRepository.GetApiKeyCountAsync(stoppingToken);
@@ -186,6 +191,11 @@ public class DatabaseService(
     public Task<string> GetNextApiKeyAsync(CancellationToken stoppingToken)
     {
         return _userRepository.GetNextApiKeyAsync(stoppingToken);
+    }
+
+    public Task MarkKeyUnavailableAsync(long userId, CancellationToken stoppingToken)
+    {
+        return _userRepository.MarkKeyUnavailableAsync(userId, stoppingToken);
     }
 
     public Task<UserDto> UpsertUserDetailsAsync(UserDetailsInputModel userDetails, CancellationToken stoppingToken)

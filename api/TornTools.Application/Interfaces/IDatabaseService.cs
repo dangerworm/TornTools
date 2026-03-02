@@ -34,6 +34,9 @@ public interface IDatabaseService
 
     Task<int> GetApiKeyCountAsync(CancellationToken stoppingToken);
     Task<string> GetNextApiKeyAsync(CancellationToken stoppingToken);
+    Task MarkKeyUnavailableAsync(long userId, CancellationToken stoppingToken);
+
+    Task<List<UserDto>> GetUsersAsync(CancellationToken stoppingToken);
     Task<UserDto> UpsertUserDetailsAsync(UserDetailsInputModel userDetails, CancellationToken stoppingToken);
     Task<UserDto?> ToggleUserFavourite(UserFavouriteInputModel userFavouriteModel, CancellationToken stoppingToken);
     Task<IEnumerable<ThemeDto>> GetThemesAsync(long? userId, CancellationToken stoppingToken);

@@ -5,28 +5,54 @@ using TornTools.Persistence.Entities;
 using TornTools.Persistence.Interfaces;
 
 namespace TornTools.Persistence.Repositories;
+
 public class UserRepository(
     ILogger<UserRepository> logger,
     TornToolsDbContext dbContext
 ) : RepositoryBase<UserRepository>(logger, dbContext), IUserRepository
 {
+    public Task<List<UserDto>> GetUsersAsync(CancellationToken stoppingToken)
+    {
+        return DbContext.Users
+            .Select(u => u.AsDto())
+            .ToListAsync(stoppingToken);
+    }
+
     public Task<int> GetApiKeyCountAsync(CancellationToken stoppingToken)
     {
-        return DbContext.Users.CountAsync(stoppingToken);
+        return DbContext.Users
+            .CountAsync(u => u.KeyAvailable && !string.IsNullOrEmpty(u.ApiKey), stoppingToken);
     }
 
     public async Task<string> GetNextApiKeyAsync(CancellationToken stoppingToken)
     {
         var user = await DbContext.Users
-            .Where(u => !string.IsNullOrEmpty(u.ApiKey))
+            .Where(u => u.KeyAvailable && !string.IsNullOrEmpty(u.ApiKey))
             .OrderBy(u => u.ApiKeyLastUsed == null ? DateTime.MinValue : u.ApiKeyLastUsed)
-            .FirstAsync(stoppingToken);
+            .FirstOrDefaultAsync(stoppingToken);
+
+        if (user == null)
+        {
+            throw new InvalidOperationException("No available API keys found.");
+        }
 
         user.ApiKeyLastUsed = DateTime.UtcNow;
 
         await DbContext.SaveChangesAsync(stoppingToken);
 
         return user.ApiKey;
+    }
+
+    public async Task MarkKeyUnavailableAsync(long userId, CancellationToken stoppingToken)
+    {
+        var user = await DbContext.Users
+            .FirstOrDefaultAsync(u => u.Id == userId, stoppingToken);
+
+        if (user is not null)
+        {
+            user.KeyAvailable = false;
+            await DbContext.SaveChangesAsync(stoppingToken);
+        }
     }
 
     public async Task<UserDto> UpsertUserDetailsAsync(UserDto userDto, CancellationToken stoppingToken)
@@ -43,6 +69,7 @@ public class UserRepository(
                 Id = userDto.Id,
                 ApiKey = userDto.ApiKey,
                 ApiKeyLastUsed = null,
+                KeyAvailable = true,
                 Name = userDto.Name,
                 Gender = userDto.Gender,
                 Level = userDto.Level
@@ -59,6 +86,7 @@ public class UserRepository(
             {
                 userEntity.ApiKey = userDto.ApiKey;
                 userEntity.ApiKeyLastUsed = null;
+                userEntity.KeyAvailable = true;
             }
         }
 

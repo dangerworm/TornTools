@@ -1,0 +1,1 @@
+ALTER TABLE public.users ADD "key_available" bool DEFAULT true;
