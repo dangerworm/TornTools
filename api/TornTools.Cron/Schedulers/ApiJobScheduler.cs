@@ -2,6 +2,7 @@
 using Hangfire;
 using Hangfire.Storage;
 using Microsoft.Extensions.Logging;
+using TornTools.Application.Handlers;
 using TornTools.Application.Interfaces;
 using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
@@ -9,15 +10,20 @@ using TornTools.Core.Enums;
 using TornTools.Cron.Interfaces;
 
 namespace TornTools.Cron.Schedulers;
+
 public class ApiJobScheduler(
     ILogger<ApiJobScheduler> logger,
     IApiCallerResolver callerResolver,
+    IApiCallHandlerResolver callHandlerResolver,
     IDatabaseService databaseService
 ) : IApiJobScheduler
 {
     private readonly ILogger<ApiJobScheduler> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly IApiCallerResolver _callerResolver = callerResolver ?? throw new ArgumentNullException(nameof(callerResolver));
+    private readonly IApiCallHandlerResolver _callHandlerResolver = callHandlerResolver ?? throw new ArgumentNullException(nameof(callHandlerResolver));
     private readonly IDatabaseService _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
+    
+    private const string Dangerworm = "dangerworm";
 
     public void RegisterRecurringJobs()
     {
@@ -35,6 +41,15 @@ public class ApiJobScheduler(
         );
 
         RecurringJob.AddOrUpdate(
+            nameof(CheckForExpiredKeys),
+            () => CheckForExpiredKeys(),
+            "0 1 */30 * * *" // At second 1 past every 30th minute from 0 through 59.
+            // This is intentionally offset from the other jobs to reduce chance of
+            // overlapping API calls when the key check triggers calls to update items
+            // for users with expired keys.
+        );
+
+        RecurringJob.AddOrUpdate(
             nameof(CheckUntouchedMarketItems),
             () => CheckUntouchedMarketItems(),
             "0 */1 * * *" // At minute 0 past every 1 hour.
@@ -47,7 +62,63 @@ public class ApiJobScheduler(
         );
     }
 
-    [DisplayName("Daily Item update")]
+    [DisplayName("Remove expired keys")]
+    public async Task CheckForExpiredKeys()
+    {
+        _logger.LogInformation($"Running Hangfire job {nameof(CheckForExpiredKeys)}");
+
+        var caller = _callerResolver.GetCaller(ApiCallType.TornKeyInfo);
+        var callHandler = _callHandlerResolver.GetHandler(ApiCallType.TornKeyInfo);
+
+        if (callHandler is not TornKeyApiCallHandler keyHandler)
+        {
+            _logger.LogError(
+                "Expected handler for {CallType} to be of type {ExpectedType}, but got {ActualType}. Aborting job.",
+                ApiCallType.TornKeyInfo,
+                typeof(TornKeyApiCallHandler).Name,
+                callHandler.GetType().Name
+            );
+            return;
+        }
+
+        var users = await _databaseService.GetUsersAsync([Dangerworm], CancellationToken.None);
+        var dangerworm  = users.FirstOrDefault(u => u.Name.Equals(Dangerworm, StringComparison.OrdinalIgnoreCase));
+        if (dangerworm is null)
+        {
+            _logger.LogError("Could not find {Username} to use key for expired key checks.", Dangerworm);
+            return;
+        }
+
+        users = users.Except([dangerworm!]).ToList();
+
+        foreach (var user in users)
+        {
+            if (user.Id is null)
+            {
+                _logger.LogWarning("User {Username} has no ID. Skipping API key check.", user.Name);
+                continue;
+            }
+
+             if (string.IsNullOrEmpty(user.ApiKey))
+            {
+                _logger.LogWarning("User {Username} has no API key. Marking as unavailable.", user.Name);
+                await _databaseService.MarkKeyUnavailableAsync(user.Id!.Value, CancellationToken.None);
+                continue;
+            }
+
+            var item = new QueueItemDto
+            {
+                CallType = ApiCallType.TornKeyInfo,
+                EndpointUrl = TornApiConstants.KeyInfo,
+                HeadersJson = new Dictionary<string, string> { ["Authorization"] = $"ApiKey {dangerworm.ApiKey}" }
+            };
+
+            keyHandler.SetUserId(user.Id.Value);
+            await caller.CallAsync(item, keyHandler, CancellationToken.None);
+        }
+    }
+
+    [DisplayName("Items update")]
     public async Task ItemUpdate()
     {
         _logger.LogInformation($"Running Hangfire job {nameof(ItemUpdate)}");
@@ -80,8 +151,22 @@ public class ApiJobScheduler(
         try
         {
             var caller = _callerResolver.GetCaller(ApiCallType.YataForeignStock);
+            var callHandler = _callHandlerResolver.GetHandler(ApiCallType.YataForeignStock);
+
+            if (callHandler is not YataStocksApiCallHandler yataHandler)
+            {
+                _logger.LogError(
+                    "Expected handler for {CallType} to be of type {ExpectedType}, but got {ActualType}. Aborting job.",
+                    ApiCallType.YataForeignStock,
+                    typeof(YataStocksApiCallHandler).Name,
+                    callHandler.GetType().Name
+                );
+                return;
+            }
+
             success = await caller.CallAsync(
                 queueItem,
+                yataHandler,
                 stoppingToken: CancellationToken.None
             );
         }

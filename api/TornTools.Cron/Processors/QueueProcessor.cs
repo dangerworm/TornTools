@@ -22,6 +22,7 @@ public class QueueProcessor(
 
         using var scope = _scopeFactory.CreateScope();
         var callerResolver = scope.ServiceProvider.GetRequiredService<IApiCallerResolver>();
+        var callHandlerResolver = scope.ServiceProvider.GetRequiredService<IApiCallHandlerResolver>();
         var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
         var tornApiCallerOptions = scope.ServiceProvider.GetRequiredService<TornApiCallerConfiguration>();
 
@@ -58,7 +59,8 @@ public class QueueProcessor(
                 try
                 {
                     caller = callerResolver.GetCaller(queueItem.CallType);
-                    success = await caller.CallAsync(queueItem, stoppingToken);
+                    var handler = callHandlerResolver.GetHandler(queueItem.CallType);
+                    success = await caller.CallAsync(queueItem, handler, stoppingToken);
                 }
                 catch (Exception ex)
                 {

@@ -8,20 +8,18 @@ using TornTools.Core.Enums;
 namespace TornTools.Application.Callers;
 public abstract class ApiCaller<TCaller>(
     ILogger<TCaller> logger,
-    IApiCallHandlerResolver callHandlerResolver,
     IDatabaseService databaseService,
     IHttpClientFactory httpClientFactory
 )
 {
     protected readonly ILogger<TCaller> Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    protected readonly IApiCallHandlerResolver CallHandlerResolver = callHandlerResolver ?? throw new ArgumentNullException(nameof(callHandlerResolver));
     protected readonly IDatabaseService DatabaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
     protected readonly IHttpClientFactory HttpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
 
     public abstract IEnumerable<ApiCallType> CallTypes { get; }
     protected abstract string ClientName { get; }
 
-    protected virtual async Task<bool> CallAsync(QueueItemDto queueItem, CancellationToken stoppingToken)
+    protected virtual async Task<bool> CallAsync(QueueItemDto queueItem, IApiCallHandler handler, CancellationToken stoppingToken)
     {
         using var client = HttpClientFactory.CreateClient(ClientName);
 
@@ -30,8 +28,11 @@ public abstract class ApiCaller<TCaller>(
             queueItem.EndpointUrl
         );
 
+        // Authorization header
+        await AddAuthorizationHeader(requestMessage, stoppingToken);
+
         // Headers (optional)
-        await AddHeaders(requestMessage, queueItem, stoppingToken);
+        await AddQueueItemHeaders(requestMessage, queueItem, stoppingToken);
 
         // Body for non-GET/HEAD
         AddBody(queueItem, requestMessage);
@@ -45,7 +46,6 @@ public abstract class ApiCaller<TCaller>(
                 return false;
             }
 
-            var handler = CallHandlerResolver.GetHandler(queueItem.CallType);
             await handler.HandleResponseAsync(content, stoppingToken);
 
             return true;
@@ -66,7 +66,7 @@ public abstract class ApiCaller<TCaller>(
 
             Logger.LogError(
                 ex, 
-                "API call for {QueueItem} {Id} using key {ApiKey} failed.", 
+                "API call for {QueueItem} {Id} using {ApiKey} failed.", 
                 nameof(QueueItemDto), 
                 queueItem.Id, 
                 apiKey
@@ -76,7 +76,12 @@ public abstract class ApiCaller<TCaller>(
         }
     }
 
-    protected virtual async Task AddHeaders(HttpRequestMessage requestMessage, QueueItemDto queueItem, CancellationToken stoppingToken)
+    protected virtual Task AddAuthorizationHeader(HttpRequestMessage requestMessage, CancellationToken stoppingToken)
+    {
+        return Task.CompletedTask; 
+    }
+
+    protected virtual async Task AddQueueItemHeaders(HttpRequestMessage requestMessage, QueueItemDto queueItem, CancellationToken stoppingToken)
     {
         if (queueItem.HeadersJson is not null)
         {
@@ -86,8 +91,6 @@ public abstract class ApiCaller<TCaller>(
                 requestMessage.Headers.TryAddWithoutValidation(kvp.Key, kvp.Value);
             }
         }
-
-        await Task.CompletedTask;
     }
 
     protected virtual void AddBody(QueueItemDto queueItem, HttpRequestMessage requestMessage)

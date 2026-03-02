@@ -6,18 +6,18 @@ using TornTools.Core.Enums;
 
 namespace TornTools.Application.Callers;
 
-public class YataApiCaller(
-    ILogger<YataApiCaller> logger,
+public class TornApiSingleKeyCaller(
+    ILogger<TornApiSingleKeyCaller> logger,
     IDatabaseService databaseService,
     IHttpClientFactory httpClientFactory
-) : ApiCaller<YataApiCaller>(logger, databaseService, httpClientFactory), IApiCaller
+) : ApiCaller<TornApiSingleKeyCaller>(logger, databaseService, httpClientFactory), IApiCaller
 {
     public override IEnumerable<ApiCallType> CallTypes =>
     [
-        ApiCallType.YataForeignStock
+        ApiCallType.TornKeyInfo
     ];
 
-    protected override string ClientName => YataApiConstants.ClientName;
+    protected override string ClientName => TornApiConstants.ClientName;
 
     Task<bool> IApiCaller.CallAsync(QueueItemDto queueItemDto, IApiCallHandler handler, CancellationToken stoppingToken)
     {
