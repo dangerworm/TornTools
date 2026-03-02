@@ -8,10 +8,9 @@ namespace TornTools.Application.Callers;
 
 public class YataApiCaller(
     ILogger<YataApiCaller> logger,
-    IApiCallHandlerResolver callHandlerResolver,
     IDatabaseService databaseService,
     IHttpClientFactory httpClientFactory
-) : ApiCaller<YataApiCaller>(logger, callHandlerResolver, databaseService, httpClientFactory), IApiCaller
+) : ApiCaller<YataApiCaller>(logger, databaseService, httpClientFactory), IApiCaller
 {
     public override IEnumerable<ApiCallType> CallTypes =>
     [
@@ -20,8 +19,8 @@ public class YataApiCaller(
 
     protected override string ClientName => YataApiConstants.ClientName;
 
-    Task<bool> IApiCaller.CallAsync(QueueItemDto queueItemDto, CancellationToken stoppingToken)
+    Task<bool> IApiCaller.CallAsync(QueueItemDto queueItemDto, IApiCallHandler handler, CancellationToken stoppingToken)
     {
-        return CallAsync(queueItemDto, stoppingToken);
+        return CallAsync(queueItemDto, handler, stoppingToken);
     }
 }

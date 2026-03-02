@@ -18,6 +18,9 @@ public class UserEntity
     [Column("api_key_last_used")]
     public DateTime? ApiKeyLastUsed { get; set; }
 
+    [Column("key_available")]
+    public bool KeyAvailable { get; set; }
+
     [Required]
     [Column("name")]
     public required string Name { get; set; }
@@ -45,6 +48,7 @@ public class UserEntity
             Id = Id,
             ApiKey = ApiKey,
             ApiKeyLastUsed = ApiKeyLastUsed,
+            KeyAvailable = KeyAvailable,
             Name = Name,
             Gender = Gender,
             Level = Level,

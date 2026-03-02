@@ -92,8 +92,11 @@ public class TornToolsDbContext(
         {
             e.HasKey(x => x.Id);
             e.Property(x => x.ApiKey).IsRequired();
+            e.Property(x => x.ApiKeyLastUsed).IsRequired(false);
+            e.Property(x => x.KeyAvailable).IsRequired();
             e.Property(x => x.Name).IsRequired();
             e.Property(x => x.Gender).IsRequired();
+            e.Property(x => x.Level).IsRequired();
 
             e.HasOne(u => u.PreferredTheme)
                 .WithMany()

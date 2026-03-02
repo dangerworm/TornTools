@@ -13,7 +13,9 @@ using TornTools.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddApplicationInsightsTelemetry();
+#if !DEBUG 
+    builder.Services.AddApplicationInsightsTelemetry();
+#endif
 
 builder.Services.AddCorsPolicy();
 builder.Services.AddDatabase(builder.Configuration);

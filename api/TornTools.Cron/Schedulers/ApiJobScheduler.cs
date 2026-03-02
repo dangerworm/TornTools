@@ -2,6 +2,8 @@
 using Hangfire;
 using Hangfire.Storage;
 using Microsoft.Extensions.Logging;
+using TornTools.Application.Callers;
+using TornTools.Application.Handlers;
 using TornTools.Application.Interfaces;
 using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
@@ -9,15 +11,19 @@ using TornTools.Core.Enums;
 using TornTools.Cron.Interfaces;
 
 namespace TornTools.Cron.Schedulers;
+
 public class ApiJobScheduler(
     ILogger<ApiJobScheduler> logger,
     IApiCallerResolver callerResolver,
+    IApiCallHandlerResolver callHandlerResolver,
     IDatabaseService databaseService
 ) : IApiJobScheduler
 {
     private readonly ILogger<ApiJobScheduler> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly IApiCallerResolver _callerResolver = callerResolver ?? throw new ArgumentNullException(nameof(callerResolver));
+    private readonly IApiCallHandlerResolver _callHandlerResolver = callHandlerResolver ?? throw new ArgumentNullException(nameof(callHandlerResolver));
     private readonly IDatabaseService _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
+    private static readonly string[] excludedUsernames = ["dangeworm"];
 
     public void RegisterRecurringJobs()
     {
@@ -35,6 +41,12 @@ public class ApiJobScheduler(
         );
 
         RecurringJob.AddOrUpdate(
+            nameof(CheckForExpiredKeys),
+            () => CheckForExpiredKeys(),
+            "* * * * *" // At minute 30 past every 3rd hour.
+        );
+
+        RecurringJob.AddOrUpdate(
             nameof(CheckUntouchedMarketItems),
             () => CheckUntouchedMarketItems(),
             "0 */1 * * *" // At minute 0 past every 1 hour.
@@ -47,7 +59,48 @@ public class ApiJobScheduler(
         );
     }
 
-    [DisplayName("Daily Item update")]
+    [DisplayName("Remove expired keys")]
+    public async Task CheckForExpiredKeys()
+    {
+        _logger.LogInformation($"Running Hangfire job {nameof(CheckForExpiredKeys)}");
+
+        var caller = _callerResolver.GetCaller(ApiCallType.TornKeyInfo);
+        var callHandler = _callHandlerResolver.GetHandler(ApiCallType.TornKeyInfo);
+
+        if (callHandler is not TornKeyApiCallHandler keyHandler)
+        {
+            _logger.LogError(
+                "Expected handler for {CallType} to be of type {ExpectedType}, but got {ActualType}. Aborting job.",
+                ApiCallType.TornKeyInfo,
+                typeof(TornKeyApiCallHandler).Name,
+                callHandler.GetType().Name
+            );
+            return;
+        }
+
+        var users = await _databaseService.GetUsersAsync(excludedUsernames, CancellationToken.None);
+
+        foreach (var user in users)
+        {
+            var item = new QueueItemDto
+            {
+                CallType = ApiCallType.TornKeyInfo,
+                EndpointUrl = TornApiConstants.KeyInfo
+            };
+
+            if (user.Id is null)
+            {
+                _logger.LogWarning("User {Username} has no ID. Skipping API key check.", user.Name);
+                continue;
+            }
+
+            keyHandler.SetUserId(user.Id.Value);
+
+            await caller.CallAsync(item, keyHandler, CancellationToken.None);
+        }
+    }
+
+    [DisplayName("Items update")]
     public async Task ItemUpdate()
     {
         _logger.LogInformation($"Running Hangfire job {nameof(ItemUpdate)}");
@@ -80,8 +133,22 @@ public class ApiJobScheduler(
         try
         {
             var caller = _callerResolver.GetCaller(ApiCallType.YataForeignStock);
+            var callHandler = _callHandlerResolver.GetHandler(ApiCallType.YataForeignStock);
+
+            if (callHandler is not YataStocksApiCallHandler yataHandler)
+            {
+                _logger.LogError(
+                    "Expected handler for {CallType} to be of type {ExpectedType}, but got {ActualType}. Aborting job.",
+                    ApiCallType.TornKeyInfo,
+                    typeof(YataStocksApiCallHandler).Name,
+                    callHandler.GetType().Name
+                );
+                return;
+            }
+
             success = await caller.CallAsync(
                 queueItem,
+                yataHandler,
                 stoppingToken: CancellationToken.None
             );
         }

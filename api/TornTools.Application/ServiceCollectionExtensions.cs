@@ -22,11 +22,13 @@ public static class ServiceCollectionExtensions
                     System.Net.DecompressionMethods.Brotli
             });
 
-        services.AddScoped<IApiCaller, TornApiCaller>();
+        services.AddScoped<IApiCaller, TornApiMultiKeyCaller>();
+        services.AddScoped<IApiCaller, TornApiSingleKeyCaller>();
         services.AddScoped<IApiCaller, YataApiCaller>();
         services.AddScoped<IApiCallerResolver, ApiCallerResolver>();
 
         services.AddScoped<IApiCallHandler, TornItemsApiCallHandler>();
+        services.AddScoped<IApiCallHandler, TornKeyApiCallHandler>();
         services.AddScoped<IApiCallHandler, TornMarketListingsApiCallHandler>();
         services.AddScoped<IApiCallHandler, YataStocksApiCallHandler>();
         services.AddScoped<IApiCallHandlerResolver, ApiCallHandlerResolver>();
