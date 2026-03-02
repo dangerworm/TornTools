@@ -58,7 +58,7 @@ public abstract class ApiCaller<TCaller>(
         }
         catch (Exception ex)
         {
-            var hasAuthHeaders = requestMessage.Headers.TryGetValues("Authorization", out var authHeaders);
+            requestMessage.Headers.TryGetValues("Authorization", out var authHeaders);
             var authHeader = authHeaders?.FirstOrDefault();
 
             var apiKey = authHeader is not null && authHeader.StartsWith("ApiKey ", StringComparison.OrdinalIgnoreCase)
@@ -82,7 +82,7 @@ public abstract class ApiCaller<TCaller>(
         return Task.CompletedTask;
     }
 
-    protected virtual async Task AddQueueItemHeaders(HttpRequestMessage requestMessage, QueueItemDto queueItem, CancellationToken stoppingToken)
+    protected virtual Task AddQueueItemHeaders(HttpRequestMessage requestMessage, QueueItemDto queueItem, CancellationToken stoppingToken)
     {
         if (queueItem.HeadersJson is not null)
         {
@@ -92,6 +92,8 @@ public abstract class ApiCaller<TCaller>(
                 requestMessage.Headers.TryAddWithoutValidation(kvp.Key, kvp.Value);
             }
         }
+
+        return Task.CompletedTask;
     }
 
     protected virtual void AddBody(QueueItemDto queueItem, HttpRequestMessage requestMessage)

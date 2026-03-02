@@ -15,7 +15,6 @@ public class TornApiCaller(
     public override IEnumerable<ApiCallType> CallTypes =>
     [
         ApiCallType.TornItems,
-        ApiCallType.TornKeyInfo,
         ApiCallType.TornMarketListings
     ];
 
