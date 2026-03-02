@@ -1,5 +1,5 @@
 resource "azurerm_postgresql_flexible_server" "db_server" {
-  name                   = "${var.app_name}-${var.environment}-pgflexserver"
+  name                   = "${var.app_name}-${var.environment}-pgflex"
   resource_group_name    = azurerm_resource_group.torntools_webapp_rg.name
   location               = azurerm_resource_group.torntools_webapp_rg.location
   administrator_login    = "pgadmin"
