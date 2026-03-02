@@ -29,10 +29,7 @@ public abstract class ApiCaller<TCaller>(
             queueItem.EndpointUrl
         );
 
-        // Authorization header
-        await AddAuthorizationHeader(requestMessage, stoppingToken);
-
-        if (queueItem.HeadersJson is not null && !queueItem.HeadersJson.ContainsKey("Authorization"))
+        if (queueItem.HeadersJson is null || !queueItem.HeadersJson.ContainsKey("Authorization"))
         {
             await AddAuthorizationHeader(requestMessage, stoppingToken);
         }
