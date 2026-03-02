@@ -151,6 +151,11 @@ infra/*.tfvars.json
 infra/tfdestroy
 infra/tfplan
 
+# Key Vault secrets files - contain plaintext secrets, never commit these.
+# Template (keyvault-secrets.env.template) is committed; actual files are not.
+# The *.env rule above already excludes these, but listed explicitly for clarity.
+infra/keyvault-secrets.*.env
+
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
