@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
 using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
@@ -12,6 +13,7 @@ namespace TornTools.Application.Services;
 
 public class DatabaseService(
     ILogger<DatabaseService> logger,
+    IMetricsCollector metricsCollector,
     IForeignStockItemRepository foreignStockItemRepository,
     IItemChangeLogRepository itemChangeLogRepository,
     IItemRepository itemRepository,
@@ -21,6 +23,7 @@ public class DatabaseService(
 ) : IDatabaseService
 {
     private readonly ILogger<DatabaseService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IMetricsCollector _metricsCollector = metricsCollector ?? throw new ArgumentNullException(nameof(metricsCollector));
     private readonly IForeignStockItemRepository _foreignStockItemRepository = foreignStockItemRepository ?? throw new ArgumentNullException(nameof(foreignStockItemRepository));
     private readonly IItemChangeLogRepository _itemChangeLogRepository = itemChangeLogRepository ?? throw new ArgumentNullException(nameof(itemChangeLogRepository));
     private readonly IItemRepository _itemRepository = itemRepository ?? throw new ArgumentNullException(nameof(itemRepository));
@@ -30,67 +33,93 @@ public class DatabaseService(
 
     public Task<IEnumerable<ForeignStockItemDto>> GetForeignStockItemsAsync(CancellationToken cancellationToken)
     {
-        return _foreignStockItemRepository.GetItemsAsync(cancellationToken);
+        return TrackDatabaseCallAsync(
+            nameof(GetForeignStockItemsAsync),
+            () => _foreignStockItemRepository.GetItemsAsync(cancellationToken));
     }
 
     public Task UpsertForeignStockItemsAsync(IEnumerable<ForeignStockItemDto> items, CancellationToken stoppingToken)
     {
-        return _foreignStockItemRepository.UpsertItemsAsync(items, stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(UpsertForeignStockItemsAsync),
+            () => _foreignStockItemRepository.UpsertItemsAsync(items, stoppingToken));
     }
 
     public Task CreateItemChangeLogAsync(ItemChangeLogDto changeLogDto, CancellationToken stoppingToken)
     {
-        return _itemChangeLogRepository.CreateItemChangeLogAsync(changeLogDto, stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(CreateItemChangeLogAsync),
+            () => _itemChangeLogRepository.CreateItemChangeLogAsync(changeLogDto, stoppingToken));
     }
 
     public Task<IEnumerable<ItemDto>> GetAllItemsAsync(CancellationToken stoppingToken)
     {
-        return _itemRepository.GetAllItemsAsync(stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(GetAllItemsAsync),
+            () => _itemRepository.GetAllItemsAsync(stoppingToken));
     }
 
     public Task<int> GetNumberOfItemsAsync(CancellationToken stoppingToken)
     {
-        return _itemRepository.GetNumberOfItemsAsync(stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(GetNumberOfItemsAsync),
+            () => _itemRepository.GetNumberOfItemsAsync(stoppingToken));
     }
 
     public Task UpsertItemsAsync(IEnumerable<ItemDto> items, CancellationToken stoppingToken)
     {
-        return _itemRepository.UpsertItemsAsync(items, stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(UpsertItemsAsync),
+            () => _itemRepository.UpsertItemsAsync(items, stoppingToken));
     }
 
     public Task<IEnumerable<ItemHistoryPointDto>> GetItemPriceHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken)
     {
-        return _itemChangeLogRepository.GetItemPriceHistoryAsync(itemId, window, stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(GetItemPriceHistoryAsync),
+            () => _itemChangeLogRepository.GetItemPriceHistoryAsync(itemId, window, stoppingToken));
     }
 
     public Task<IEnumerable<ItemHistoryPointDto>> GetItemVelocityHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken)
     {
-        return _itemChangeLogRepository.GetItemVelocityHistoryAsync(itemId, window, stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(GetItemVelocityHistoryAsync),
+            () => _itemChangeLogRepository.GetItemVelocityHistoryAsync(itemId, window, stoppingToken));
     }
 
     public Task CreateListingsAsync(IEnumerable<ListingDto> listings, CancellationToken stoppingToken)
     {
-        return _listingRepository.CreateListingsAsync(listings, stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(CreateListingsAsync),
+            () => _listingRepository.CreateListingsAsync(listings, stoppingToken));
     }
 
-    public async Task<IEnumerable<ListingDto>> GetListingsByItemIdAsync(int itemId, CancellationToken stoppingToken)
+    public Task<IEnumerable<ListingDto>> GetListingsByItemIdAsync(int itemId, CancellationToken stoppingToken)
     {
-        return await _listingRepository.GetListingsByItemIdAsync(itemId, stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(GetListingsByItemIdAsync),
+            () => _listingRepository.GetListingsByItemIdAsync(itemId, stoppingToken));
     }
 
-    public async Task<IEnumerable<ListingDto>> GetListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken)
+    public Task<IEnumerable<ListingDto>> GetListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken)
     {
-        return await _listingRepository.GetListingsBySourceAndItemIdAsync(source, itemId, stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(GetListingsBySourceAndItemIdAsync),
+            () => _listingRepository.GetListingsBySourceAndItemIdAsync(source, itemId, stoppingToken));
     }
 
     public Task DeleteListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken)
     {
-        return _listingRepository.DeleteListingsBySourceAndItemIdAsync(source, itemId, stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(DeleteListingsBySourceAndItemIdAsync),
+            () => _listingRepository.DeleteListingsBySourceAndItemIdAsync(source, itemId, stoppingToken));
     }
 
     public Task<IEnumerable<ProfitableListingDto>> GetProfitableListings(CancellationToken stoppingToken)
     {
-        return _itemRepository.GetProfitableItemsAsync(stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(GetProfitableListings),
+            () => _itemRepository.GetProfitableItemsAsync(stoppingToken));
     }
 
     public async Task PopulateMarketQueueItemsOfInterest(CancellationToken stoppingToken)
@@ -130,14 +159,18 @@ public class DatabaseService(
             queueItems.AddRange(profitableQueueItems);
         }
 
-        await _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken);
+        await TrackDatabaseCallAsync(
+            nameof(_queueItemRepository.CreateQueueItemsAsync),
+            () => _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken));
     }
 
     public async Task PopulateMarketQueueItemsRemaining(CancellationToken stoppingToken)
     {
         var (profitableItemIds, groupedChanges) = await GetItemChangeData(stoppingToken);
 
-        var marketItems = await _itemRepository.GetMarketItemsAsync(stoppingToken);
+        var marketItems = await TrackDatabaseCallAsync(
+            nameof(_itemRepository.GetMarketItemsAsync),
+            () => _itemRepository.GetMarketItemsAsync(stoppingToken));
         var queueItems = marketItems
             .Select(item => item.Id)
             .Except(profitableItemIds)
@@ -145,47 +178,65 @@ public class DatabaseService(
             .SelectMany(BuildQueueItems)
             .ToList();
 
-        await _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken);
+        await TrackDatabaseCallAsync(
+            nameof(_queueItemRepository.CreateQueueItemsAsync),
+            () => _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken));
     }
 
     public Task<QueueItemDto> CreateQueueItem(ApiCallType callType, string endpointUrl, CancellationToken stoppingToken)
     {
-        return _queueItemRepository.CreateQueueItemAsync(callType, endpointUrl, stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(CreateQueueItem),
+            () => _queueItemRepository.CreateQueueItemAsync(callType, endpointUrl, stoppingToken));
     }
 
     public Task<QueueItemDto?> GetNextQueueItem(CancellationToken stoppingToken)
     {
-        return _queueItemRepository.GetNextQueueItemAsync(stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(GetNextQueueItem),
+            () => _queueItemRepository.GetNextQueueItemAsync(stoppingToken));
     }
 
     public Task<QueueItemDto> IncrementQueueItemAttempts(Guid id, CancellationToken stoppingToken)
     {
-        return _queueItemRepository.IncrementQueueItemAttemptsAsync(id, stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(IncrementQueueItemAttempts),
+            () => _queueItemRepository.IncrementQueueItemAttemptsAsync(id, stoppingToken));
     }
 
     public Task<QueueItemDto> SetQueueItemCompleted(Guid id, CancellationToken stoppingToken)
     {
-        return _queueItemRepository.SetQueueItemCompletedAsync(id, stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(SetQueueItemCompleted),
+            () => _queueItemRepository.SetQueueItemCompletedAsync(id, stoppingToken));
     }
 
     public Task RemoveQueueItemsAsync(CancellationToken stoppingToken, QueueStatus? statusToRemove = null)
     {
-        return _queueItemRepository.RemoveQueueItemsAsync(stoppingToken, statusToRemove);
+        return TrackDatabaseCallAsync(
+            nameof(RemoveQueueItemsAsync),
+            () => _queueItemRepository.RemoveQueueItemsAsync(stoppingToken, statusToRemove));
     }
 
     public Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken)
     {
-        return _queueItemRepository.RemoveQueueItemAsync(id, stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(RemoveQueueItemAsync),
+            () => _queueItemRepository.RemoveQueueItemAsync(id, stoppingToken));
     }
 
     public Task<int> GetApiKeyCountAsync(CancellationToken stoppingToken)
     {
-        return _userRepository.GetApiKeyCountAsync(stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(GetApiKeyCountAsync),
+            () => _userRepository.GetApiKeyCountAsync(stoppingToken));
     }
 
     public Task<string> GetNextApiKeyAsync(CancellationToken stoppingToken)
     {
-        return _userRepository.GetNextApiKeyAsync(stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(GetNextApiKeyAsync),
+            () => _userRepository.GetNextApiKeyAsync(stoppingToken));
     }
 
     public Task<UserDto> UpsertUserDetailsAsync(UserDetailsInputModel userDetails, CancellationToken stoppingToken)
@@ -199,17 +250,23 @@ public class DatabaseService(
             Gender = userDetails.UserProfile.Gender
         };
 
-        return _userRepository.UpsertUserDetailsAsync(userDto, stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(UpsertUserDetailsAsync),
+            () => _userRepository.UpsertUserDetailsAsync(userDto, stoppingToken));
     }
 
     public Task<UserDto?> ToggleUserFavourite(UserFavouriteInputModel model, CancellationToken stoppingToken)
     {
-        return _userRepository.ToggleUserFavourite(model.UserId, model.ItemId, model.Add, stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(ToggleUserFavourite),
+            () => _userRepository.ToggleUserFavourite(model.UserId, model.ItemId, model.Add, stoppingToken));
     }
 
     public Task<IEnumerable<ThemeDto>> GetThemesAsync(long? userId, CancellationToken stoppingToken)
     {
-        return _userRepository.GetThemesAsync(userId, stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(GetThemesAsync),
+            () => _userRepository.GetThemesAsync(userId, stoppingToken));
     }
 
     public Task<ThemeDto> UpsertThemeAsync(ThemeInputModel themeInputModel, CancellationToken stoppingToken)
@@ -224,23 +281,87 @@ public class DatabaseService(
             UserId = themeInputModel.UserId
         };
 
-        return _userRepository.UpsertThemeAsync(dto, stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(UpsertThemeAsync),
+            () => _userRepository.UpsertThemeAsync(dto, stoppingToken));
     }
 
     public Task<UserDto?> UpdateUserPreferredThemeAsync(UserThemeSelectionInputModel inputModel, CancellationToken stoppingToken)
     {
-        return _userRepository.UpdateUserPreferredThemeAsync(inputModel.UserId, inputModel.ThemeId, stoppingToken);
+        return TrackDatabaseCallAsync(
+            nameof(UpdateUserPreferredThemeAsync),
+            () => _userRepository.UpdateUserPreferredThemeAsync(inputModel.UserId, inputModel.ThemeId, stoppingToken));
+    }
+
+    private async Task<T> TrackDatabaseCallAsync<T>(string operation, Func<Task<T>> action)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        try
+        {
+            var result = await action();
+            stopwatch.Stop();
+
+            _metricsCollector.RecordDatabaseCall(operation, stopwatch.Elapsed, success: true);
+            _logger.LogInformation(
+                "Database call {Operation} succeeded in {ElapsedMs} ms.",
+                operation,
+                Math.Round(stopwatch.Elapsed.TotalMilliseconds, 2));
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            _metricsCollector.RecordDatabaseCall(operation, stopwatch.Elapsed, success: false);
+            _logger.LogError(
+                ex,
+                "Database call {Operation} failed after {ElapsedMs} ms.",
+                operation,
+                Math.Round(stopwatch.Elapsed.TotalMilliseconds, 2));
+            throw;
+        }
+    }
+
+    private async Task TrackDatabaseCallAsync(string operation, Func<Task> action)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        try
+        {
+            await action();
+            stopwatch.Stop();
+
+            _metricsCollector.RecordDatabaseCall(operation, stopwatch.Elapsed, success: true);
+            _logger.LogInformation(
+                "Database call {Operation} succeeded in {ElapsedMs} ms.",
+                operation,
+                Math.Round(stopwatch.Elapsed.TotalMilliseconds, 2));
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            _metricsCollector.RecordDatabaseCall(operation, stopwatch.Elapsed, success: false);
+            _logger.LogError(
+                ex,
+                "Database call {Operation} failed after {ElapsedMs} ms.",
+                operation,
+                Math.Round(stopwatch.Elapsed.TotalMilliseconds, 2));
+            throw;
+        }
     }
 
     private async Task<(HashSet<int> profitableItemIds, Dictionary<int, int> groupedChanges)> GetItemChangeData(CancellationToken stoppingToken)
     {
-        var profitableItems = await _itemRepository.GetProfitableItemsAsync(stoppingToken);
+        var profitableItems = await TrackDatabaseCallAsync(
+            nameof(_itemRepository.GetProfitableItemsAsync),
+            () => _itemRepository.GetProfitableItemsAsync(stoppingToken));
         var profitableItemIds = profitableItems
             .Where(pi => pi.Profit >= QueueProcessorConstants.MinProfitToPrioritise)
             .Select(pi => pi.ItemId)
             .ToHashSet();
 
-        var changeLogs = await _itemChangeLogRepository.GetRecentItemChangeLogsAsync(TimeConstants.TimeWindowHours, stoppingToken);
+        var changeLogs = await TrackDatabaseCallAsync(
+            nameof(_itemChangeLogRepository.GetRecentItemChangeLogsAsync),
+            () => _itemChangeLogRepository.GetRecentItemChangeLogsAsync(TimeConstants.TimeWindowHours, stoppingToken));
         var groupedChanges = changeLogs
             .Where(log => !profitableItemIds.Contains(log.ItemId))
             .GroupBy(log => log.ItemId)

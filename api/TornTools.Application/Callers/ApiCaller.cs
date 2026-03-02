@@ -1,4 +1,5 @@
-﻿using System.Text;
+using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
@@ -10,13 +11,15 @@ public abstract class ApiCaller<TCaller>(
     ILogger<TCaller> logger,
     IApiCallHandlerResolver callHandlerResolver,
     IDatabaseService databaseService,
-    IHttpClientFactory httpClientFactory
+    IHttpClientFactory httpClientFactory,
+    IMetricsCollector metricsCollector
 )
 {
     protected readonly ILogger<TCaller> Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     protected readonly IApiCallHandlerResolver CallHandlerResolver = callHandlerResolver ?? throw new ArgumentNullException(nameof(callHandlerResolver));
     protected readonly IDatabaseService DatabaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
     protected readonly IHttpClientFactory HttpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+    protected readonly IMetricsCollector MetricsCollector = metricsCollector ?? throw new ArgumentNullException(nameof(metricsCollector));
 
     public abstract IEnumerable<ApiCallType> CallTypes { get; }
     protected abstract string ClientName { get; }
@@ -36,6 +39,9 @@ public abstract class ApiCaller<TCaller>(
         // Body for non-GET/HEAD
         AddBody(queueItem, requestMessage);
 
+        var stopwatch = Stopwatch.StartNew();
+        var success = false;
+
         try
         {
             var content = await Fetch(client, requestMessage, stoppingToken);
@@ -48,7 +54,8 @@ public abstract class ApiCaller<TCaller>(
             var handler = CallHandlerResolver.GetHandler(queueItem.CallType);
             await handler.HandleResponseAsync(content, stoppingToken);
 
-            return true;
+            success = true;
+            return success;
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
@@ -59,6 +66,20 @@ public abstract class ApiCaller<TCaller>(
         {
             Logger.LogError(ex, "API call for {QueueItem} {Id} failed.", nameof(QueueItemDto), queueItem.Id);
             return false;
+        }
+        finally
+        {
+            stopwatch.Stop();
+            var durationMs = Math.Round(stopwatch.Elapsed.TotalMilliseconds, 2);
+            var target = requestMessage.RequestUri?.Host ?? ClientName;
+
+            MetricsCollector.RecordExternalCall(target, stopwatch.Elapsed, success);
+            Logger.LogInformation(
+                "External call to {Target} for {CallType} completed in {ElapsedMs} ms (Success: {Success}).",
+                target,
+                queueItem.CallType,
+                durationMs,
+                success);
         }
     }
 
