@@ -32,7 +32,7 @@ public interface IDatabaseService
     Task RemoveQueueItemsAsync(CancellationToken stoppingToken, QueueStatus? statusToRemove = null);
     Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken);
 
-    Task<List<UserDto>> GetUsersAsync(IEnumerable<string> excludedUsernames, CancellationToken stoppingToken);
+    Task<List<UserDto>> GetUsersAsync(CancellationToken stoppingToken);
     Task<int> GetApiKeyCountAsync(CancellationToken stoppingToken);
     Task<string> GetKnownWorkingApiKeyAsync(CancellationToken stoppingToken);
     Task<string> GetNextApiKeyAsync(CancellationToken stoppingToken);
