@@ -62,7 +62,7 @@ public class ApiJobScheduler(
     [DisplayName("Remove expired keys")]
     public async Task CheckForExpiredKeys()
     {
-        _logger.LogInformation($"Running Hangfire job {nameof(CheckForExpiredKeys)}");
+        _logger.LogInformation("Running Hangfire job {JobName}", nameof(CheckForExpiredKeys));
 
         var caller = _callerResolver.GetCaller(ApiCallType.TornKeyInfo);
         var callHandler = _callHandlerResolver.GetHandler(ApiCallType.TornKeyInfo);
@@ -109,7 +109,7 @@ public class ApiJobScheduler(
     [DisplayName("Items update")]
     public async Task ItemUpdate()
     {
-        _logger.LogInformation($"Running Hangfire job {nameof(ItemUpdate)}");
+        _logger.LogInformation("Running Hangfire job {JobName}", nameof(ItemUpdate));
         await _databaseService.CreateQueueItem(
             callType: ApiCallType.TornItems,
             endpointUrl: TornApiConstants.Items,
@@ -120,14 +120,14 @@ public class ApiJobScheduler(
     [DisplayName("Untouched item update")]
     public async Task CheckUntouchedMarketItems()
     {
-        _logger.LogInformation($"Running Hangfire job {nameof(CheckUntouchedMarketItems)}");
+        _logger.LogInformation("Running Hangfire job {JobName}", nameof(CheckUntouchedMarketItems));
         await _databaseService.PopulateMarketQueueItemsRemaining(stoppingToken: CancellationToken.None);
     }
 
     [DisplayName("Foreign stock update")]
     public async Task UpdateForeignStock()
     {
-        _logger.LogInformation($"Running Hangfire job {nameof(UpdateForeignStock)}");
+        _logger.LogInformation("Running Hangfire job {JobName}", nameof(UpdateForeignStock));
 
         var queueItem = new QueueItemDto
         {
