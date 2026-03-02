@@ -30,7 +30,7 @@ public class TornKeyApiCallHandler(
         var payload = JsonSerializer.Deserialize<KeyPayload>(content)
             ?? throw new Exception($"Failed to deserialize {nameof(KeyPayload)} from API response.");
         
-        if (payload.Error is not null)
+        if (payload.Error?.ErrorMessage is not null && payload.Error.ErrorMessage.Equals("Incorrect key", StringComparison.OrdinalIgnoreCase))
         {
             await DatabaseService.MarkKeyUnavailableAsync(_userId.Value, stoppingToken);
         }
