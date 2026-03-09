@@ -13,10 +13,6 @@ using TornTools.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-#if !DEBUG 
-    builder.Services.AddApplicationInsightsTelemetry();
-#endif
-
 builder.Services.AddCorsPolicy();
 builder.Services.AddDatabase(builder.Configuration);
 builder.Services.AddHangfire(builder.Configuration);

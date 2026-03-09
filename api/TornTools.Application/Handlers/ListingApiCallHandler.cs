@@ -30,8 +30,14 @@ public abstract class ListingApiCallHandler<TCallHandler>(
         CancellationToken stoppingToken)
     {
         newListings = [.. newListings
+            .Where(nl => nl is not null)
             .OrderBy(l => l.Price)
             .Take(QueryConstants.NumberOfListingsToStorePerItem)];
+
+        if (newListings.Count == 0)
+        {
+            return;
+        }
 
         if (previousListings.Count == 0)
         {
@@ -43,7 +49,7 @@ public abstract class ListingApiCallHandler<TCallHandler>(
             .OrderBy(l => l.Price)
             .Take(QueryConstants.NumberOfListingsToStorePerItem)];
 
-        var previousMinimumPrice = previousListings.Min(l => l.Price);
+        var previousMinimumPrice = previousListings.First().Price;
         var newMinimumPrice = newListings.Min(l => l.Price);
 
         // There are a maximum of 100 items returned.
@@ -58,7 +64,7 @@ public abstract class ListingApiCallHandler<TCallHandler>(
             {
                 var previousListing = previousListings[i];
                 var newListing = newListings[i];
-                if (newListing == null || previousListing.Price != newListing.Price)
+                if (previousListing.Price != newListing.Price)
                 {
                     hasMarketChanged = true;
                     break;
