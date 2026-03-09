@@ -209,6 +209,7 @@ jobs:
             -url="$FLYWAY_URL" \
             -user="$FLYWAY_USER" \
             -password="$FLYWAY_PASSWORD" \
+            -defaultSchema=public \
             -outOfOrder=false \
             -validateMigrationNaming=true \
             repair \
