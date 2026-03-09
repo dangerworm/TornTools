@@ -156,7 +156,9 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
           ARM_TENANT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
           TF_VAR_app_name: "torntools"
+          TF_VAR_app_service_outbound_ips: ${{ secrets.TF_VAR_APP_SERVICE_OUTBOUND_IPS }}
           TF_VAR_db_admin_password: ${{ secrets.TF_VAR_DB_ADMIN_PASSWORD }}
+          TF_VAR_developer_ip: ${{ secrets.TF_VAR_DEVELOPER_IP }}
           TF_VAR_enable_local_user_access: false
           TF_VAR_environment: ${{ env.ENV_DISPLAY_NAME }}
           TF_VAR_github_actions_object_id: ${{ secrets.TF_VAR_GITHUB_ACTIONS_OBJECT_ID }}
