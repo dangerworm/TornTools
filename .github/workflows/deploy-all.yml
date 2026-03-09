@@ -76,6 +76,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check if infra files changed
+        id: infra_changes
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Manual dispatch — running Terraform plan/apply."
+          else
+            CHANGED=$(git diff --name-only HEAD~1 HEAD -- infra/ | wc -l)
+            if [ "$CHANGED" -gt 0 ]; then
+              echo "changed=true" >> $GITHUB_OUTPUT
+              echo "Infra files changed — running Terraform plan/apply."
+            else
+              echo "changed=false" >> $GITHUB_OUTPUT
+              echo "No infra files changed — skipping Terraform plan/apply."
+            fi
+          fi
+
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
 
@@ -95,6 +112,7 @@ jobs:
 
       - name: Terraform Plan (with lock retry)
         id: plan
+        if: steps.infra_changes.outputs.changed == 'true'
         env:
           ARM_CLIENT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
           ARM_CLIENT_SECRET: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}
