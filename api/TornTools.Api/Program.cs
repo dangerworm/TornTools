@@ -33,6 +33,8 @@ if (localConfig is null || !localConfig.RunningLocally)
 
 var app = builder.Build();
 
+var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
+
 app.UseHangfireDashboard("/hangfire");
 
 // Configure the HTTP request pipeline.
@@ -44,6 +46,8 @@ if (app.Environment.IsDevelopment())
 using var scope = app.Services.CreateScope();
 if (localConfig is null || !localConfig.RunningLocally)
 {
+    startupLogger.LogInformation("Running in hosted mode. Initialising queue.");
+
     var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
 
     await databaseService.RemoveQueueItemsAsync(CancellationToken.None);
@@ -51,12 +55,22 @@ if (localConfig is null || !localConfig.RunningLocally)
     var numberOfItems = await databaseService.GetNumberOfItemsAsync(CancellationToken.None);
     if (numberOfItems == 0)
     {
+        startupLogger.LogInformation("No items found in database. Creating initial queue item.");
         await databaseService.CreateQueueItem(ApiCallType.TornItems, TornApiConstants.Items, CancellationToken.None);
     }
+    else
+    {
+        startupLogger.LogInformation("Database contains {ItemCount} items.", numberOfItems);
+    }
+}
+else
+{
+    startupLogger.LogInformation("Running locally. Skipping queue initialisation and background processor.");
 }
 
 var jobScheduler = scope.ServiceProvider.GetRequiredService<IApiJobScheduler>();
 jobScheduler.RegisterRecurringJobs();
+startupLogger.LogInformation("Recurring Hangfire jobs registered.");
 
 app.UseHttpsRedirection();
 

@@ -36,8 +36,7 @@ public class ApiController(
 
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
-                message = string.Format(ErrorMessage, "items"),
-                details = ex.Message
+                message = string.Format(ErrorMessage, "items")
             });
         }
     }
@@ -62,8 +61,7 @@ public class ApiController(
 
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
-                message = string.Format(ErrorMessage, "foreign stock items"),
-                details = ex.Message
+                message = string.Format(ErrorMessage, "foreign stock items")
             });
         }
     }
@@ -85,11 +83,10 @@ public class ApiController(
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occurred while retrieving {EntityType}.", "listings");
-            
+
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
-                message = string.Format(ErrorMessage, "listings"),
-                details = ex.Message
+                message = string.Format(ErrorMessage, "listings")
             });
         }
     }
@@ -109,8 +106,7 @@ public class ApiController(
             _logger.LogError(ex, "An error occurred while processing user details.");
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
-                message = "An error occurred while processing user details.",
-                details = ex.Message
+                message = "An error occurred while processing user details."
             });
         }
     }
@@ -127,11 +123,10 @@ public class ApiController(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An error occurred while processing user details.");
+            _logger.LogError(ex, "An error occurred while toggling user favourite.");
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
-                message = "An error occurred while processing user details.",
-                details = ex.Message
+                message = "An error occurred while toggling user favourite."
             });
         }
     }
@@ -151,8 +146,7 @@ public class ApiController(
             _logger.LogError(ex, "An error occurred while retrieving themes.");
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
-                message = string.Format(ErrorMessage, "themes"),
-                details = ex.Message
+                message = string.Format(ErrorMessage, "themes")
             });
         }
     }
@@ -172,8 +166,7 @@ public class ApiController(
             _logger.LogError(ex, "An error occurred while saving a theme.");
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
-                message = "An error occurred while saving a theme.",
-                details = ex.Message
+                message = "An error occurred while saving a theme."
             });
         }
     }
@@ -193,8 +186,7 @@ public class ApiController(
             _logger.LogError(ex, "An error occurred while saving user settings.");
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
-                message = "An error occurred while saving user settings.",
-                details = ex.Message
+                message = "An error occurred while saving user settings."
             });
         }
     }

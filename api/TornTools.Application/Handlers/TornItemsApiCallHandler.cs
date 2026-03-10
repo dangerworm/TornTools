@@ -21,8 +21,10 @@ public class TornItemsApiCallHandler(
         
         var items = payload.Items
             .Where(item => !string.Equals(item.Type, "Unused", StringComparison.InvariantCultureIgnoreCase))
-            .Select(item => new ItemDto(item));
+            .Select(item => new ItemDto(item))
+            .ToList();
 
+        Logger.LogInformation("Upserting {ItemCount} Torn items.", items.Count);
         await DatabaseService.UpsertItemsAsync(items, stoppingToken);
     }
 }

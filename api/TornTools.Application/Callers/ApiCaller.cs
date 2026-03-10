@@ -61,16 +61,19 @@ public abstract class ApiCaller<TCaller>(
             requestMessage.Headers.TryGetValues("Authorization", out var authHeaders);
             var authHeader = authHeaders?.FirstOrDefault();
 
-            var apiKey = authHeader is not null && authHeader.StartsWith("ApiKey ", StringComparison.OrdinalIgnoreCase)
-                ? $"key {authHeader.Replace("ApiKey", "").Trim()}"
+            var rawKey = authHeader?.StartsWith("ApiKey ", StringComparison.OrdinalIgnoreCase) == true
+                ? authHeader["ApiKey ".Length..].Trim()
+                : null;
+            var apiKeyHint = rawKey?.Length > 4
+                ? $"key {rawKey[..4]}****"
                 : "unknown key";
 
             Logger.LogError(
                 ex,
-                "API call for {QueueItem} {Id} using {ApiKey} failed.",
+                "API call for {QueueItem} {Id} using {ApiKeyHint} failed.",
                 nameof(QueueItemDto),
                 queueItem.Id,
-                apiKey
+                apiKeyHint
             );
 
             return false;

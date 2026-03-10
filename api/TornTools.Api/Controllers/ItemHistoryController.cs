@@ -35,8 +35,7 @@ public class ItemHistoryController(
             _logger.LogError(ex, "Failed to retrieve price history for item {ItemId}.", itemId);
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
-                message = string.Format(ErrorMessage, "price"),
-                details = ex.Message
+                message = string.Format(ErrorMessage, "price")
             });
         }
     }
@@ -61,8 +60,7 @@ public class ItemHistoryController(
             _logger.LogError(ex, "Failed to retrieve velocity history for item {ItemId}.", itemId);
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
-                message = string.Format(ErrorMessage, "velocity"),
-                details = ex.Message
+                message = string.Format(ErrorMessage, "velocity")
             });
         }
     }
