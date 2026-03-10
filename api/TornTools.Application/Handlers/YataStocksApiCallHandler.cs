@@ -34,8 +34,9 @@ public class YataStocksApiCallHandler(
                     Cost = item.Cost,
                     LastUpdated = lastUpdated
                 });
-        });
+        }).ToList();
 
+        Logger.LogInformation("Upserting {ItemCount} foreign stock items.", items.Count);
         await DatabaseService.UpsertForeignStockItemsAsync(items, stoppingToken);
     }
 }

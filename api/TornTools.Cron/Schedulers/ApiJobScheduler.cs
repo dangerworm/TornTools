@@ -162,5 +162,10 @@ public class ApiJobScheduler(
         {
             _logger.LogError(ex, "Unhandled exception processing {QueueItem} {Id}. Marking for retry.", nameof(QueueItemDto), queueItem.Id);
         }
+
+        if (!success)
+        {
+            _logger.LogWarning("Hangfire job {JobName} did not complete successfully.", nameof(UpdateForeignStock));
+        }
     }
 }

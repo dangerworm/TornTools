@@ -75,6 +75,10 @@ public abstract class ListingApiCallHandler<TCallHandler>(
 
         if (hasMarketChanged || hasMinimumPriceChanged)
         {
+            Logger.LogInformation(
+                "Market change detected for item {ItemId}: minimum price {PreviousPrice} → {NewPrice}.",
+                itemId, previousMinimumPrice, newMinimumPrice);
+
             var itemChangeLog = new ItemChangeLogDto
             {
                 ItemId = itemId,

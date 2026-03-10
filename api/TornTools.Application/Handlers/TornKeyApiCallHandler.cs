@@ -32,6 +32,7 @@ public class TornKeyApiCallHandler(
         
         if (payload.Error?.ErrorMessage is not null && payload.Error.ErrorMessage.Equals("Incorrect key", StringComparison.OrdinalIgnoreCase))
         {
+            Logger.LogWarning("API key for user {UserId} is incorrect or cancelled. Marking as unavailable.", _userId.Value);
             await DatabaseService.MarkKeyUnavailableAsync(_userId.Value, stoppingToken);
         }
     }
