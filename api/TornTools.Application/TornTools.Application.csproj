@@ -16,4 +16,8 @@
     <ProjectReference Include="..\TornTools.Persistence\TornTools.Persistence.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Weav3rPython\" />
+  </ItemGroup>
+
 </Project>

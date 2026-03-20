@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.Playwright;
+using System.Diagnostics;
+using System.Text.Json;
 using TornTools.Application.Interfaces;
-using TornTools.Application.Playwright;
 using TornTools.Core.Configurations;
 using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
@@ -13,7 +13,6 @@ public class Weav3rApiCaller(
     ILogger<Weav3rApiCaller> logger,
     IDatabaseService databaseService,
     IHttpClientFactory httpClientFactory,
-    PlaywrightSingleton playwright,
     Weav3rApiCallerConfiguration options
 ) : ApiCaller<Weav3rApiCaller>(logger, databaseService, httpClientFactory), IApiCaller
 {
@@ -27,27 +26,48 @@ public class Weav3rApiCaller(
   protected override string ClientName => Weav3rApiConstants.ClientName;
 
   protected override async Task<string?> Fetch(
-      HttpClient client,
-      HttpRequestMessage requestMessage,
-      CancellationToken stoppingToken)
+    HttpClient client,
+    HttpRequestMessage requestMessage,
+    CancellationToken stoppingToken)
   {
     if (requestMessage.RequestUri is null)
     {
       return null;
     }
 
-    var context = await playwright.Browser.NewContextAsync(new BrowserNewContextOptions
+    var headers = requestMessage.Headers
+      .ToDictionary(h => h.Key, h => h.Value.First());
+    var pythonScript = "/api/TornTools.Application/Weav3rPython/bazaar_fetch.py";
+    var url = requestMessage.RequestUri.ToString();
+
+    var psi = new ProcessStartInfo
     {
-      // Set a realistic UA if you want: UserAgent = "Mozilla/5.0 (Windows NT 10.0; ...)"
-      IgnoreHTTPSErrors = true
-    });
+      FileName = "python3",
+      EnvironmentVariables =
+      {
+        ["FETCH_HEADERS"] = JsonSerializer.Serialize(headers),
+        ["PYTHONUNBUFFERED"] = "1", // Ensure real-time output
+      },
+      Arguments = $"{pythonScript} \"{url}\"",
+      RedirectStandardOutput = true,
+      RedirectStandardError = true,
+      UseShellExecute = false,
+      CreateNoWindow = true
+    };
 
-    var page = await context.NewPageAsync();
-    await page.GotoAsync(requestMessage.RequestUri.AbsoluteUri);
-    var content = await page.TextContentAsync("pre");
+    using var process = new Process { StartInfo = psi };
+    process.Start();
 
-    await page.CloseAsync();
-    await context.CloseAsync();
+    var content = await process.StandardOutput.ReadToEndAsync(stoppingToken);
+    var error = await process.StandardError.ReadToEndAsync(stoppingToken);
+
+    await process.WaitForExitAsync(stoppingToken);
+
+    if (process.ExitCode != 0)
+    {
+      Logger.LogError("bazaar_fetch.py failed: {Error}", error);
+      return null;
+    }
 
     return content;
   }
