@@ -12,22 +12,22 @@ public class TornApiCaller(
     IHttpClientFactory httpClientFactory
 ) : ApiCaller<TornApiCaller>(logger, databaseService, httpClientFactory), IApiCaller
 {
-    public override IEnumerable<ApiCallType> CallTypes =>
-    [
-        ApiCallType.TornItems,
+  public override IEnumerable<ApiCallType> CallTypes =>
+  [
+      ApiCallType.TornItems,
         ApiCallType.TornMarketListings
-    ];
+  ];
 
-    protected override string ClientName => TornApiConstants.ClientName;
+  protected override string ClientName => TornApiConstants.ClientName;
 
-    protected override async Task AddAuthorizationHeader(HttpRequestMessage requestMessage, CancellationToken stoppingToken)
-    {
-        var nextApiKey = await DatabaseService.GetNextApiKeyAsync(stoppingToken);
-        requestMessage.Headers.TryAddWithoutValidation("Authorization", $"ApiKey {nextApiKey}");
-    }
+  protected override async Task AddAuthorizationHeader(HttpRequestMessage requestMessage, CancellationToken stoppingToken)
+  {
+    var nextApiKey = await DatabaseService.GetNextApiKeyAsync(stoppingToken);
+    requestMessage.Headers.TryAddWithoutValidation("Authorization", $"ApiKey {nextApiKey}");
+  }
 
-    Task<bool> IApiCaller.CallAsync(QueueItemDto queueItemDto, IApiCallHandler handler, CancellationToken stoppingToken)
-    {
-        return CallAsync(queueItemDto, handler, stoppingToken);
-    }
+  Task<bool> IApiCaller.CallAsync(QueueItemDto queueItemDto, IApiCallHandler handler, CancellationToken stoppingToken)
+  {
+    return CallAsync(queueItemDto, handler, stoppingToken);
+  }
 }

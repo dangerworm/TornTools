@@ -4,17 +4,17 @@ namespace TornTools.Application.Playwright;
 
 public class PlaywrightSingleton
 {
-    private static readonly Lazy<IPlaywright> _playwright = new(
-       () => Microsoft.Playwright.Playwright.CreateAsync().GetAwaiter().GetResult()
-   );
+  private static readonly Lazy<IPlaywright> _playwright = new(
+     () => Microsoft.Playwright.Playwright.CreateAsync().GetAwaiter().GetResult()
+  );
 
-    public readonly IBrowser Browser;
+  public readonly IBrowser Browser;
 
-    public PlaywrightSingleton()
+  public PlaywrightSingleton()
+  {
+    Browser = _playwright.Value.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
     {
-        Browser = _playwright.Value.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
-        {
-            Headless = false
-        }).GetAwaiter().GetResult();
-    }
+      Headless = false
+    }).GetAwaiter().GetResult();
+  }
 }

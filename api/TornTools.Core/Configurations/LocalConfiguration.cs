@@ -2,5 +2,5 @@
 
 public class LocalConfiguration
 {
-    public required bool RunningLocally { get; set; }
+  public required bool RunningLocally { get; set; }
 }

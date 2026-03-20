@@ -6,20 +6,21 @@ using TornTools.Persistence.Interfaces;
 using TornTools.Persistence.Repositories;
 
 namespace TornTools.Persistence;
+
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
-    {
-        services.AddDbContext<ITornToolsDbContext, TornToolsDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString(DatabaseConstants.ConnectionString)));
+  public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
+  {
+    services.AddDbContext<ITornToolsDbContext, TornToolsDbContext>(options =>
+        options.UseNpgsql(configuration.GetConnectionString(DatabaseConstants.ConnectionString)));
 
-        services.AddScoped<IForeignStockItemRepository, ForeignStockItemRepository>();
-        services.AddScoped<IItemChangeLogRepository, ItemChangeLogRepository>();
-        services.AddScoped<IItemRepository, ItemRepository>();
-        services.AddScoped<IListingRepository, ListingRepository>();
-        services.AddScoped<IQueueItemRepository, QueueItemRepository>();
-        services.AddScoped<IUserRepository, UserRepository>();
+    services.AddScoped<IForeignStockItemRepository, ForeignStockItemRepository>();
+    services.AddScoped<IItemChangeLogRepository, ItemChangeLogRepository>();
+    services.AddScoped<IItemRepository, ItemRepository>();
+    services.AddScoped<IListingRepository, ListingRepository>();
+    services.AddScoped<IQueueItemRepository, QueueItemRepository>();
+    services.AddScoped<IUserRepository, UserRepository>();
 
-        return services;
-    }
+    return services;
+  }
 }

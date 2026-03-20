@@ -2,6 +2,6 @@
 
 public class UserDetailsInputModel
 {
-    public required string ApiKey { get; set; }
-    public required UserProfileInputModel UserProfile { get; set; }
+  public required string ApiKey { get; set; }
+  public required UserProfileInputModel UserProfile { get; set; }
 }

@@ -1,7 +1,8 @@
 ﻿namespace TornTools.Core.Constants;
+
 public static class CountryConstants
 {
-    public static readonly Dictionary<string, string> CountryCodeLookup = new()
+  public static readonly Dictionary<string, string> CountryCodeLookup = new()
     {
         { "arg", "Argentina" },
         { "can", "Canada" },

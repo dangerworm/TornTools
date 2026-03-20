@@ -5,32 +5,32 @@ namespace TornTools.Application.Resolvers;
 
 public class ApiCallerResolver : IApiCallerResolver
 {
-    private readonly Dictionary<ApiCallType, IApiCaller> _callers;
+  private readonly Dictionary<ApiCallType, IApiCaller> _callers;
 
-    public ApiCallerResolver(IEnumerable<IApiCaller> callers)
+  public ApiCallerResolver(IEnumerable<IApiCaller> callers)
+  {
+    _callers = [];
+    foreach (var callType in Enum.GetValues<ApiCallType>())
     {
-        _callers = [];
-        foreach (var callType in Enum.GetValues<ApiCallType>())
-        {
-            var applicableCallers = callers.Where(callers => callers.CallTypes.Contains(callType));
+      var applicableCallers = callers.Where(callers => callers.CallTypes.Contains(callType));
 
-            foreach (var caller in applicableCallers)
-            {
-                _callers.TryAdd(callType, caller);
-            }
-        }
+      foreach (var caller in applicableCallers)
+      {
+        _callers.TryAdd(callType, caller);
+      }
+    }
+  }
+
+  public IApiCaller GetCaller(ApiCallType callType)
+  {
+    if (!_callers.TryGetValue(callType, out var caller))
+    {
+      throw new KeyNotFoundException($"No API caller registered for call type '{callType}'.");
     }
 
-    public IApiCaller GetCaller(ApiCallType callType)
-    {
-        if (!_callers.TryGetValue(callType, out var caller))
-        {
-            throw new KeyNotFoundException($"No API caller registered for call type '{callType}'.");
-        }
+    return caller;
+  }
 
-        return caller;
-    }
-
-    public bool TryGetCaller(ApiCallType callType, out IApiCaller? caller)
-        => _callers.TryGetValue(callType, out caller);
+  public bool TryGetCaller(ApiCallType callType, out IApiCaller? caller)
+      => _callers.TryGetValue(callType, out caller);
 }

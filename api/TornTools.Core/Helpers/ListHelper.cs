@@ -2,13 +2,13 @@
 
 public static class ListHelper
 {
-    public static void Shuffle<T>(this IList<T> list)
+  public static void Shuffle<T>(this IList<T> list)
+  {
+    int n = list.Count;
+    while (n > 1)
     {
-        int n = list.Count;
-        while (n > 1)
-        {
-            int k = Random.Shared.Next(n--);
-            (list[k], list[n]) = (list[n], list[k]);
-        }
+      int k = Random.Shared.Next(n--);
+      (list[k], list[n]) = (list[n], list[k]);
     }
+  }
 }

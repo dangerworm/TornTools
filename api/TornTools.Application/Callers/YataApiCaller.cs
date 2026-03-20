@@ -12,15 +12,15 @@ public class YataApiCaller(
     IHttpClientFactory httpClientFactory
 ) : ApiCaller<YataApiCaller>(logger, databaseService, httpClientFactory), IApiCaller
 {
-    public override IEnumerable<ApiCallType> CallTypes =>
-    [
-        ApiCallType.YataForeignStock
-    ];
+  public override IEnumerable<ApiCallType> CallTypes =>
+  [
+      ApiCallType.YataForeignStock
+  ];
 
-    protected override string ClientName => YataApiConstants.ClientName;
+  protected override string ClientName => YataApiConstants.ClientName;
 
-    Task<bool> IApiCaller.CallAsync(QueueItemDto queueItemDto, IApiCallHandler handler, CancellationToken stoppingToken)
-    {
-        return CallAsync(queueItemDto, handler, stoppingToken);
-    }
+  Task<bool> IApiCaller.CallAsync(QueueItemDto queueItemDto, IApiCallHandler handler, CancellationToken stoppingToken)
+  {
+    return CallAsync(queueItemDto, handler, stoppingToken);
+  }
 }

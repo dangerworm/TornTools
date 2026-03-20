@@ -1,6 +1,6 @@
-﻿using System.Text;
+﻿using Microsoft.Extensions.Logging;
+using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
 using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Enums;
@@ -13,128 +13,128 @@ public abstract class ApiCaller<TCaller>(
     IHttpClientFactory httpClientFactory
 )
 {
-    protected readonly ILogger<TCaller> Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    protected readonly IDatabaseService DatabaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
-    protected readonly IHttpClientFactory HttpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+  protected readonly ILogger<TCaller> Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+  protected readonly IDatabaseService DatabaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
+  protected readonly IHttpClientFactory HttpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
 
-    public abstract IEnumerable<ApiCallType> CallTypes { get; }
-    protected abstract string ClientName { get; }
+  public abstract IEnumerable<ApiCallType> CallTypes { get; }
+  protected abstract string ClientName { get; }
 
-    protected virtual async Task<bool> CallAsync(QueueItemDto queueItem, IApiCallHandler handler, CancellationToken stoppingToken)
+  protected virtual async Task<bool> CallAsync(QueueItemDto queueItem, IApiCallHandler handler, CancellationToken stoppingToken)
+  {
+    using var client = HttpClientFactory.CreateClient(ClientName);
+
+    using var requestMessage = new HttpRequestMessage(
+        new HttpMethod(queueItem.HttpMethod ?? "GET"),
+        queueItem.EndpointUrl
+    );
+
+    if (queueItem.HeadersJson is null || !queueItem.HeadersJson.ContainsKey("Authorization"))
     {
-        using var client = HttpClientFactory.CreateClient(ClientName);
-
-        using var requestMessage = new HttpRequestMessage(
-            new HttpMethod(queueItem.HttpMethod ?? "GET"),
-            queueItem.EndpointUrl
-        );
-
-        if (queueItem.HeadersJson is null || !queueItem.HeadersJson.ContainsKey("Authorization"))
-        {
-            await AddAuthorizationHeader(requestMessage, stoppingToken);
-        }
-
-        await AddQueueItemHeaders(requestMessage, queueItem, stoppingToken);
-
-        AddBody(queueItem, requestMessage);
-
-        try
-        {
-            var content = await Fetch(client, requestMessage, stoppingToken);
-            if (content is null)
-            {
-                Logger.LogWarning("API call for {QueueItem} {Id} failed.", nameof(QueueItemDto), queueItem.Id);
-                return false;
-            }
-
-            await handler.HandleResponseAsync(content, stoppingToken);
-
-            return true;
-        }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-        {
-            // shutting down
-            return false;
-        }
-        catch (Exception ex)
-        {
-            requestMessage.Headers.TryGetValues("Authorization", out var authHeaders);
-            var authHeader = authHeaders?.FirstOrDefault();
-
-            var rawKey = authHeader?.StartsWith("ApiKey ", StringComparison.OrdinalIgnoreCase) == true
-                ? authHeader["ApiKey ".Length..].Trim()
-                : null;
-            var apiKeyHint = rawKey?.Length > 4
-                ? $"key {rawKey[..4]}****"
-                : "unknown key";
-
-            Logger.LogError(
-                ex,
-                "API call for {QueueItem} {Id} using {ApiKeyHint} failed.",
-                nameof(QueueItemDto),
-                queueItem.Id,
-                apiKeyHint
-            );
-
-            return false;
-        }
+      await AddAuthorizationHeader(requestMessage, stoppingToken);
     }
 
-    protected virtual Task AddAuthorizationHeader(HttpRequestMessage requestMessage, CancellationToken stoppingToken)
+    await AddQueueItemHeaders(requestMessage, queueItem, stoppingToken);
+
+    AddBody(queueItem, requestMessage);
+
+    try
     {
-        return Task.CompletedTask;
+      var content = await Fetch(client, requestMessage, stoppingToken);
+      if (content is null)
+      {
+        Logger.LogWarning("API call for {QueueItem} {Id} failed.", nameof(QueueItemDto), queueItem.Id);
+        return false;
+      }
+
+      await handler.HandleResponseAsync(content, stoppingToken);
+
+      return true;
+    }
+    catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+    {
+      // shutting down
+      return false;
+    }
+    catch (Exception ex)
+    {
+      requestMessage.Headers.TryGetValues("Authorization", out var authHeaders);
+      var authHeader = authHeaders?.FirstOrDefault();
+
+      var rawKey = authHeader?.StartsWith("ApiKey ", StringComparison.OrdinalIgnoreCase) == true
+          ? authHeader["ApiKey ".Length..].Trim()
+          : null;
+      var apiKeyHint = rawKey?.Length > 4
+          ? $"key {rawKey[..4]}****"
+          : "unknown key";
+
+      Logger.LogError(
+          ex,
+          "API call for {QueueItem} {Id} using {ApiKeyHint} failed.",
+          nameof(QueueItemDto),
+          queueItem.Id,
+          apiKeyHint
+      );
+
+      return false;
+    }
+  }
+
+  protected virtual Task AddAuthorizationHeader(HttpRequestMessage requestMessage, CancellationToken stoppingToken)
+  {
+    return Task.CompletedTask;
+  }
+
+  protected virtual Task AddQueueItemHeaders(HttpRequestMessage requestMessage, QueueItemDto queueItem, CancellationToken stoppingToken)
+  {
+    if (queueItem.HeadersJson is not null)
+    {
+      foreach (var kvp in queueItem.HeadersJson)
+      {
+        // TryAddWithoutValidation avoids format exceptions on custom headers
+        requestMessage.Headers.TryAddWithoutValidation(kvp.Key, kvp.Value);
+      }
     }
 
-    protected virtual Task AddQueueItemHeaders(HttpRequestMessage requestMessage, QueueItemDto queueItem, CancellationToken stoppingToken)
-    {
-        if (queueItem.HeadersJson is not null)
-        {
-            foreach (var kvp in queueItem.HeadersJson)
-            {
-                // TryAddWithoutValidation avoids format exceptions on custom headers
-                requestMessage.Headers.TryAddWithoutValidation(kvp.Key, kvp.Value);
-            }
-        }
+    return Task.CompletedTask;
+  }
 
-        return Task.CompletedTask;
+  protected virtual void AddBody(QueueItemDto queueItem, HttpRequestMessage requestMessage)
+  {
+    var method = (queueItem.HttpMethod ?? "GET").ToUpperInvariant();
+    if (method is "POST" or "PUT" or "PATCH")
+    {
+      if (queueItem.PayloadJson is not null)
+      {
+        var payloadJson = JsonSerializer.Serialize(queueItem.PayloadJson);
+        requestMessage.Content = new StringContent(payloadJson, Encoding.UTF8, "application/json");
+      }
+      else
+      {
+        requestMessage.Content = new StringContent("{}", Encoding.UTF8, "application/json");
+      }
+    }
+  }
+
+  protected virtual async Task<string?> Fetch(HttpClient client, HttpRequestMessage requestMessage, CancellationToken stoppingToken)
+  {
+    var responseMessage = await client.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, stoppingToken);
+    var content = await responseMessage.Content.ReadAsStringAsync(stoppingToken);
+
+    if (!responseMessage.IsSuccessStatusCode)
+    {
+      var headers = responseMessage.Headers.ToString() + responseMessage.Content.Headers.ToString();
+
+      Logger.LogWarning("API call to {RequestUri} returned {Status} ({Reason}).\nHeaders:\n{Headers}\nBody:\n{Body}",
+          requestMessage.RequestUri,
+          (int)responseMessage.StatusCode,
+          responseMessage.ReasonPhrase,
+          headers,
+          content);
     }
 
-    protected virtual void AddBody(QueueItemDto queueItem, HttpRequestMessage requestMessage)
-    {
-        var method = (queueItem.HttpMethod ?? "GET").ToUpperInvariant();
-        if (method is "POST" or "PUT" or "PATCH")
-        {
-            if (queueItem.PayloadJson is not null)
-            {
-                var payloadJson = JsonSerializer.Serialize(queueItem.PayloadJson);
-                requestMessage.Content = new StringContent(payloadJson, Encoding.UTF8, "application/json");
-            }
-            else
-            {
-                requestMessage.Content = new StringContent("{}", Encoding.UTF8, "application/json");
-            }
-        }
-    }
-
-    protected virtual async Task<string?> Fetch(HttpClient client, HttpRequestMessage requestMessage, CancellationToken stoppingToken)
-    {
-        var responseMessage = await client.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, stoppingToken);
-        var content = await responseMessage.Content.ReadAsStringAsync(stoppingToken);
-
-        if (!responseMessage.IsSuccessStatusCode)
-        {
-            var headers = responseMessage.Headers.ToString() + responseMessage.Content.Headers.ToString();
-
-            Logger.LogWarning("API call to {RequestUri} returned {Status} ({Reason}).\nHeaders:\n{Headers}\nBody:\n{Body}",
-                requestMessage.RequestUri,
-                (int)responseMessage.StatusCode,
-                responseMessage.ReasonPhrase,
-                headers,
-                content);
-        }
-
-        return responseMessage.IsSuccessStatusCode
-            ? content
-            : null;
-    }
+    return responseMessage.IsSuccessStatusCode
+        ? content
+        : null;
+  }
 }

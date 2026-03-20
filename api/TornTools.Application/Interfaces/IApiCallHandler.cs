@@ -4,6 +4,6 @@ namespace TornTools.Application.Interfaces;
 
 public interface IApiCallHandler
 {
-    ApiCallType CallType { get; }
-    Task HandleResponseAsync(string content, CancellationToken stoppingToken);
+  ApiCallType CallType { get; }
+  Task HandleResponseAsync(string content, CancellationToken stoppingToken);
 }
