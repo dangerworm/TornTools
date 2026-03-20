@@ -46,15 +46,6 @@ export const menuItems: MenuItem[] = [
     title: "Foreign Markets",
   },
   {
-    address: "/settings",
-    icon: <FavoriteIcon />,
-    requiresItems: true,
-    requiresLogin: true,
-    showOnHomePage: true,
-    subTitle: "Shows only the markets you have marked as favourites.",
-    title: "My Favourites",
-  },
-  {
     address: "/resale",
     icon: <SellIcon />,
     requiresItems: true,
