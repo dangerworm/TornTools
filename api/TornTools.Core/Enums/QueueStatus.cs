@@ -2,8 +2,8 @@
 
 public enum QueueStatus
 {
-    Pending = 0,
-    InProgress = 1,
-    Completed = 2,
-    Failed = 3
+  Pending = 0,
+  InProgress = 1,
+  Completed = 2,
+  Failed = 3
 }

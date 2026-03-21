@@ -17,4 +17,11 @@
     <ProjectReference Include="..\TornTools.Cron\TornTools.Cron.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Weav3rPython\bazaar_fetch.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

@@ -4,9 +4,9 @@ namespace TornTools.Core.Extensions;
 
 public static class HistoryWindowExtensions
 {
-    private static readonly Dictionary<HistoryWindow, (TimeSpan Range, TimeSpan Bucket)> WindowConfigurations =
-        new()
-        {
+  private static readonly Dictionary<HistoryWindow, (TimeSpan Range, TimeSpan Bucket)> WindowConfigurations =
+      new()
+      {
             { HistoryWindow.Hour1, (TimeSpan.FromHours(1), TimeSpan.FromMinutes(2)) },
             { HistoryWindow.Hours4, (TimeSpan.FromHours(4), TimeSpan.FromMinutes(10)) },
             { HistoryWindow.Day1, (TimeSpan.FromDays(1), TimeSpan.FromHours(1)) },
@@ -14,62 +14,62 @@ public static class HistoryWindowExtensions
             { HistoryWindow.Month1, (TimeSpan.FromDays(30), TimeSpan.FromDays(1)) },
             { HistoryWindow.Months3, (TimeSpan.FromDays(90), TimeSpan.FromDays(3)) },
             { HistoryWindow.Year1, (TimeSpan.FromDays(365), TimeSpan.FromDays(7)) }
-        };
+      };
 
-    public static HistoryWindow Default => HistoryWindow.Day1;
+  public static HistoryWindow Default => HistoryWindow.Day1;
 
-    public static (TimeSpan Range, TimeSpan Bucket) ToWindowConfiguration(this HistoryWindow window)
+  public static (TimeSpan Range, TimeSpan Bucket) ToWindowConfiguration(this HistoryWindow window)
+  {
+    return WindowConfigurations.TryGetValue(window, out var config)
+        ? config
+        : WindowConfigurations[Default];
+  }
+
+  public static bool TryParse(string? value, out HistoryWindow window)
+  {
+    if (string.IsNullOrWhiteSpace(value))
     {
-        return WindowConfigurations.TryGetValue(window, out var config)
-            ? config
-            : WindowConfigurations[Default];
+      window = Default;
+      return true;
     }
 
-    public static bool TryParse(string? value, out HistoryWindow window)
+    var normalized = value.Trim().ToLowerInvariant();
+
+    switch (normalized)
     {
-        if (string.IsNullOrWhiteSpace(value))
+      case "30m":
+        window = HistoryWindow.Minutes30;
+        return true;
+      case "1h":
+        window = HistoryWindow.Hour1;
+        return true;
+      case "4h":
+        window = HistoryWindow.Hours4;
+        return true;
+      case "day" or "1d":
+        window = HistoryWindow.Day1;
+        return true;
+      case "week" or "1w":
+        window = HistoryWindow.Week1;
+        return true;
+      case "month" or "1m":
+        window = HistoryWindow.Month1;
+        return true;
+      case "3m":
+        window = HistoryWindow.Months3;
+        return true;
+      case "year" or "1y":
+        window = HistoryWindow.Year1;
+        return true;
+      default:
+        if (Enum.TryParse(value, true, out HistoryWindow parsed))
         {
-            window = Default;
-            return true;
+          window = parsed;
+          return true;
         }
 
-        var normalized = value.Trim().ToLowerInvariant();
-
-        switch (normalized)
-        {
-            case "30m":
-                window = HistoryWindow.Minutes30;
-                return true;
-            case "1h":
-                window = HistoryWindow.Hour1;
-                return true;
-            case "4h":
-                window = HistoryWindow.Hours4;
-                return true;
-            case "day" or "1d":
-                window = HistoryWindow.Day1;
-                return true;
-            case "week" or "1w":
-                window = HistoryWindow.Week1;
-                return true;
-            case "month" or "1m":
-                window = HistoryWindow.Month1;
-                return true;
-            case "3m":
-                window = HistoryWindow.Months3;
-                return true;
-            case "year" or "1y":
-                window = HistoryWindow.Year1;
-                return true;
-            default:
-                if (Enum.TryParse(value, true, out HistoryWindow parsed))
-                {
-                    window = parsed;
-                    return true;
-                }
-
-                window = Default;
-                return false;
-        }
+        window = Default;
+        return false;
     }
+  }
 }

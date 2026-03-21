@@ -4,6 +4,6 @@ namespace TornTools.Core.Models.TornItems;
 
 public class ItemsPayload
 {
-    [JsonPropertyName("items")]
-    public IEnumerable<Item> Items { get; set; } = [];
+  [JsonPropertyName("items")]
+  public IEnumerable<Item> Items { get; set; } = [];
 }

@@ -2,7 +2,7 @@
 
 public sealed class ItemMarketHistoryPointEntity
 {
-    public required DateTimeOffset Bucket { get; init; }
-    public decimal? AveragePrice { get; set; }
-    public required int Count { get; init; }
+  public required DateTimeOffset Bucket { get; init; }
+  public decimal? AveragePrice { get; set; }
+  public required int Count { get; init; }
 }

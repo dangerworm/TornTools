@@ -30,9 +30,10 @@ resource "azurerm_linux_web_app" "backend_api" {
       var.environment,
       "Development"
     )
-    "ConnectionStrings__PostgresConnection" = "Host=${azurerm_postgresql_flexible_server.db_server.fqdn};Database=${azurerm_postgresql_flexible_server_database.postgres_db.name};Username=${azurerm_postgresql_flexible_server.db_server.administrator_login};Password=${azurerm_key_vault_secret.db_password.value};Ssl Mode=Require"
-    "LocalConfiguration__RunningLocally"    = "false"
-    "TornApiCallerConfiguration__MaxCallsPerMinute" = "100"
+    "ConnectionStrings__PostgresConnection"       = "Host=${azurerm_postgresql_flexible_server.db_server.fqdn};Database=${azurerm_postgresql_flexible_server_database.postgres_db.name};Username=${azurerm_postgresql_flexible_server.db_server.administrator_login};Password=${azurerm_key_vault_secret.db_password.value};Ssl Mode=Require"
+    "EnvironmentConfiguration__EnvironmentName"   = "${var.environment}"
+    "EnvironmentConfiguration__PopulateQueue"     = "true"
+    "EnvironmentConfiguration__RunQueueProcessor" = "true"
   }
 
   depends_on = [azurerm_service_plan.backend_plan]

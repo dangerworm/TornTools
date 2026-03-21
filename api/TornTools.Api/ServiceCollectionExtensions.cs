@@ -4,13 +4,13 @@ namespace TornTools.Api;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddCorsPolicy(this IServiceCollection services)
+  public static IServiceCollection AddCorsPolicy(this IServiceCollection services)
+  {
+    services.AddCors(options =>
     {
-        services.AddCors(options =>
-        {
-            options.AddPolicy(ApiConstants.CorsPolicy, policy =>
-            {
-                policy
+      options.AddPolicy(ApiConstants.CorsPolicy, policy =>
+          {
+            policy
                     .WithOrigins(
                         "http://localhost:5173",
                         "https://localhost:7012",
@@ -19,9 +19,9 @@ public static class ServiceCollectionExtensions
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials();
-            });
-        });
+          });
+    });
 
-        return services;
-    }
+    return services;
+  }
 }

@@ -2,5 +2,5 @@
 
 public interface IApiJobScheduler
 {
-    void RegisterRecurringJobs();
+  void RegisterRecurringJobs();
 }

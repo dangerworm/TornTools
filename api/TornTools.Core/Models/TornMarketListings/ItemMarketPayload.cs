@@ -4,6 +4,6 @@ namespace TornTools.Core.Models.TornMarketListings;
 
 public class ItemMarketPayload
 {
-    [JsonPropertyName("itemmarket")]
-    public required ItemMarket ItemMarket { get; set; }
+  [JsonPropertyName("itemmarket")]
+  public required ItemMarket ItemMarket { get; set; }
 }

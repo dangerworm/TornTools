@@ -5,22 +5,22 @@ namespace TornTools.Core.DataTransferObjects;
 
 public class QueueItemDto
 {
-    public Guid? Id { get; set; }
+  public Guid? Id { get; set; }
 
-    public required ApiCallType CallType { get; set; }
-    public required string EndpointUrl { get; set; } = default!;
+  public required ApiCallType CallType { get; set; }
+  public required string EndpointUrl { get; set; } = default!;
 
-    public string? HttpMethod { get; set; } = "GET";
-    public Dictionary<string, string>? HeadersJson { get; set; } // Optional custom headers
-    public Dictionary<string, string>? PayloadJson { get; set; } // Optional POST/PUT body
+  public string? HttpMethod { get; set; } = "GET";
+  public Dictionary<string, string>? HeadersJson { get; set; } // Optional custom headers
+  public Dictionary<string, string>? PayloadJson { get; set; } // Optional POST/PUT body
 
-    public string ItemStatus { get; set; } = nameof(QueueStatus.Pending);
+  public string ItemStatus { get; set; } = nameof(QueueStatus.Pending);
 
-    public int Attempts { get; set; } = 0;
+  public int Attempts { get; set; } = 0;
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime? LastAttemptAt { get; set; }
-    public DateTime? NextAttemptAt { get; set; }
-    public DateTime? ProcessedAt { get; set; }
-    public long QueueIndex { get; set; }
+  public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+  public DateTime? LastAttemptAt { get; set; }
+  public DateTime? NextAttemptAt { get; set; }
+  public DateTime? ProcessedAt { get; set; }
+  public long QueueIndex { get; set; }
 }

@@ -5,6 +5,6 @@ namespace TornTools.Application.Interfaces;
 
 public interface IApiCaller
 {
-    IEnumerable<ApiCallType> CallTypes { get; }
-    Task<bool> CallAsync(QueueItemDto queueItemDto, IApiCallHandler handler, CancellationToken stoppingToken);
+  IEnumerable<ApiCallType> CallTypes { get; }
+  Task<bool> CallAsync(QueueItemDto queueItemDto, IApiCallHandler handler, CancellationToken stoppingToken);
 }

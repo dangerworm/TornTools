@@ -8,35 +8,35 @@ namespace TornTools.Persistence.Entities;
 [Table("item_change_logs", Schema = "public")]
 public class ItemChangeLogEntity
 {
-    [Key]
-    [Column("id")]
-    public Guid Id { get; set; } = Guid.NewGuid();
+  [Key]
+  [Column("id")]
+  public Guid Id { get; set; } = Guid.NewGuid();
 
-    [Required]
-    [Column("item_id")]
-    public required int ItemId { get; set; }
+  [Required]
+  [Column("item_id")]
+  public required int ItemId { get; set; }
 
-    [Required]
-    [Column("source")]
-    public required string Source { get; set; }
+  [Required]
+  [Column("source")]
+  public required string Source { get; set; }
 
-    [Required]
-    [Column("change_time")]
-    public required DateTime ChangeTime { get; set; }
+  [Required]
+  [Column("change_time")]
+  public required DateTime ChangeTime { get; set; }
 
-    [Required]
-    [Column("new_price")]
-    public required long NewPrice { get; set; }
+  [Required]
+  [Column("new_price")]
+  public required long NewPrice { get; set; }
 
-    public ItemChangeLogDto AsDto()
+  public ItemChangeLogDto AsDto()
+  {
+    return new ItemChangeLogDto
     {
-        return new ItemChangeLogDto
-        {
-            Id = Id,
-            ItemId = ItemId,
-            Source = Enum.Parse<Source>(Source),
-            ChangeTime = ChangeTime,
-            NewPrice = NewPrice
-        };
-    }
+      Id = Id,
+      ItemId = ItemId,
+      Source = Enum.Parse<Source>(Source),
+      ChangeTime = ChangeTime,
+      NewPrice = NewPrice
+    };
+  }
 }
