@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TornTools.Core.Configurations;
 using TornTools.Core.Constants;
+using TornTools.Core.Enums;
 using TornTools.Cron.Interfaces;
 using TornTools.Cron.Schedulers;
 
@@ -13,8 +14,10 @@ public static class ServiceCollectionExtensions
 {
   public static IServiceCollection AddHangfire(this IServiceCollection services, IConfiguration configuration)
   {
-    var localConfig = configuration.GetSection(nameof(LocalConfiguration)).Get<LocalConfiguration>();
-    var isLocal = localConfig is not null;
+    var localConfig = configuration.GetRequiredSection(nameof(EnvironmentConfiguration)).Get<EnvironmentConfiguration>()
+      ?? throw new InvalidProgramException($"Failed to bind {nameof(EnvironmentConfiguration)} from configuration.");
+
+    var isLocal = localConfig.EnvironmentName.Equals(TerraformEnvironmentName.Development);
 
     services.AddHangfire(config =>
     {

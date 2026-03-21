@@ -33,6 +33,6 @@ public class Weav3rBazaarListingsApiCallHandler(
         )
         .ToList();
 
-    await ProcessListings(itemId, previousListings, newListings, stoppingToken);
+    await ProcessListings(itemId, Source.Weav3r, previousListings, newListings, stoppingToken);
   }
 }

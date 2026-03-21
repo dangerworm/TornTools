@@ -25,6 +25,7 @@ public abstract class ListingApiCallHandler<TCallHandler>(
 
   protected async Task ProcessListings(
       int itemId,
+      Source source,
       List<ListingDto> previousListings,
       List<ListingDto> newListings,
       CancellationToken stoppingToken)
@@ -82,7 +83,7 @@ public abstract class ListingApiCallHandler<TCallHandler>(
       var itemChangeLog = new ItemChangeLogDto
       {
         ItemId = itemId,
-        Source = Source.Torn,
+        Source = source,
         NewPrice = newMinimumPrice,
         ChangeTime = DateTime.UtcNow,
       };
@@ -90,7 +91,7 @@ public abstract class ListingApiCallHandler<TCallHandler>(
       await DatabaseService.CreateItemChangeLogAsync(itemChangeLog, stoppingToken);
 
       await DatabaseService.DeleteListingsBySourceAndItemIdAsync(
-          Source.Torn,
+          source,
           itemId,
           stoppingToken
       );

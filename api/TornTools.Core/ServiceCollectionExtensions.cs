@@ -17,12 +17,12 @@ public static class ServiceCollectionExtensions
 
   private static IServiceCollection AddLocalConfiguration(this IServiceCollection services, IConfiguration configuration)
   {
-    services.Configure<LocalConfiguration>(
-        configuration.GetSection(nameof(LocalConfiguration)));
+    services.Configure<EnvironmentConfiguration>(
+        configuration.GetRequiredSection(nameof(EnvironmentConfiguration)));
     services.AddSingleton(sp =>
-        sp.GetRequiredService<IOptions<LocalConfiguration>>().Value
+        sp.GetRequiredService<IOptions<EnvironmentConfiguration>>().Value
     );
-    
+
     return services;
   }
 

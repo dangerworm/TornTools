@@ -2,7 +2,6 @@ import AccessTimeFilled from "@mui/icons-material/AccessTimeFilled";
 import HomeIcon from "@mui/icons-material/Home";
 import LanguageIcon from '@mui/icons-material/Language';
 import LocationCityIcon from '@mui/icons-material/LocationCity';
-import FavoriteIcon from '@mui/icons-material/Favorite';
 import SellIcon from "@mui/icons-material/Sell";
 
 export const DRAWER_WIDTH = 240; // px

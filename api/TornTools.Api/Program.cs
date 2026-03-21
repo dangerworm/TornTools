@@ -25,8 +25,11 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-var localConfig = builder.Configuration.GetSection(nameof(LocalConfiguration)).Get<LocalConfiguration>();
-if (localConfig is null || localConfig.RunQueueProcessor)
+var environmentConfiguration = builder.Configuration
+  .GetRequiredSection(nameof(EnvironmentConfiguration)).Get<EnvironmentConfiguration>()
+    ?? throw new InvalidProgramException($"Failed to bind {nameof(EnvironmentConfiguration)} from configuration.");
+
+if (environmentConfiguration.RunQueueProcessor)
 {
   builder.Services.AddHostedService<QueueProcessor>();
 }
@@ -44,7 +47,7 @@ if (app.Environment.IsDevelopment())
 }
 
 using var scope = app.Services.CreateScope();
-if (localConfig is null || localConfig.PopulateQueue)
+if (environmentConfiguration.PopulateQueue)
 {
   startupLogger.LogInformation("Running in hosted mode. Initialising queue.");
 

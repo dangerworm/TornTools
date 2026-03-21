@@ -34,6 +34,6 @@ public class TornMarketListingsApiCallHandler(
         )
         .ToList();
 
-    await ProcessListings(itemId, previousListings, newListings, stoppingToken);
+    await ProcessListings(itemId, Source.Torn, previousListings, newListings, stoppingToken);
   }
 }

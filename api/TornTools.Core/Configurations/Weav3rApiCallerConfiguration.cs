@@ -1,7 +1,6 @@
-﻿namespace TornTools.Core.Configurations
+﻿namespace TornTools.Core.Configurations;
+
+public class Weav3rApiCallerConfiguration
 {
-  public class Weav3rApiCallerConfiguration
-  {
-    public required int MaxCallsPerMinute { get; set; } = 100;
-  }
+  public required int MaxCallsPerMinute { get; set; } = 100;
 }

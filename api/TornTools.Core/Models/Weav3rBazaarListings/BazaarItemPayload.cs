@@ -1,5 +1,4 @@
 ﻿using System.Text.Json.Serialization;
-using TornTools.Core.Models.TornMarketListings;
 
 namespace TornTools.Core.Models.Weav3rBazaarListings;
 
