@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using System.Reflection;
 using System.Text.Json;
 using TornTools.Application.Interfaces;
 using TornTools.Core.Configurations;
@@ -13,9 +14,11 @@ public class Weav3rApiCaller(
     ILogger<Weav3rApiCaller> logger,
     IDatabaseService databaseService,
     IHttpClientFactory httpClientFactory,
+    LocalConfiguration localConfiguration,
     Weav3rApiCallerConfiguration options
 ) : ApiCaller<Weav3rApiCaller>(logger, databaseService, httpClientFactory), IApiCaller
 {
+  private readonly LocalConfiguration _localConfiguration = localConfiguration ?? throw new ArgumentNullException(nameof(localConfiguration));
   private readonly Weav3rApiCallerConfiguration _options = options ?? throw new ArgumentNullException(nameof(options));
 
   public override IEnumerable<ApiCallType> CallTypes =>
@@ -37,12 +40,19 @@ public class Weav3rApiCaller(
 
     var headers = requestMessage.Headers
       .ToDictionary(h => h.Key, h => h.Value.First());
-    var pythonScript = "/api/TornTools.Application/Weav3rPython/bazaar_fetch.py";
+    var location = Assembly.GetExecutingAssembly().Location ?? string.Empty;
+    var pythonScript = localConfiguration is not null
+      ? Path.Combine(
+          Path.GetDirectoryName(location) ?? string.Empty,
+          "Weav3rPython", 
+          "bazaar_fetch.py"
+        )
+      : "/api/TornTools.Application/Weav3rPython/bazaar_fetch.py";
     var url = requestMessage.RequestUri.ToString();
 
     var psi = new ProcessStartInfo
     {
-      FileName = "python3",
+      FileName = "python",
       EnvironmentVariables =
       {
         ["FETCH_HEADERS"] = JsonSerializer.Serialize(headers),

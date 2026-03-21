@@ -2,5 +2,6 @@
 
 public class LocalConfiguration
 {
-  public required bool RunningLocally { get; set; }
+  public required bool PopulateQueue { get; set; }
+  public required bool RunQueueProcessor { get; set; }
 }

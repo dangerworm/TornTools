@@ -227,10 +227,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Python dependencies into publish output
-        run: |
-          pip install curl_cffi --target api/TornTools.Application/publish/Weav3rPython/libs
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -240,6 +236,10 @@ jobs:
         run: |
           cd api/TornTools.Api
           dotnet publish -c Release -o publish
+
+      - name: Install Python dependencies into publish output
+        run: |
+          pip install curl_cffi --target api/TornTools.Api/publish/Weav3rPython/libs
 
       - name: Log in to Azure
         uses: azure/login@v2

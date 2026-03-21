@@ -7,13 +7,44 @@ namespace TornTools.Core;
 
 public static class ServiceCollectionExtensions
 {
-  public static IServiceCollection AddConfiguration(this IServiceCollection services, IConfiguration configuration)
+  public static IServiceCollection AddConfigurations(this IServiceCollection services, IConfiguration configuration)
+  {
+    return services
+        .AddLocalConfiguration(configuration)
+        .AddTornApiCallerConfiguration(configuration)
+        .AddWeav3rApiCallerConfiguration(configuration);
+  }
+
+  private static IServiceCollection AddLocalConfiguration(this IServiceCollection services, IConfiguration configuration)
+  {
+    services.Configure<LocalConfiguration>(
+        configuration.GetSection(nameof(LocalConfiguration)));
+    services.AddSingleton(sp =>
+        sp.GetRequiredService<IOptions<LocalConfiguration>>().Value
+    );
+    
+    return services;
+  }
+
+  private static IServiceCollection AddTornApiCallerConfiguration(this IServiceCollection services, IConfiguration configuration)
   {
     services.Configure<TornApiCallerConfiguration>(
         configuration.GetSection(nameof(TornApiCallerConfiguration)));
 
     services.AddSingleton(sp =>
         sp.GetRequiredService<IOptions<TornApiCallerConfiguration>>().Value
+    );
+
+    return services;
+  }
+
+  private static IServiceCollection AddWeav3rApiCallerConfiguration(this IServiceCollection services, IConfiguration configuration)
+  {
+    services.Configure<Weav3rApiCallerConfiguration>(
+        configuration.GetSection(nameof(Weav3rApiCallerConfiguration)));
+
+    services.AddSingleton(sp =>
+        sp.GetRequiredService<IOptions<Weav3rApiCallerConfiguration>>().Value
     );
 
     return services;

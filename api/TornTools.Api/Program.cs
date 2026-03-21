@@ -17,7 +17,7 @@ builder.Services.AddCorsPolicy();
 builder.Services.AddDatabase(builder.Configuration);
 builder.Services.AddHangfire(builder.Configuration);
 builder.Services.AddHttpClient();
-builder.Services.AddConfiguration(builder.Configuration);
+builder.Services.AddConfigurations(builder.Configuration);
 builder.Services.AddDependencies();
 
 builder.Services.AddControllers();
@@ -26,7 +26,7 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 var localConfig = builder.Configuration.GetSection(nameof(LocalConfiguration)).Get<LocalConfiguration>();
-if (localConfig is null || !localConfig.RunningLocally)
+if (localConfig is null || localConfig.RunQueueProcessor)
 {
   builder.Services.AddHostedService<QueueProcessor>();
 }
@@ -44,7 +44,7 @@ if (app.Environment.IsDevelopment())
 }
 
 using var scope = app.Services.CreateScope();
-if (localConfig is null || !localConfig.RunningLocally)
+if (localConfig is null || localConfig.PopulateQueue)
 {
   startupLogger.LogInformation("Running in hosted mode. Initialising queue.");
 

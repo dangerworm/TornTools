@@ -6,11 +6,11 @@ using TornTools.Core.Enums;
 
 namespace TornTools.Application.Callers;
 
-public class TornApiCaller(
-    ILogger<TornApiCaller> logger,
+public class TornApiMultiKeyCaller(
+    ILogger<TornApiMultiKeyCaller> logger,
     IDatabaseService databaseService,
     IHttpClientFactory httpClientFactory
-) : ApiCaller<TornApiCaller>(logger, databaseService, httpClientFactory), IApiCaller
+) : ApiCaller<TornApiMultiKeyCaller>(logger, databaseService, httpClientFactory), IApiCaller
 {
   public override IEnumerable<ApiCallType> CallTypes =>
   [

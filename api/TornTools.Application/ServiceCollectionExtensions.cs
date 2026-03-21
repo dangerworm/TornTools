@@ -22,8 +22,9 @@ public static class ServiceCollectionExtensions
                 System.Net.DecompressionMethods.Brotli
         });
 
-    services.AddScoped<IApiCaller, TornApiCaller>();
+    services.AddScoped<IApiCaller, TornApiMultiKeyCaller>();
     services.AddScoped<IApiCaller, TornApiSingleKeyCaller>();
+    services.AddScoped<IApiCaller, Weav3rApiCaller>();
     services.AddScoped<IApiCaller, YataApiCaller>();
     services.AddScoped<IApiCallerResolver, ApiCallerResolver>();
 

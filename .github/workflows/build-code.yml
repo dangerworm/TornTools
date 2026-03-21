@@ -55,7 +55,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install & validate Python dependencies
-        working-directory: api/TornTools.Application/Weav3rPython
+        working-directory: api/TornTools.Api/Weav3rPython
         run: |
           pip install curl_cffi
           python -c "from curl_cffi import requests; print('curl_cffi OK')"

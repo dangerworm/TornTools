@@ -14,7 +14,7 @@ public static class ServiceCollectionExtensions
   public static IServiceCollection AddHangfire(this IServiceCollection services, IConfiguration configuration)
   {
     var localConfig = configuration.GetSection(nameof(LocalConfiguration)).Get<LocalConfiguration>();
-    var isLocal = localConfig is not null && localConfig.RunningLocally;
+    var isLocal = localConfig is not null;
 
     services.AddHangfire(config =>
     {
