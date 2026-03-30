@@ -11,6 +11,16 @@ public class UserRepository(
     TornToolsDbContext dbContext
 ) : RepositoryBase<UserRepository>(logger, dbContext), IUserRepository
 {
+  public async Task<UserDto?> GetUserByIdAsync(long userId, CancellationToken stoppingToken)
+  {
+    var entity = await DbContext.Users
+        .Include(u => u.FavouriteItems)
+        .Include(u => u.PreferredTheme)
+        .FirstOrDefaultAsync(u => u.Id == userId, stoppingToken);
+
+    return entity?.AsDto();
+  }
+
   public Task<List<UserDto>> GetUsersAsync(CancellationToken stoppingToken)
   {
     return DbContext.Users

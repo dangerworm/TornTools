@@ -182,6 +182,11 @@ public class DatabaseService(
     return _queueItemRepository.RemoveQueueItemAsync(id, stoppingToken);
   }
 
+  public Task<UserDto?> GetUserByIdAsync(long userId, CancellationToken stoppingToken)
+  {
+    return _userRepository.GetUserByIdAsync(userId, stoppingToken);
+  }
+
   public Task<List<UserDto>> GetUsersAsync(CancellationToken stoppingToken)
   {
     return _userRepository.GetUsersAsync(stoppingToken);

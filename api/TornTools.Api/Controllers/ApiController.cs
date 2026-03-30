@@ -92,28 +92,6 @@ public class ApiController(
     }
   }
 
-  [HttpPost(Name = "PostUserDetails")]
-  [Authorize]
-  [ProducesResponseType(StatusCodes.Status200OK)]
-  [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-  [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-  public async Task<IActionResult> PostUserDetails([FromBody] UserDetailsInputModel userDetails)
-  {
-    try
-    {
-      var user = await _databaseService.UpsertUserDetailsAsync(userDetails, CancellationToken.None);
-      return Ok(user);
-    }
-    catch (Exception ex)
-    {
-      _logger.LogError(ex, "An error occurred while processing user details.");
-      return StatusCode(StatusCodes.Status500InternalServerError, new
-      {
-        message = "An error occurred while processing user details."
-      });
-    }
-  }
-
   [HttpPost(Name = "PostToggleUserFavourite")]
   [Authorize]
   [ProducesResponseType(StatusCodes.Status200OK)]

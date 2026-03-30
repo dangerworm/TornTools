@@ -39,6 +39,13 @@ public class QueueProcessor(
         try
         {
           queueItem = await databaseService.GetNextQueueItem(stoppingToken);
+
+          if (queueItem?.CallType == ApiCallType.Ignore)
+          {
+            // A concurrency problem occurred. Continue to try again.
+            continue;
+          }
+
           if (queueItem?.Id is null)
           {
             // Queue only has InProgress or Failed items, so repopulate

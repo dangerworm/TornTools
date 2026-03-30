@@ -84,7 +84,14 @@ public class QueueItemRepository(
       // Detach the stale entity and return null so the processor retries next tick.
       Logger.LogDebug("Concurrency claim failed for {QueueItem} {Id}. Retrying.", nameof(QueueItemDto), queueItem.Id);
       DbContext.Entry(queueItem).State = EntityState.Detached;
-      return null;
+      return new QueueItemDto
+      {
+        Id = null,
+        CallType = ApiCallType.Ignore,
+        EndpointUrl = string.Empty,
+        HttpMethod = null,
+        ItemStatus = nameof(QueueStatus.Failed),
+      };
     }
 
     return queueItem.AsDto();

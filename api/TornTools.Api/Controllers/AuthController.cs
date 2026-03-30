@@ -1,8 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using System.Text.Json;
 using TornTools.Application.Interfaces;
 using TornTools.Api.Authentication;
 using TornTools.Core.Constants;
+using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Models.InputModels;
 using TornTools.Core.Models.TornKey;
 using TornTools.Core.Models.TornUser;
@@ -18,7 +21,7 @@ public class AuthController(
     ILogger<AuthController> logger
 ) : ControllerBase
 {
-  private static readonly CookieOptions AuthCookieOptions = new()
+  private static CookieOptions AuthCookieOptions => new()
   {
     HttpOnly = true,
     Secure = true,
@@ -55,19 +58,17 @@ public class AuthController(
     }
 
     var keyPayload = JsonSerializer.Deserialize<KeyPayload>(keyInfoContent);
-    if (keyPayload?.Error is not null || keyPayload?.Info?.User?.Id is null)
+    if (keyPayload?.Error is not null || keyPayload?.Info is null)
       return Unauthorized();
 
-    var userId = (long)keyPayload.Info.User.Id.Value;
-
-    // Get name, level, gender
+    // Get name, level, gender, and the authoritative user ID
     string userBasicContent;
     try
     {
       var response = await client.GetAsync(TornApiConstants.UserBasic, cancellationToken);
       if (!response.IsSuccessStatusCode)
       {
-        logger.LogWarning("Torn returned {Status} during login for user {UserId}.", (int)response.StatusCode, userId);
+        logger.LogWarning("Torn returned {Status} during login.", (int)response.StatusCode);
         return Unauthorized();
       }
 
@@ -75,15 +76,15 @@ public class AuthController(
     }
     catch (Exception ex)
     {
-      logger.LogError(ex, "Failed to contact Torn API (user basic) during login for user {UserId}.", userId);
+      logger.LogError(ex, "Failed to contact Torn API (user basic) during login.");
       return StatusCode(StatusCodes.Status502BadGateway);
     }
 
     var userBasicPayload = JsonSerializer.Deserialize<UserBasicPayload>(userBasicContent);
-    if (userBasicPayload?.Error is not null || userBasicPayload?.Basic is null)
+    if (userBasicPayload?.Error is not null || userBasicPayload?.Profile is null)
       return Unauthorized();
 
-    var basic = userBasicPayload.Basic;
+    var profile = userBasicPayload.Profile;
 
     // Upsert user
     var userDetails = new UserDetailsInputModel
@@ -91,20 +92,38 @@ public class AuthController(
       ApiKey = model.ApiKey,
       UserProfile = new UserProfileInputModel
       {
-        Id = userId,
-        Name = basic.Name ?? string.Empty,
-        Level = basic.Level ?? 0,
-        Gender = basic.Gender ?? string.Empty
+        Id = profile.Id,
+        Name = profile.Name ?? string.Empty,
+        Level = profile.Level ?? 0,
+        Gender = profile.Gender ?? string.Empty
       }
     };
 
     var user = await databaseService.UpsertUserDetailsAsync(userDetails, cancellationToken);
 
     // Issue JWT in httpOnly cookie
-    var token = jwtService.GenerateToken(userId, user.Name);
+    var token = jwtService.GenerateToken(profile.Id, user.Name);
     Response.Cookies.Append("auth", token, AuthCookieOptions);
 
-    return Ok(new { userId = user.Id, name = user.Name });
+    return Ok(ToResponse(user));
+  }
+
+  [HttpGet("me")]
+  [Authorize]
+  [ProducesResponseType(StatusCodes.Status200OK)]
+  [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+  [ProducesResponseType(StatusCodes.Status404NotFound)]
+  public async Task<IActionResult> Me(CancellationToken cancellationToken)
+  {
+    var sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (!long.TryParse(sub, out var userId))
+      return Unauthorized();
+
+    var user = await databaseService.GetUserByIdAsync(userId, cancellationToken);
+    if (user is null)
+      return NotFound();
+
+    return Ok(ToResponse(user));
   }
 
   [HttpPost("logout")]
@@ -120,4 +139,15 @@ public class AuthController(
 
     return Ok();
   }
+
+  private static object ToResponse(UserDto user) => new
+  {
+    id = user.Id,
+    name = user.Name,
+    level = user.Level,
+    gender = user.Gender,
+    favouriteItems = user.FavouriteItems,
+    preferredThemeId = user.PreferredThemeId,
+    preferredTheme = user.PreferredTheme
+  };
 }

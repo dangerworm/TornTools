@@ -2,18 +2,16 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { UserContext, type UserContextModel } from '../hooks/useUser'
 import { fetchTornKeyInfo, fetchTornUserDetails, type TornUserProfile } from '../lib/tornapi'
 import {
+  getMe,
+  login,
+  logout,
   postAddUserFavourite,
   postRemoveUserFavourite,
-  postUserDetails,
   type DotNetUserDetails,
 } from '../lib/dotnetapi'
 
-const LOCAL_STORAGE_KEY_DOTNET_USER_DETAILS = 'torntools:user:dotnet:details:v1'
-
 const LOCAL_STORAGE_KEY_TORN_API_KEY = 'torntools:user:torn:apiKey:v1'
 const LOCAL_STORAGE_KEY_TORN_USER_DETAILS = 'torntools:user:torn:details:v1'
-
-// Single “master” timestamp for the whole user cache
 const LOCAL_STORAGE_KEY_USER_CACHE_TS = 'torntools:user:cache:ts:v1'
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000
@@ -36,20 +34,21 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
 
   const abortRef = useRef<AbortController | null>(null)
 
-  // --- helpers for cache management ---
+  // --- helpers ---
 
   const updateCacheTimestamp = useCallback(() => {
     localStorage.setItem(LOCAL_STORAGE_KEY_USER_CACHE_TS, Date.now().toString())
   }, [])
 
   const clearAllUserData = useCallback(() => {
-    // Abort any in-flight Torn request
     if (abortRef.current) {
       abortRef.current.abort()
       abortRef.current = null
     }
 
-    localStorage.clear()
+    localStorage.removeItem(LOCAL_STORAGE_KEY_TORN_API_KEY)
+    localStorage.removeItem(LOCAL_STORAGE_KEY_TORN_USER_DETAILS)
+    localStorage.removeItem(LOCAL_STORAGE_KEY_USER_CACHE_TS)
 
     setApiKeyState(null)
     setTornUserProfile(null)
@@ -60,20 +59,20 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
     setErrorDotNetUserDetails(null)
   }, [])
 
-  const updateDotNetUserDetails = useCallback(
-    (details: DotNetUserDetails | null) => {
-      setDotNetUserDetails(details)
-      if (details) {
-        localStorage.setItem(LOCAL_STORAGE_KEY_DOTNET_USER_DETAILS, JSON.stringify(details))
-        updateCacheTimestamp()
-      } else {
-        localStorage.removeItem(LOCAL_STORAGE_KEY_DOTNET_USER_DETAILS)
-      }
-    },
-    [updateCacheTimestamp],
-  )
+  const logoutAsync = useCallback(async () => {
+    try {
+      await logout()
+    } catch {
+      // best-effort: clear local state regardless
+    }
+    clearAllUserData()
+  }, [clearAllUserData])
 
-  // --- Torn profile fetch ---
+  const updateDotNetUserDetails = useCallback((details: DotNetUserDetails | null) => {
+    setDotNetUserDetails(details)
+  }, [])
+
+  // --- Torn profile fetch (used for signin preview and ForeignMarkets) ---
 
   const fetchTornProfileAsync = useCallback(
     async (key: string) => {
@@ -103,7 +102,6 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
         localStorage.setItem(LOCAL_STORAGE_KEY_TORN_USER_DETAILS, JSON.stringify(profile))
         updateCacheTimestamp()
       } catch (e) {
-        // If deliberately cancelled, don't show an error
         if ((e as any)?.name === 'AbortError') {
           return
         }
@@ -124,30 +122,25 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
   const setApiKey = useCallback(
     async (key: string | null) => {
       if (!key) {
-        // Treat null/empty as logout
-        clearAllUserData()
+        await logoutAsync()
         return
       }
 
-      // New key: store it, reset dotnet details (they haven't agreed yet)
       setApiKeyState(key)
       localStorage.setItem(LOCAL_STORAGE_KEY_TORN_API_KEY, key)
       setDotNetUserDetails(null)
-      localStorage.removeItem(LOCAL_STORAGE_KEY_DOTNET_USER_DETAILS)
-
       updateCacheTimestamp()
 
-      // Fetch Torn profile for this key
       await fetchTornProfileAsync(key)
     },
-    [clearAllUserData, fetchTornProfileAsync, updateCacheTimestamp],
+    [logoutAsync, fetchTornProfileAsync, updateCacheTimestamp],
   )
 
   // --- "I agree to add this API key" flow ---
 
   const confirmApiKeyAsync = useCallback(async () => {
-    if (!apiKey || !tornUserProfile) {
-      console.warn('Cannot confirm API key: missing apiKey or tornUserProfile')
+    if (!apiKey) {
+      console.warn('Cannot confirm API key: missing apiKey')
       return
     }
 
@@ -155,9 +148,11 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
     setErrorDotNetUserDetails(null)
 
     try {
-      const userData = await postUserDetails(apiKey, tornUserProfile)
+      const userData = await login(apiKey)
       if (userData) {
         updateDotNetUserDetails(userData)
+      } else {
+        setErrorDotNetUserDetails('Invalid API key or login failed.')
       }
     } catch (e: unknown) {
       if (e instanceof Error) {
@@ -168,7 +163,7 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
     } finally {
       setLoadingDotNetUserDetails(false)
     }
-  }, [apiKey, tornUserProfile, updateDotNetUserDetails])
+  }, [apiKey, updateDotNetUserDetails])
 
   // --- favourites toggle ---
 
@@ -200,24 +195,27 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
     [dotNetUserDetails, updateDotNetUserDetails],
   )
 
-  // --- initial load: restore from cache if within TTL ---
+  // --- initial load ---
 
   useEffect(() => {
+    // Always check if the JWT cookie is still valid
+    getMe().then(userData => {
+      if (userData) setDotNetUserDetails(userData)
+    }).catch(() => { /* not logged in */ })
+
+    // Restore apiKey and tornProfile from localStorage (used for ForeignMarkets etc.)
     const tsRaw = localStorage.getItem(LOCAL_STORAGE_KEY_USER_CACHE_TS)
     const ts = tsRaw ? Number(tsRaw) : 0
     const age = ts ? Date.now() - ts : Infinity
 
     if (!ts || age > ttlMs) {
-      // Cache too old or missing – start from a clean slate
-      console.log('User cache expired or missing; clearing user data')
-      clearAllUserData()
+      localStorage.removeItem(LOCAL_STORAGE_KEY_TORN_API_KEY)
+      localStorage.removeItem(LOCAL_STORAGE_KEY_TORN_USER_DETAILS)
       return
     }
 
-    // Cache is valid; restore what we have
     const cachedApiKey = localStorage.getItem(LOCAL_STORAGE_KEY_TORN_API_KEY)
     const cachedTornProfile = localStorage.getItem(LOCAL_STORAGE_KEY_TORN_USER_DETAILS)
-    const cachedDotNet = localStorage.getItem(LOCAL_STORAGE_KEY_DOTNET_USER_DETAILS)
 
     if (cachedApiKey) {
       setApiKeyState(cachedApiKey)
@@ -230,40 +228,28 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
         console.warn('Failed to parse cached Torn user profile')
       }
     }
-
-    if (cachedDotNet) {
-      try {
-        setDotNetUserDetails(JSON.parse(cachedDotNet))
-      } catch {
-        console.warn('Failed to parse cached dotnet user details')
-      }
-    }
-  }, [clearAllUserData, ttlMs])
+  }, [ttlMs])
 
   const contextValue = useMemo(
     () =>
       ({
-        // data
         apiKey,
         tornUserProfile,
         dotNetUserDetails,
 
-        // loading / errors
         loadingTornUserProfile,
         errorTornUserProfile,
         loadingDotNetUserDetails,
         errorDotNetUserDetails,
 
-        // profile update
         fetchTornProfileAsync,
 
-        // actions
-        setApiKey, // user types/pastes key here
-        confirmApiKeyAsync, // "I agree" button
+        setApiKey,
+        confirmApiKeyAsync,
         toggleFavouriteItemAsync,
 
-        // optional: expose an explicit logout if you like
         clearAllUserData,
+        logoutAsync,
         updateDotNetUserDetails,
       }) as UserContextModel,
     [
@@ -279,6 +265,7 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
       confirmApiKeyAsync,
       toggleFavouriteItemAsync,
       clearAllUserData,
+      logoutAsync,
       updateDotNetUserDetails,
     ],
   )

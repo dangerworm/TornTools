@@ -16,6 +16,7 @@ export interface UserContextModel {
   toggleFavouriteItemAsync: (itemId: number) => Promise<void>;
   updateDotNetUserDetails: (details: DotNetUserDetails | null) => void;
   clearAllUserData: () => void;
+  logoutAsync: () => Promise<void>;
 }
 
 export const UserContext = createContext<UserContextModel | null>(null);
