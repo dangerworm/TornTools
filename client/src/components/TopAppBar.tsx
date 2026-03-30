@@ -29,7 +29,7 @@ interface TopAppBarProps {
 
 function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
   const navigate = useNavigate()
-  const { dotNetUserDetails, clearAllUserData } = useUser()
+  const { dotNetUserDetails, logoutAsync } = useUser()
   const { selectTheme, selectedThemeId } = useThemeSettings()
 
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null)
@@ -45,8 +45,8 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
     handleCloseMenu()
   }
 
-  const handleSignOut = () => {
-    clearAllUserData()
+  const handleSignOut = async () => {
+    await logoutAsync()
     navigate('/')
     handleCloseMenu()
   }

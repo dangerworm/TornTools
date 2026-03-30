@@ -248,7 +248,6 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
         confirmApiKeyAsync,
         toggleFavouriteItemAsync,
 
-        clearAllUserData,
         logoutAsync,
         updateDotNetUserDetails,
       }) as UserContextModel,
@@ -264,7 +263,6 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
       setApiKey,
       confirmApiKeyAsync,
       toggleFavouriteItemAsync,
-      clearAllUserData,
       logoutAsync,
       updateDotNetUserDetails,
     ],

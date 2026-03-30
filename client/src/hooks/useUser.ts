@@ -15,7 +15,6 @@ export interface UserContextModel {
   confirmApiKeyAsync: () => Promise<void>;
   toggleFavouriteItemAsync: (itemId: number) => Promise<void>;
   updateDotNetUserDetails: (details: DotNetUserDetails | null) => void;
-  clearAllUserData: () => void;
   logoutAsync: () => Promise<void>;
 }
 
