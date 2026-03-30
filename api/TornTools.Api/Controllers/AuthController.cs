@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using TornTools.Application.Interfaces;
 using TornTools.Api.Authentication;
+using TornTools.Core.Configurations;
 using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Models.InputModels;
@@ -18,15 +19,23 @@ public class AuthController(
     IDatabaseService databaseService,
     IHttpClientFactory httpClientFactory,
     JwtService jwtService,
+    JwtConfiguration jwtConfiguration,
     ILogger<AuthController> logger
 ) : ControllerBase
 {
-  private static CookieOptions AuthCookieOptions => new()
+  private static readonly CookieOptions ClearCookieOptions = new()
+  {
+    HttpOnly = true,
+    Secure = true,
+    SameSite = SameSiteMode.None
+  };
+
+  private CookieOptions AuthCookieOptions => new()
   {
     HttpOnly = true,
     Secure = true,
     SameSite = SameSiteMode.None,
-    Expires = DateTimeOffset.UtcNow.AddDays(30)
+    Expires = DateTimeOffset.UtcNow.AddDays(jwtConfiguration.ExpiryDays)
   };
 
   [HttpPost("login")]
@@ -46,7 +55,7 @@ public class AuthController(
       if (!response.IsSuccessStatusCode)
       {
         logger.LogWarning("Torn keyinfo returned {Status} during login attempt.", (int)response.StatusCode);
-        return Unauthorized();
+        return UnauthorizedAndClearCookie();
       }
 
       keyInfoContent = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -59,7 +68,7 @@ public class AuthController(
 
     var keyPayload = JsonSerializer.Deserialize<KeyPayload>(keyInfoContent);
     if (keyPayload?.Error is not null || keyPayload?.Info is null)
-      return Unauthorized();
+      return UnauthorizedAndClearCookie();
 
     // Get name, level, gender, and the authoritative user ID
     string userBasicContent;
@@ -69,7 +78,7 @@ public class AuthController(
       if (!response.IsSuccessStatusCode)
       {
         logger.LogWarning("Torn returned {Status} during login.", (int)response.StatusCode);
-        return Unauthorized();
+        return UnauthorizedAndClearCookie();
       }
 
       userBasicContent = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -82,7 +91,7 @@ public class AuthController(
 
     var userBasicPayload = JsonSerializer.Deserialize<UserBasicPayload>(userBasicContent);
     if (userBasicPayload?.Error is not null || userBasicPayload?.Profile is null)
-      return Unauthorized();
+      return UnauthorizedAndClearCookie();
 
     var profile = userBasicPayload.Profile;
 
@@ -130,14 +139,14 @@ public class AuthController(
   [ProducesResponseType(StatusCodes.Status200OK)]
   public IActionResult Logout()
   {
-    Response.Cookies.Delete("auth", new CookieOptions
-    {
-      HttpOnly = true,
-      Secure = true,
-      SameSite = SameSiteMode.None
-    });
-
+    Response.Cookies.Delete("auth", ClearCookieOptions);
     return Ok();
+  }
+
+  private IActionResult UnauthorizedAndClearCookie()
+  {
+    Response.Cookies.Delete("auth", ClearCookieOptions);
+    return Unauthorized();
   }
 
   private static object ToResponse(UserDto user) => new
