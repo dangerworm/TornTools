@@ -15,7 +15,7 @@ public class YataStocksApiCallHandler(
 {
   public override ApiCallType CallType => ApiCallType.YataForeignStock;
 
-  public override async Task HandleResponseAsync(string content, CancellationToken stoppingToken)
+  public override async Task HandleResponseAsync(QueueItemDto item, string content, CancellationToken stoppingToken)
   {
     var payload = JsonSerializer.Deserialize<ForeignStocksPayload>(content)
         ?? throw new Exception($"Failed to deserialize {nameof(ForeignStocksPayload)} from API response.");

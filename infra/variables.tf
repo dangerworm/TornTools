@@ -1,3 +1,9 @@
+variable "jwt_secret" {
+  description = "Secret used to sign JWTs issued to authenticated users"
+  type        = string
+  sensitive   = true
+}
+
 variable "app_name" {
   description = "Name of the application"
   type        = string

@@ -14,7 +14,7 @@ public class TornMarketListingsApiCallHandler(
 {
   public override ApiCallType CallType => ApiCallType.TornMarketListings;
 
-  public override async Task HandleResponseAsync(string content, CancellationToken stoppingToken)
+  public override async Task HandleResponseAsync(QueueItemDto item, string content, CancellationToken stoppingToken)
   {
     var payload = JsonSerializer.Deserialize<ItemMarketPayload>(content)
         ?? throw new Exception($"Failed to deserialize {nameof(ItemMarketPayload)} from API response.");

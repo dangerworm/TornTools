@@ -11,7 +11,8 @@ public class QueueItemEntity
 {
   [Key]
   [Column("id")]
-  public Guid? Id { get; set; }
+  [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+  public Guid Id { get; set; }
 
   [Required]
   [Column("call_type")]

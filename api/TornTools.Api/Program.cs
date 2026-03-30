@@ -13,7 +13,8 @@ using TornTools.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddCorsPolicy();
+builder.Services.AddCorsPolicy(builder.Configuration);
+builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddDatabase(builder.Configuration);
 builder.Services.AddHangfire(builder.Configuration);
 builder.Services.AddHttpClient();
@@ -81,6 +82,7 @@ app.UseRouting();
 
 app.UseCors(ApiConstants.CorsPolicy);
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

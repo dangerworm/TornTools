@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
+using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Enums;
 
 namespace TornTools.Application.Handlers;
@@ -15,5 +16,5 @@ public abstract class ApiCallHandler<TCallHandler>(
 
   public abstract ApiCallType CallType { get; }
 
-  public abstract Task HandleResponseAsync(string content, CancellationToken stoppingToken);
+  public abstract Task HandleResponseAsync(QueueItemDto item, string content, CancellationToken stoppingToken);
 }

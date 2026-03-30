@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TornTools.Application.Interfaces;
 using TornTools.Core.Models.InputModels;
@@ -73,7 +74,7 @@ public class ApiController(
   {
     try
     {
-      var listings = await _databaseService.GetProfitableListings(CancellationToken.None);
+      var listings = await _databaseService.GetProfitableListingsAsync(CancellationToken.None);
 
       if (listings == null || !listings.Any())
         return NotFound("No listings found.");
@@ -92,7 +93,9 @@ public class ApiController(
   }
 
   [HttpPost(Name = "PostUserDetails")]
+  [Authorize]
   [ProducesResponseType(StatusCodes.Status200OK)]
+  [ProducesResponseType(StatusCodes.Status401Unauthorized)]
   [ProducesResponseType(StatusCodes.Status500InternalServerError)]
   public async Task<IActionResult> PostUserDetails([FromBody] UserDetailsInputModel userDetails)
   {
@@ -112,7 +115,9 @@ public class ApiController(
   }
 
   [HttpPost(Name = "PostToggleUserFavourite")]
+  [Authorize]
   [ProducesResponseType(StatusCodes.Status200OK)]
+  [ProducesResponseType(StatusCodes.Status401Unauthorized)]
   [ProducesResponseType(StatusCodes.Status500InternalServerError)]
   public async Task<IActionResult> PostToggleUserFavourite([FromBody] UserFavouriteInputModel userFavouriteModel)
   {
@@ -152,7 +157,9 @@ public class ApiController(
   }
 
   [HttpPost(Name = "PostTheme")]
+  [Authorize]
   [ProducesResponseType(StatusCodes.Status200OK)]
+  [ProducesResponseType(StatusCodes.Status401Unauthorized)]
   [ProducesResponseType(StatusCodes.Status500InternalServerError)]
   public async Task<IActionResult> PostTheme([FromBody] ThemeInputModel themeInput)
   {
@@ -172,7 +179,9 @@ public class ApiController(
   }
 
   [HttpPost(Name = "PostUserThemeSelection")]
+  [Authorize]
   [ProducesResponseType(StatusCodes.Status200OK)]
+  [ProducesResponseType(StatusCodes.Status401Unauthorized)]
   [ProducesResponseType(StatusCodes.Status500InternalServerError)]
   public async Task<IActionResult> PostUserThemeSelection([FromBody] UserThemeSelectionInputModel themeSelection)
   {

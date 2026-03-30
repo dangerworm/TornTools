@@ -34,6 +34,8 @@ resource "azurerm_linux_web_app" "backend_api" {
     "EnvironmentConfiguration__EnvironmentName"   = "${var.environment}"
     "EnvironmentConfiguration__PopulateQueue"     = "true"
     "EnvironmentConfiguration__RunQueueProcessor" = "true"
+    "CorsAllowedOrigins"                          = trimsuffix(azurerm_storage_account.frontend_sa.primary_web_endpoint, "/")
+    "JwtConfiguration__Secret"                    = var.jwt_secret
   }
 
   depends_on = [azurerm_service_plan.backend_plan]

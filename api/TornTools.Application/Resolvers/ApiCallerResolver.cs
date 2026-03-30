@@ -12,7 +12,7 @@ public class ApiCallerResolver : IApiCallerResolver
     _callers = [];
     foreach (var callType in Enum.GetValues<ApiCallType>())
     {
-      var applicableCallers = callers.Where(callers => callers.CallTypes.Contains(callType));
+      var applicableCallers = callers.Where(c => c.CallTypes.Contains(callType));
 
       foreach (var caller in applicableCallers)
       {

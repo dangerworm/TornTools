@@ -72,14 +72,14 @@ public class DatabaseService(
     return _listingRepository.CreateListingsAsync(listings, stoppingToken);
   }
 
-  public async Task<IEnumerable<ListingDto>> GetListingsByItemIdAsync(int itemId, CancellationToken stoppingToken)
+  public Task<IEnumerable<ListingDto>> GetListingsByItemIdAsync(int itemId, CancellationToken stoppingToken)
   {
-    return await _listingRepository.GetListingsByItemIdAsync(itemId, stoppingToken);
+    return _listingRepository.GetListingsByItemIdAsync(itemId, stoppingToken);
   }
 
-  public async Task<IEnumerable<ListingDto>> GetListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken)
+  public Task<IEnumerable<ListingDto>> GetListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken)
   {
-    return await _listingRepository.GetListingsBySourceAndItemIdAsync(source, itemId, stoppingToken);
+    return _listingRepository.GetListingsBySourceAndItemIdAsync(source, itemId, stoppingToken);
   }
 
   public Task DeleteListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken)
@@ -87,7 +87,12 @@ public class DatabaseService(
     return _listingRepository.DeleteListingsBySourceAndItemIdAsync(source, itemId, stoppingToken);
   }
 
-  public Task<IEnumerable<ProfitableListingDto>> GetProfitableListings(CancellationToken stoppingToken)
+  public Task ReplaceListingsAsync(Source source, int itemId, IEnumerable<ListingDto> newListings, CancellationToken stoppingToken)
+  {
+    return _listingRepository.ReplaceListingsAsync(source, itemId, newListings, stoppingToken);
+  }
+
+  public Task<IEnumerable<ProfitableListingDto>> GetProfitableListingsAsync(CancellationToken stoppingToken)
   {
     return _itemRepository.GetProfitableItemsAsync(stoppingToken);
   }
@@ -167,9 +172,9 @@ public class DatabaseService(
     return _queueItemRepository.SetQueueItemCompletedAsync(id, stoppingToken);
   }
 
-  public Task RemoveQueueItemsAsync(CancellationToken stoppingToken, QueueStatus? statusToRemove = null)
+  public Task RemoveQueueItemsAsync(CancellationToken stoppingToken)
   {
-    return _queueItemRepository.RemoveQueueItemsAsync(stoppingToken, statusToRemove);
+    return _queueItemRepository.RemoveQueueItemsAsync(stoppingToken);
   }
 
   public Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken)

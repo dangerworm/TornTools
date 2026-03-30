@@ -22,6 +22,16 @@ public static class ServiceCollectionExtensions
                 System.Net.DecompressionMethods.Brotli
         });
 
+    services
+        .AddHttpClient(YataApiConstants.ClientName)
+        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+          AutomaticDecompression =
+                System.Net.DecompressionMethods.GZip |
+                System.Net.DecompressionMethods.Deflate |
+                System.Net.DecompressionMethods.Brotli
+        });
+
     services.AddScoped<IApiCaller, TornApiMultiKeyCaller>();
     services.AddScoped<IApiCaller, TornApiSingleKeyCaller>();
     services.AddScoped<IApiCaller, Weav3rApiCaller>();

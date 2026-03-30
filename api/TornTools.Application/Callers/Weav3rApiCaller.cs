@@ -34,12 +34,6 @@ public class Weav3rApiCaller(
 
     var headers = requestMessage.Headers
       .ToDictionary(h => h.Key, h => h.Value.First());
-    var location = Assembly.GetExecutingAssembly().Location ?? string.Empty;
-    var pythonScript = Path.Combine(
-          Path.GetDirectoryName(location) ?? string.Empty,
-          "Weav3rPython",
-          "bazaar_fetch.py");
-    var url = requestMessage.RequestUri.ToString();
 
     var psi = new ProcessStartInfo
     {
@@ -49,28 +43,51 @@ public class Weav3rApiCaller(
         ["FETCH_HEADERS"] = JsonSerializer.Serialize(headers),
         ["PYTHONUNBUFFERED"] = "1", // Ensure real-time output
       },
-      Arguments = $"{pythonScript} \"{url}\"",
       RedirectStandardOutput = true,
       RedirectStandardError = true,
       UseShellExecute = false,
       CreateNoWindow = true
     };
 
+    var location = Assembly.GetExecutingAssembly().Location ?? string.Empty;
+    var pythonScript = Path.Combine(
+          Path.GetDirectoryName(location) ?? string.Empty,
+          "Weav3rPython",
+          "bazaar_fetch.py");
+    var url = requestMessage.RequestUri.ToString();
+
+    psi.ArgumentList.Add(pythonScript);
+    psi.ArgumentList.Add(url);
+
+    using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, timeoutCts.Token);
+
     using var process = new Process { StartInfo = psi };
     process.Start();
 
-    var content = await process.StandardOutput.ReadToEndAsync(stoppingToken);
-    var error = await process.StandardError.ReadToEndAsync(stoppingToken);
-
-    await process.WaitForExitAsync(stoppingToken);
-
-    if (process.ExitCode != 0)
+    try
     {
-      Logger.LogError("bazaar_fetch.py failed: {Error}", error);
+      var contentTask = process.StandardOutput.ReadToEndAsync(linkedCts.Token);
+      var errorTask = process.StandardError.ReadToEndAsync(linkedCts.Token);
+      await process.WaitForExitAsync(linkedCts.Token);
+
+      var content = await contentTask;
+      var error = await errorTask;
+
+      if (process.ExitCode != 0)
+      {
+        Logger.LogError("bazaar_fetch.py failed: {Error}", error);
+        return null;
+      }
+
+      return content;
+    }
+    catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested)
+    {
+      process.Kill(entireProcessTree: true);
+      Logger.LogError("bazaar_fetch.py timed out after 30 seconds.");
       return null;
     }
-
-    return content;
   }
 
   Task<bool> IApiCaller.CallAsync(QueueItemDto item, IApiCallHandler handler, CancellationToken ct)

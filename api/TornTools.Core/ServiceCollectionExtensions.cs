@@ -11,6 +11,7 @@ public static class ServiceCollectionExtensions
   {
     return services
         .AddLocalConfiguration(configuration)
+        .AddJwtConfiguration(configuration)
         .AddTornApiCallerConfiguration(configuration)
         .AddWeav3rApiCallerConfiguration(configuration);
   }
@@ -21,6 +22,18 @@ public static class ServiceCollectionExtensions
         configuration.GetRequiredSection(nameof(EnvironmentConfiguration)));
     services.AddSingleton(sp =>
         sp.GetRequiredService<IOptions<EnvironmentConfiguration>>().Value
+    );
+
+    return services;
+  }
+
+  private static IServiceCollection AddJwtConfiguration(this IServiceCollection services, IConfiguration configuration)
+  {
+    services.Configure<JwtConfiguration>(
+        configuration.GetRequiredSection(nameof(JwtConfiguration)));
+
+    services.AddSingleton(sp =>
+        sp.GetRequiredService<IOptions<JwtConfiguration>>().Value
     );
 
     return services;

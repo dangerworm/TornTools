@@ -78,9 +78,27 @@ public class ListingRepository(
 
   public async Task DeleteListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken)
   {
-    var listings = await DbContext.Listings
+    await DbContext.Listings
         .Where(l => l.Source == source.ToString() && l.ItemId == itemId)
         .ExecuteDeleteAsync(stoppingToken);
+  }
+
+  public async Task ReplaceListingsAsync(Source source, int itemId, IEnumerable<ListingDto> newListings, CancellationToken stoppingToken)
+  {
+    await using var transaction = await DbContext.Database.BeginTransactionAsync(stoppingToken);
+
+    await DbContext.Listings
+        .Where(l => l.Source == source.ToString() && l.ItemId == itemId)
+        .ExecuteDeleteAsync(stoppingToken);
+
+    foreach (var listingDto in newListings)
+    {
+      DbContext.Listings.Add(CreateEntityFromDto(listingDto));
+    }
+
+    await DbContext.SaveChangesAsync(stoppingToken);
+    await transaction.CommitAsync(stoppingToken);
+    DbContext.ChangeTracker.Clear();
   }
 
   private static ListingEntity CreateEntityFromDto(ListingDto listingDto)

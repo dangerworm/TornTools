@@ -21,15 +21,15 @@ public class QueueProcessor(
   {
     _logger.LogInformation("QueueProcessorService starting.");
 
-    using var scope = _scopeFactory.CreateScope();
-    var callerResolver = scope.ServiceProvider.GetRequiredService<IApiCallerResolver>();
-    var callHandlerResolver = scope.ServiceProvider.GetRequiredService<IApiCallHandlerResolver>();
-    var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
-    var tornApiCallerOptions = scope.ServiceProvider.GetRequiredService<TornApiCallerConfiguration>();
-    var weav3rApiCallerOptions = scope.ServiceProvider.GetRequiredService<Weav3rApiCallerConfiguration>();
-
     while (!stoppingToken.IsCancellationRequested)
     {
+      using var scope = _scopeFactory.CreateScope();
+      var callerResolver = scope.ServiceProvider.GetRequiredService<IApiCallerResolver>();
+      var callHandlerResolver = scope.ServiceProvider.GetRequiredService<IApiCallHandlerResolver>();
+      var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
+      var tornApiCallerOptions = scope.ServiceProvider.GetRequiredService<TornApiCallerConfiguration>();
+      var weav3rApiCallerOptions = scope.ServiceProvider.GetRequiredService<Weav3rApiCallerConfiguration>();
+
       QueueItemDto? queueItem = null;
       try
       {

@@ -80,9 +80,11 @@ public class QueueItemRepository(
     }
     catch (DbUpdateConcurrencyException)
     {
-      // Another worker took it—just try again
+      // Another worker took it.
+      // Detach the stale entity and return null so the processor retries next tick.
       Logger.LogDebug("Concurrency claim failed for {QueueItem} {Id}. Retrying.", nameof(QueueItemDto), queueItem.Id);
-      throw;
+      DbContext.Entry(queueItem).State = EntityState.Detached;
+      return null;
     }
 
     return queueItem.AsDto();
@@ -124,30 +126,29 @@ public class QueueItemRepository(
     return queueItem.AsDto();
   }
 
-  public async Task RemoveQueueItemsAsync(CancellationToken stoppingToken, QueueStatus? statusToRemove = null)
+  public async Task RemoveQueueItemsAsync(CancellationToken stoppingToken)
   {
     while (true)
     {
-      var completedItems = await DbContext.QueueItems
-          .Where(q => statusToRemove == null || q.ItemStatus == nameof(QueueStatus.Completed))
+      var items = await DbContext.QueueItems
           .Where(q => q.ItemStatus != nameof(QueueStatus.Failed))
           .OrderBy(q => q.QueueIndex)
           .Take(DatabaseConstants.BulkUpdateSize)
           .ToListAsync(stoppingToken);
 
-      if (completedItems.Count == 0)
+      if (items.Count == 0)
       {
         break;
       }
 
-      DbContext.QueueItems.RemoveRange(completedItems);
+      DbContext.QueueItems.RemoveRange(items);
       await DbContext.SaveChangesAsync(stoppingToken);
     }
   }
 
   public async Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken)
   {
-    var itemToRemove = await DbContext.QueueItems.FindAsync([id, stoppingToken], cancellationToken: stoppingToken)
+    var itemToRemove = await DbContext.QueueItems.FindAsync(id, stoppingToken)
         ?? throw new Exception($"{nameof(QueueItemEntity)} with ID {id} not found.");
 
     DbContext.QueueItems.Remove(itemToRemove);

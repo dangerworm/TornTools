@@ -14,7 +14,7 @@ public class Weav3rBazaarListingsApiCallHandler(
 {
   public override ApiCallType CallType => ApiCallType.Weav3rBazaarListings;
 
-  public override async Task HandleResponseAsync(string content, CancellationToken stoppingToken)
+  public override async Task HandleResponseAsync(QueueItemDto item, string content, CancellationToken stoppingToken)
   {
     var payload = JsonSerializer.Deserialize<BazaarItemPayload>(content)
         ?? throw new Exception($"Failed to deserialize {nameof(BazaarItemPayload)} from API response.");

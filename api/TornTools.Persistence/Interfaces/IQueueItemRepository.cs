@@ -11,6 +11,6 @@ public interface IQueueItemRepository
   Task<QueueItemDto?> GetNextQueueItemAsync(CancellationToken stoppingToken);
   Task<QueueItemDto> IncrementQueueItemAttemptsAsync(Guid id, CancellationToken stoppingToken);
   Task<QueueItemDto> SetQueueItemCompletedAsync(Guid id, CancellationToken stoppingToken);
-  Task RemoveQueueItemsAsync(CancellationToken stoppingToken, QueueStatus? statusToRemove = null);
+  Task RemoveQueueItemsAsync(CancellationToken stoppingToken);
   Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken);
 }
