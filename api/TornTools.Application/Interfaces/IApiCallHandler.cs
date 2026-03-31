@@ -1,9 +1,10 @@
-﻿using TornTools.Core.Enums;
+﻿using TornTools.Core.DataTransferObjects;
+using TornTools.Core.Enums;
 
 namespace TornTools.Application.Interfaces;
 
 public interface IApiCallHandler
 {
   ApiCallType CallType { get; }
-  Task HandleResponseAsync(string content, CancellationToken stoppingToken);
+  Task HandleResponseAsync(QueueItemDto item, string content, CancellationToken stoppingToken);
 }

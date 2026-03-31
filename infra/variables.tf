@@ -1,3 +1,27 @@
+variable "custom_domains_enabled" {
+  description = "Whether custom domains are attached. Requires DNS CNAMEs to be in place first."
+  type        = bool
+  default     = false
+}
+
+variable "frontend_hostname" {
+  description = "Custom hostname for the frontend (e.g. torntools.dangerworm.dev)"
+  type        = string
+  default     = "torntools.dangerworm.dev"
+}
+
+variable "api_hostname" {
+  description = "Custom hostname for the API (e.g. api.torntools.dangerworm.dev)"
+  type        = string
+  default     = "api.torntools.dangerworm.dev"
+}
+
+variable "jwt_secret" {
+  description = "Secret used to sign JWTs issued to authenticated users"
+  type        = string
+  sensitive   = true
+}
+
 variable "app_name" {
   description = "Name of the application"
   type        = string

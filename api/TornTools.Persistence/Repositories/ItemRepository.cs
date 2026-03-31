@@ -21,20 +21,6 @@ public class ItemRepository(
     return item.AsDto();
   }
 
-  public async Task<ItemDto> UpsertItemAsync(ItemDto itemDto, CancellationToken stoppingToken)
-  {
-    var item = await DbContext.Items.FindAsync([itemDto.Id, stoppingToken], stoppingToken);
-    if (item is null)
-    {
-      return await CreateItemAsync(itemDto, stoppingToken);
-    }
-
-    item = CreateEntityFromDto(itemDto);
-    DbContext.Items.Update(item);
-    await DbContext.SaveChangesAsync(stoppingToken);
-    return item.AsDto();
-  }
-
   public async Task UpsertItemsAsync(IEnumerable<ItemDto> itemDtos, CancellationToken stoppingToken)
   {
     var items = itemDtos.ToList();

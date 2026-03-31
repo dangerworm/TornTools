@@ -89,14 +89,7 @@ public abstract class ListingApiCallHandler<TCallHandler>(
       };
 
       await DatabaseService.CreateItemChangeLogAsync(itemChangeLog, stoppingToken);
-
-      await DatabaseService.DeleteListingsBySourceAndItemIdAsync(
-          source,
-          itemId,
-          stoppingToken
-      );
-
-      await DatabaseService.CreateListingsAsync(newListings, stoppingToken);
+      await DatabaseService.ReplaceListingsAsync(source, itemId, newListings, stoppingToken);
     }
   }
 }

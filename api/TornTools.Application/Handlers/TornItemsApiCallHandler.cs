@@ -14,7 +14,7 @@ public class TornItemsApiCallHandler(
 {
   public override ApiCallType CallType => ApiCallType.TornItems;
 
-  public override async Task HandleResponseAsync(string content, CancellationToken stoppingToken)
+  public override async Task HandleResponseAsync(QueueItemDto item, string content, CancellationToken stoppingToken)
   {
     var payload = JsonSerializer.Deserialize<ItemsPayload>(content)
         ?? throw new Exception($"Failed to deserialize {nameof(ItemsPayload)} from API response.");

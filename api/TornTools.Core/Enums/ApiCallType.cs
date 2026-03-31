@@ -2,6 +2,7 @@
 
 public enum ApiCallType
 {
+  Ignore,
   TornItems,
   TornKeyInfo,
   TornMarketListings,

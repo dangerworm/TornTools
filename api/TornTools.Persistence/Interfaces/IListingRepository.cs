@@ -11,4 +11,5 @@ public interface IListingRepository
   Task<IEnumerable<ListingDto>> GetListingsByItemIdAsync(int itemId, CancellationToken stoppingToken);
   Task<IEnumerable<ListingDto>> GetListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken);
   Task DeleteListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken);
+  Task ReplaceListingsAsync(Source source, int itemId, IEnumerable<ListingDto> newListings, CancellationToken stoppingToken);
 }

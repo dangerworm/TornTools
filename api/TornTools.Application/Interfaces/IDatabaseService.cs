@@ -21,8 +21,9 @@ public interface IDatabaseService
   Task CreateListingsAsync(IEnumerable<ListingDto> listings, CancellationToken stoppingToken);
   Task<IEnumerable<ListingDto>> GetListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken);
   Task DeleteListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken);
+  Task ReplaceListingsAsync(Source source, int itemId, IEnumerable<ListingDto> newListings, CancellationToken stoppingToken);
 
-  Task<IEnumerable<ProfitableListingDto>> GetProfitableListings(CancellationToken stoppingToken);
+  Task<IEnumerable<ProfitableListingDto>> GetProfitableListingsAsync(CancellationToken stoppingToken);
 
   Task PopulateMarketQueueItemsOfInterest(CancellationToken stoppingToken);
   Task PopulateMarketQueueItemsRemaining(CancellationToken stoppingToken);
@@ -30,13 +31,14 @@ public interface IDatabaseService
   Task<QueueItemDto?> GetNextQueueItem(CancellationToken stoppingToken);
   Task<QueueItemDto> IncrementQueueItemAttempts(Guid id, CancellationToken stoppingToken);
   Task<QueueItemDto> SetQueueItemCompleted(Guid id, CancellationToken stoppingToken);
-  Task RemoveQueueItemsAsync(CancellationToken stoppingToken, QueueStatus? statusToRemove = null);
+  Task RemoveQueueItemsAsync(CancellationToken stoppingToken);
   Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken);
 
   Task<int> GetApiKeyCountAsync(CancellationToken stoppingToken);
   Task<string> GetNextApiKeyAsync(CancellationToken stoppingToken);
   Task MarkKeyUnavailableAsync(long userId, CancellationToken stoppingToken);
 
+  Task<UserDto?> GetUserByIdAsync(long userId, CancellationToken stoppingToken);
   Task<List<UserDto>> GetUsersAsync(CancellationToken stoppingToken);
   Task<UserDto> UpsertUserDetailsAsync(UserDetailsInputModel userDetails, CancellationToken stoppingToken);
   Task<UserDto?> ToggleUserFavourite(UserFavouriteInputModel userFavouriteModel, CancellationToken stoppingToken);

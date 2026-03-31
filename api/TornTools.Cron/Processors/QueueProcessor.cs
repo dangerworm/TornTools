@@ -21,15 +21,15 @@ public class QueueProcessor(
   {
     _logger.LogInformation("QueueProcessorService starting.");
 
-    using var scope = _scopeFactory.CreateScope();
-    var callerResolver = scope.ServiceProvider.GetRequiredService<IApiCallerResolver>();
-    var callHandlerResolver = scope.ServiceProvider.GetRequiredService<IApiCallHandlerResolver>();
-    var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
-    var tornApiCallerOptions = scope.ServiceProvider.GetRequiredService<TornApiCallerConfiguration>();
-    var weav3rApiCallerOptions = scope.ServiceProvider.GetRequiredService<Weav3rApiCallerConfiguration>();
-
     while (!stoppingToken.IsCancellationRequested)
     {
+      using var scope = _scopeFactory.CreateScope();
+      var callerResolver = scope.ServiceProvider.GetRequiredService<IApiCallerResolver>();
+      var callHandlerResolver = scope.ServiceProvider.GetRequiredService<IApiCallHandlerResolver>();
+      var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
+      var tornApiCallerOptions = scope.ServiceProvider.GetRequiredService<TornApiCallerConfiguration>();
+      var weav3rApiCallerOptions = scope.ServiceProvider.GetRequiredService<Weav3rApiCallerConfiguration>();
+
       QueueItemDto? queueItem = null;
       try
       {
@@ -39,6 +39,13 @@ public class QueueProcessor(
         try
         {
           queueItem = await databaseService.GetNextQueueItem(stoppingToken);
+
+          if (queueItem?.CallType == ApiCallType.Ignore)
+          {
+            // A concurrency problem occurred. Continue to try again.
+            continue;
+          }
+
           if (queueItem?.Id is null)
           {
             // Queue only has InProgress or Failed items, so repopulate

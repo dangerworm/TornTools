@@ -67,17 +67,6 @@ public class ApiJobScheduler(
     var caller = _callerResolver.GetCaller(ApiCallType.TornKeyInfo);
     var callHandler = _callHandlerResolver.GetHandler(ApiCallType.TornKeyInfo);
 
-    if (callHandler is not TornKeyApiCallHandler keyHandler)
-    {
-      _logger.LogError(
-          "Expected handler for {CallType} to be of type {ExpectedType}, but got {ActualType}. Aborting job.",
-          ApiCallType.TornKeyInfo,
-          typeof(TornKeyApiCallHandler).Name,
-          callHandler.GetType().Name
-      );
-      return;
-    }
-
     var users = await _databaseService.GetUsersAsync(CancellationToken.None);
     foreach (var user in users)
     {
@@ -98,11 +87,11 @@ public class ApiJobScheduler(
       {
         CallType = ApiCallType.TornKeyInfo,
         EndpointUrl = TornApiConstants.KeyInfo,
-        HeadersJson = new Dictionary<string, string> { ["Authorization"] = $"ApiKey {user.ApiKey}" }
+        HeadersJson = new Dictionary<string, string> { ["Authorization"] = $"ApiKey {user.ApiKey}" },
+        PayloadJson = new Dictionary<string, string> { ["UserId"] = user.Id.Value.ToString() }
       };
 
-      keyHandler.SetUserId(user.Id.Value);
-      await caller.CallAsync(item, keyHandler, CancellationToken.None);
+      await caller.CallAsync(item, callHandler, CancellationToken.None);
     }
   }
 

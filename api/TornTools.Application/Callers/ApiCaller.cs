@@ -47,7 +47,7 @@ public abstract class ApiCaller<TCaller>(
         return false;
       }
 
-      await handler.HandleResponseAsync(content, stoppingToken);
+      await handler.HandleResponseAsync(queueItem, content, stoppingToken);
 
       return true;
     }
@@ -119,6 +119,8 @@ public abstract class ApiCaller<TCaller>(
   protected virtual async Task<string?> Fetch(HttpClient client, HttpRequestMessage requestMessage, CancellationToken stoppingToken)
   {
     var responseMessage = await client.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, stoppingToken);
+
+    // Error payloads from Torn aren't big, so read it here for logging even on non-success status codes.
     var content = await responseMessage.Content.ReadAsStringAsync(stoppingToken);
 
     if (!responseMessage.IsSuccessStatusCode)
