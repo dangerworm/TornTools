@@ -10,3 +10,8 @@ import {
   to = azurerm_cdn_frontdoor_custom_domain.frontend_custom_domain[0]
   id = "/subscriptions/0c5fdc8a-f4a3-42f1-bf05-51750ca69db6/resourceGroups/torntools-webapp-dev-rg/providers/Microsoft.Cdn/profiles/torntools-dev-afd/customDomains/torntools-dangerworm-dev-d11a"
 }
+
+import {
+  to = azurerm_app_service_managed_certificate.api_managed_cert[0]
+  id = "/subscriptions/0c5fdc8a-f4a3-42f1-bf05-51750ca69db6/resourceGroups/torntools-webapp-dev-rg/providers/Microsoft.Web/certificates/api.torntools.dangerworm.dev-torntools-dev-back-end-api"
+}
