@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using TornTools.Application.Interfaces;
+using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Enums;
 using TornTools.Core.Models.TornKey;
 
@@ -11,28 +12,24 @@ public class TornKeyApiCallHandler(
     IDatabaseService databaseService
 ) : ApiCallHandler<TornKeyApiCallHandler>(logger, databaseService)
 {
-    private long? _userId = null;
+  public override ApiCallType CallType => ApiCallType.TornKeyInfo;
 
-    public override ApiCallType CallType => ApiCallType.TornKeyInfo;
-
-    public void SetUserId(long userId)
+  public override async Task HandleResponseAsync(QueueItemDto item, string content, CancellationToken stoppingToken)
+  {
+    if (item.PayloadJson is null ||
+        !item.PayloadJson.TryGetValue("UserId", out var userIdString) ||
+        !long.TryParse(userIdString, out var userId))
     {
-        _userId = userId;
+      throw new InvalidOperationException("UserId must be present in the queue item payload.");
     }
 
-    public override async Task HandleResponseAsync(string content, CancellationToken stoppingToken)
-    {
-        if (_userId is null)
-        {
-            throw new InvalidOperationException("User ID must be set before handling API response.");
-        }
+    var payload = JsonSerializer.Deserialize<KeyPayload>(content)
+        ?? throw new Exception($"Failed to deserialize {nameof(KeyPayload)} from API response.");
 
-        var payload = JsonSerializer.Deserialize<KeyPayload>(content)
-            ?? throw new Exception($"Failed to deserialize {nameof(KeyPayload)} from API response.");
-        
-        if (payload.Error?.ErrorMessage is not null && payload.Error.ErrorMessage.Equals("Incorrect key", StringComparison.OrdinalIgnoreCase))
-        {
-            await DatabaseService.MarkKeyUnavailableAsync(_userId.Value, stoppingToken);
-        }
+    if (payload.Error?.ErrorMessage is not null && payload.Error.ErrorMessage.Equals("Incorrect key", StringComparison.OrdinalIgnoreCase))
+    {
+      Logger.LogWarning("API key for user {UserId} is incorrect or cancelled. Marking as unavailable.", userId);
+      await DatabaseService.MarkKeyUnavailableAsync(userId, stoppingToken);
     }
+  }
 }

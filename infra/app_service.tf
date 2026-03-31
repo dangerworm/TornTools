@@ -30,10 +30,32 @@ resource "azurerm_linux_web_app" "backend_api" {
       var.environment,
       "Development"
     )
-    "ConnectionStrings__PostgresConnection" = "Host=${azurerm_postgresql_flexible_server.db_server.fqdn};Database=${azurerm_postgresql_flexible_server_database.postgres_db.name};Username=${azurerm_postgresql_flexible_server.db_server.administrator_login};Password=${azurerm_key_vault_secret.db_password.value};Ssl Mode=Require"
-    "LocalConfiguration__RunningLocally"    = "false"
-    "TornApiCallerConfiguration__MaxCallsPerMinute" = "100"
+    "ConnectionStrings__PostgresConnection"       = "Host=${azurerm_postgresql_flexible_server.db_server.fqdn};Database=${azurerm_postgresql_flexible_server_database.postgres_db.name};Username=${azurerm_postgresql_flexible_server.db_server.administrator_login};Password=${azurerm_key_vault_secret.db_password.value};Ssl Mode=Require"
+    "EnvironmentConfiguration__EnvironmentName"   = "${var.environment}"
+    "EnvironmentConfiguration__PopulateQueue"     = "true"
+    "EnvironmentConfiguration__RunQueueProcessor" = "true"
+    "CorsAllowedOrigins"                          = var.custom_domains_enabled ? "https://${var.frontend_hostname}" : trimsuffix(azurerm_storage_account.frontend_sa.primary_web_endpoint, "/")
+    "JwtConfiguration__Secret"                    = var.jwt_secret
   }
 
   depends_on = [azurerm_service_plan.backend_plan]
+}
+
+resource "azurerm_app_service_custom_hostname_binding" "api_custom_hostname" {
+  count               = var.custom_domains_enabled ? 1 : 0
+  hostname            = var.api_hostname
+  app_service_name    = azurerm_linux_web_app.backend_api.name
+  resource_group_name = azurerm_resource_group.torntools_webapp_rg.name
+}
+
+resource "azurerm_app_service_managed_certificate" "api_managed_cert" {
+  count                      = var.custom_domains_enabled ? 1 : 0
+  custom_hostname_binding_id = azurerm_app_service_custom_hostname_binding.api_custom_hostname[0].id
+}
+
+resource "azurerm_app_service_certificate_binding" "api_cert_binding" {
+  count               = var.custom_domains_enabled ? 1 : 0
+  hostname_binding_id = azurerm_app_service_custom_hostname_binding.api_custom_hostname[0].id
+  certificate_id      = azurerm_app_service_managed_certificate.api_managed_cert[0].id
+  ssl_state           = "SniEnabled"
 }

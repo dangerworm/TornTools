@@ -7,22 +7,22 @@ namespace TornTools.Persistence.Entities;
 [Table("user_favourite_items", Schema = "public")]
 public class UserFavouriteItemEntity
 {
-    [Required]
-    [Column("user_id")]
-    public required long UserId { get; set; }
+  [Required]
+  [Column("user_id")]
+  public required long UserId { get; set; }
 
-    [Required]
-    [Column("item_id")]
-    public required int ItemId { get; set; }
+  [Required]
+  [Column("item_id")]
+  public required int ItemId { get; set; }
 
-    public UserEntity User { get; set; } = null!;
+  public UserEntity User { get; set; } = null!;
 
-    public UserFavouriteItemDto AsDto()
+  public UserFavouriteItemDto AsDto()
+  {
+    return new UserFavouriteItemDto
     {
-        return new UserFavouriteItemDto
-        {
-            UserId = UserId,
-            ItemId = ItemId
-        };
-    }
+      UserId = UserId,
+      ItemId = ItemId
+    };
+  }
 }

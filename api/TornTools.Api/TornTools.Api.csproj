@@ -9,12 +9,20 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="3.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.4" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.4" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\TornTools.Application\TornTools.Application.csproj" />
     <ProjectReference Include="..\TornTools.Cron\TornTools.Cron.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Weav3rPython\bazaar_fetch.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

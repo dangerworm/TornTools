@@ -5,11 +5,11 @@ namespace TornTools.Core.Models.YataStocks;
 
 public class ForeignStocksPayload
 {
-    [JsonPropertyName("stocks")]
-    public required Dictionary<string, CountryStocks> CountryStocks { get; set; }
+  [JsonPropertyName("stocks")]
+  public required Dictionary<string, CountryStocks> CountryStocks { get; set; }
 
-    [JsonPropertyName("timestamp")]
-    [JsonConverter(typeof(UnixSecondsDateTimeConverter))]
-    public required DateTime Timestamp { get; set; }
+  [JsonPropertyName("timestamp")]
+  [JsonConverter(typeof(UnixSecondsDateTimeConverter))]
+  public required DateTimeOffset Timestamp { get; set; }
 }
 

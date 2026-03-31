@@ -3,17 +3,15 @@ using System.Text.Json.Serialization;
 
 namespace TornTools.Core.Helpers;
 
-public class UnixSecondsDateTimeConverter : JsonConverter<DateTime>
+public class UnixSecondsDateTimeConverter : JsonConverter<DateTimeOffset>
 {
-    public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-    {
-        var seconds = reader.GetInt64();
-        return DateTimeOffset.FromUnixTimeSeconds(seconds).UtcDateTime;
-    }
+  public override DateTimeOffset Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+  {
+    return DateTimeOffset.FromUnixTimeSeconds(reader.GetInt64());
+  }
 
-    public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
-    {
-        var seconds = new DateTimeOffset(value).ToUnixTimeSeconds();
-        writer.WriteNumberValue(seconds);
-    }
+  public override void Write(Utf8JsonWriter writer, DateTimeOffset value, JsonSerializerOptions options)
+  {
+    writer.WriteNumberValue(value.ToUnixTimeSeconds());
+  }
 }

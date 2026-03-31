@@ -7,6 +7,6 @@ public abstract class RepositoryBase<TRepository>(
     TornToolsDbContext dbContext
 )
 {
-    protected readonly ILogger<TRepository> Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    protected readonly TornToolsDbContext DbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+  protected readonly ILogger<TRepository> Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+  protected readonly TornToolsDbContext DbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
 }

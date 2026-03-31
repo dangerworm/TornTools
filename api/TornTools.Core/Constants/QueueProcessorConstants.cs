@@ -2,7 +2,7 @@
 
 public static class QueueProcessorConstants
 {
-    public const decimal GroupDivisor = 5.0m;
-    public const int MinProfitToPrioritise = 500;
-    public const int SecondsToWaitOnEmptyQueue = 5;
+  public const decimal GroupDivisor = 5.0m;
+  public const int MinProfitToPrioritise = 500;
+  public const int SecondsToWaitOnEmptyQueue = 5;
 }

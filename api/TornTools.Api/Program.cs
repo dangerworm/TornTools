@@ -13,11 +13,12 @@ using TornTools.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddCorsPolicy();
+builder.Services.AddCorsPolicy(builder.Configuration);
+builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddDatabase(builder.Configuration);
 builder.Services.AddHangfire(builder.Configuration);
 builder.Services.AddHttpClient();
-builder.Services.AddConfiguration(builder.Configuration);
+builder.Services.AddConfigurations(builder.Configuration);
 builder.Services.AddDependencies();
 
 builder.Services.AddControllers();
@@ -25,38 +26,55 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-var localConfig = builder.Configuration.GetSection(nameof(LocalConfiguration)).Get<LocalConfiguration>();
-if (localConfig is null || !localConfig.RunningLocally)
+var environmentConfiguration = builder.Configuration
+  .GetRequiredSection(nameof(EnvironmentConfiguration)).Get<EnvironmentConfiguration>()
+    ?? throw new InvalidProgramException($"Failed to bind {nameof(EnvironmentConfiguration)} from configuration.");
+
+if (environmentConfiguration.RunQueueProcessor)
 {
-    builder.Services.AddHostedService<QueueProcessor>();
+  builder.Services.AddHostedService<QueueProcessor>();
 }
 
 var app = builder.Build();
+
+var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
 
 app.UseHangfireDashboard("/hangfire");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+  app.MapOpenApi();
 }
 
 using var scope = app.Services.CreateScope();
-if (localConfig is null || !localConfig.RunningLocally)
+if (environmentConfiguration.PopulateQueue)
 {
-    var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
+  startupLogger.LogInformation("Running in hosted mode. Initialising queue.");
 
-    await databaseService.RemoveQueueItemsAsync(CancellationToken.None);
+  var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
 
-    var numberOfItems = await databaseService.GetNumberOfItemsAsync(CancellationToken.None);
-    if (numberOfItems == 0)
-    {
-        await databaseService.CreateQueueItem(ApiCallType.TornItems, TornApiConstants.Items, CancellationToken.None);
-    }
+  await databaseService.RemoveQueueItemsAsync(CancellationToken.None);
+
+  var numberOfItems = await databaseService.GetNumberOfItemsAsync(CancellationToken.None);
+  if (numberOfItems == 0)
+  {
+    startupLogger.LogInformation("No items found in database. Creating initial queue item.");
+    await databaseService.CreateQueueItem(ApiCallType.TornItems, TornApiConstants.Items, CancellationToken.None);
+  }
+  else
+  {
+    startupLogger.LogInformation("Database contains {ItemCount} items.", numberOfItems);
+  }
+}
+else
+{
+  startupLogger.LogInformation("Running locally. Skipping queue initialisation and background processor.");
 }
 
 var jobScheduler = scope.ServiceProvider.GetRequiredService<IApiJobScheduler>();
 jobScheduler.RegisterRecurringJobs();
+startupLogger.LogInformation("Recurring Hangfire jobs registered.");
 
 app.UseHttpsRedirection();
 
@@ -64,6 +82,7 @@ app.UseRouting();
 
 app.UseCors(ApiConstants.CorsPolicy);
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
