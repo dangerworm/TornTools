@@ -22,7 +22,7 @@ public class ItemChangeLogEntity
 
   [Required]
   [Column("change_time")]
-  public required DateTime ChangeTime { get; set; }
+  public required DateTimeOffset ChangeTime { get; set; }
 
   [Required]
   [Column("new_price")]

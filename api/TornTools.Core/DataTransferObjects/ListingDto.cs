@@ -11,7 +11,7 @@ public class ListingDto
   public long? PlayerId { get; set; }
   public required int ItemId { get; set; }
   public required int ListingPosition { get; set; }
-  public required DateTime TimeSeen { get; set; }
+  public required DateTimeOffset TimeSeen { get; set; }
   public required long Price { get; set; }
   public required int Quantity { get; set; }
 
@@ -25,7 +25,7 @@ public class ListingDto
     Source = Source.Torn;
     ItemId = itemId;
     ListingPosition = listingPosition;
-    TimeSeen = DateTime.UtcNow;
+    TimeSeen = DateTimeOffset.UtcNow;
     Price = listing.Price;
     Quantity = listing.Quantity;
   }

@@ -8,5 +8,5 @@ public class ForeignStockItemDto
   public required string ItemName { get; set; }
   public required int Quantity { get; set; }
   public required long Cost { get; set; }
-  public required DateTime LastUpdated { get; set; }
+  public required DateTimeOffset LastUpdated { get; set; }
 }

@@ -10,6 +10,6 @@ public class ForeignStocksPayload
 
   [JsonPropertyName("timestamp")]
   [JsonConverter(typeof(UnixSecondsDateTimeConverter))]
-  public required DateTime Timestamp { get; set; }
+  public required DateTimeOffset Timestamp { get; set; }
 }
 

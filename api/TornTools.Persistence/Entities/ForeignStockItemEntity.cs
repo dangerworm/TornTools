@@ -26,7 +26,7 @@ public class ForeignStockItemEntity
   public required long Cost { get; set; }
 
   [Column("last_updated")]
-  public required DateTime LastUpdated { get; set; }
+  public required DateTimeOffset LastUpdated { get; set; }
 
   public ForeignStockItemDto AsDto()
   {

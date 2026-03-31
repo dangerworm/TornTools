@@ -7,7 +7,7 @@ public class CountryStocks
 {
   [JsonPropertyName("update")]
   [JsonConverter(typeof(UnixSecondsDateTimeConverter))]
-  public required DateTime LastUpdated { get; set; }
+  public required DateTimeOffset LastUpdated { get; set; }
 
   [JsonPropertyName("stocks")]
   public IEnumerable<ForeignStockItem> ForeignStockItems { get; set; } = [];

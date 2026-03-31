@@ -42,7 +42,7 @@ public class QueueItemEntity
 
   [Required]
   [Column("created_at")]
-  public required DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+  public required DateTimeOffset CreatedAt { get; set; } = DateTime.UtcNow;
 
   [Column("last_attempt_at")]
   public DateTime? LastAttemptAt { get; set; }

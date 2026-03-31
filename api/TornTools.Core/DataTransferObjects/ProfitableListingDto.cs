@@ -10,7 +10,7 @@ public class ProfitableListingDto
   public long TotalCost { get; set; }
   public long? CityPrice { get; set; }
   public long MarketPrice { get; set; }
-  public DateTime LastUpdated { get; set; }
+  public DateTimeOffset LastUpdated { get; set; }
 
   public long Profit => CityPrice.HasValue
       ? (CityPrice.Value * Quantity) - TotalCost

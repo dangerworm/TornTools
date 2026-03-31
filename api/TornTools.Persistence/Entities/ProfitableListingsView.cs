@@ -30,7 +30,7 @@ public class ProfitableListingView
   public long MarketPrice { get; set; }
 
   [Column("last_updated")]
-  public DateTime LastUpdated { get; set; }
+  public DateTimeOffset LastUpdated { get; set; }
 
   public ProfitableListingDto AsDto()
   {

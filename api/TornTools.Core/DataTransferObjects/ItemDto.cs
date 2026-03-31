@@ -32,7 +32,7 @@ public class ItemDto
   public int? DetailsAmmoMagazineRounds { get; set; }
   public int? DetailsAmmoRateOfFireMinimum { get; set; }
   public int? DetailsAmmoRateOfFireMaximum { get; set; }
-  public required DateTime LastUpdated { get; set; }
+  public required DateTimeOffset LastUpdated { get; set; }
 
   public ItemDto() { }
 

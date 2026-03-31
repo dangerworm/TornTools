@@ -33,7 +33,7 @@ public class ListingEntity
 
   [Required]
   [Column("time_seen")]
-  public DateTime TimeSeen { get; set; }
+  public DateTimeOffset TimeSeen { get; set; }
 
   [Required]
   [Column("price")]

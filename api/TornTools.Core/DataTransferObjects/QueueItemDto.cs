@@ -18,9 +18,9 @@ public class QueueItemDto
 
   public int Attempts { get; set; } = 0;
 
-  public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-  public DateTime? LastAttemptAt { get; set; }
-  public DateTime? NextAttemptAt { get; set; }
-  public DateTime? ProcessedAt { get; set; }
+  public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+  public DateTimeOffset? LastAttemptAt { get; set; }
+  public DateTimeOffset? NextAttemptAt { get; set; }
+  public DateTimeOffset? ProcessedAt { get; set; }
   public long QueueIndex { get; set; }
 }

@@ -91,7 +91,7 @@ public class ItemEntity
   public int? DetailsAmmoRateOfFireMaximum { get; set; }
 
   [Column("last_updated")]
-  public required DateTime LastUpdated { get; set; }
+  public required DateTimeOffset LastUpdated { get; set; }
 
   public ICollection<ItemChangeLogEntity> ChangeLogs { get; set; } = [];
   public ICollection<ForeignStockItemEntity> ForeignStockItems { get; set; } = [];
