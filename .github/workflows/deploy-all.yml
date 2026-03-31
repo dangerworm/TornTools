@@ -93,6 +93,17 @@ jobs:
         run: terraform init -backend-config=backend.${{ env.ENV_DISPLAY_NAME }}.config
         working-directory: infra
 
+      - name: Remove unmanageable resources from state
+        env:
+          ARM_CLIENT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
+          ARM_CLIENT_SECRET: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}
+          ARM_SUBSCRIPTION_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
+          ARM_TENANT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
+        run: |
+          terraform state rm 'azurerm_app_service_managed_certificate.api_managed_cert[0]' 2>/dev/null || true
+          terraform state rm 'azurerm_app_service_certificate_binding.api_cert_binding[0]' 2>/dev/null || true
+        working-directory: infra
+
       - name: Terraform Plan (with lock retry)
         id: plan
         env:
