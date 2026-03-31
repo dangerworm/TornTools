@@ -9,13 +9,14 @@ output "api_url" {
 }
 
 output "cdn_endpoint_hostname" {
-  description = "CDN endpoint hostname — set this as the CNAME target for your frontend custom domain (torntools.dangerworm.dev)"
-  value       = azurerm_cdn_endpoint.frontend_cdn_endpoint.fqdn
+  description = "Front Door endpoint hostname — use as CNAME target for torntools.dangerworm.dev"
+  value       = azurerm_cdn_frontdoor_endpoint.frontend_afd_endpoint.host_name
 }
 
 output "app_service_domain_verification_id" {
-  description = "App Service domain verification ID — set this as the TXT record value for asuid.api.torntools.dangerworm.dev"
+  description = "App Service domain verification ID — use as TXT record value for asuid.api.torntools.dangerworm.dev"
   value       = azurerm_linux_web_app.backend_api.custom_domain_verification_id
+  sensitive   = true
 }
 
 output "postgres_connection_string" {
