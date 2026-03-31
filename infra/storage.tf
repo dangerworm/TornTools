@@ -78,7 +78,7 @@ resource "azurerm_cdn_frontdoor_route" "frontend_route" {
 
 resource "azurerm_cdn_frontdoor_custom_domain" "frontend_custom_domain" {
   count                    = var.custom_domains_enabled ? 1 : 0
-  name                     = "frontend-custom-domain"
+  name                     = "torntools-dangerworm-dev-d11a"
   cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.frontend_afd.id
   host_name                = var.frontend_hostname
 
