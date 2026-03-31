@@ -16,7 +16,7 @@ public class UserEntity
   public required string ApiKey { get; set; }
 
   [Column("api_key_last_used")]
-  public DateTime? ApiKeyLastUsed { get; set; }
+  public DateTimeOffset? ApiKeyLastUsed { get; set; }
 
   [Column("key_available")]
   public bool KeyAvailable { get; set; }

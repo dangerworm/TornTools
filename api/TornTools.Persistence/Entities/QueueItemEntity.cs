@@ -45,13 +45,13 @@ public class QueueItemEntity
   public required DateTimeOffset CreatedAt { get; set; } = DateTime.UtcNow;
 
   [Column("last_attempt_at")]
-  public DateTime? LastAttemptAt { get; set; }
+  public DateTimeOffset? LastAttemptAt { get; set; }
 
   [Column("next_attempt_at")]
-  public DateTime? NextAttemptAt { get; set; }
+  public DateTimeOffset? NextAttemptAt { get; set; }
 
   [Column("processed_at")]
-  public DateTime? ProcessedAt { get; set; }
+  public DateTimeOffset? ProcessedAt { get; set; }
 
   [Column("queue_index")]
   [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

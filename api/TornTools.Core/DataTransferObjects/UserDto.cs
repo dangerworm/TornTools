@@ -3,7 +3,7 @@
 public class UserDto
 {
   public required string ApiKey { get; set; }
-  public DateTime? ApiKeyLastUsed { get; set; }
+  public DateTimeOffset? ApiKeyLastUsed { get; set; }
   public bool KeyAvailable { get; set; } = true;
   public long? Id { get; set; }
   public required string Name { get; set; }
