@@ -111,6 +111,7 @@ jobs:
           TF_VAR_github_actions_tenant_id: ${{ secrets.TF_VAR_GITHUB_ACTIONS_TENANT_ID }}
           TF_VAR_subscription_id: ${{ secrets.TF_VAR_SUBSCRIPTION_ID }}
           TF_VAR_tfstate_storage_account_name: "torntoolsstoretfstate"
+          TF_VAR_custom_domains_enabled: ${{ vars.TF_VAR_CUSTOM_DOMAINS_ENABLED || 'false' }}
         run: |
           echo "📐 Running terraform plan..."
           set +e
@@ -167,6 +168,7 @@ jobs:
           TF_VAR_github_actions_tenant_id: ${{ secrets.TF_VAR_GITHUB_ACTIONS_TENANT_ID }}
           TF_VAR_subscription_id: ${{ secrets.TF_VAR_SUBSCRIPTION_ID }}
           TF_VAR_tfstate_storage_account_name: "torntoolsstoretfstate"
+          TF_VAR_custom_domains_enabled: ${{ vars.TF_VAR_CUSTOM_DOMAINS_ENABLED || 'false' }}
         run: terraform apply -auto-approve tfplan
         working-directory: infra
 
