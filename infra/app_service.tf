@@ -48,14 +48,8 @@ resource "azurerm_app_service_custom_hostname_binding" "api_custom_hostname" {
   resource_group_name = azurerm_resource_group.torntools_webapp_rg.name
 }
 
-resource "azurerm_app_service_managed_certificate" "api_managed_cert" {
-  count                      = var.custom_domains_enabled ? 1 : 0
-  custom_hostname_binding_id = azurerm_app_service_custom_hostname_binding.api_custom_hostname[0].id
-}
-
-resource "azurerm_app_service_certificate_binding" "api_cert_binding" {
-  count               = var.custom_domains_enabled ? 1 : 0
-  hostname_binding_id = azurerm_app_service_custom_hostname_binding.api_custom_hostname[0].id
-  certificate_id      = azurerm_app_service_managed_certificate.api_managed_cert[0].id
-  ssl_state           = "SniEnabled"
-}
+# azurerm_app_service_managed_certificate and azurerm_app_service_certificate_binding
+# are intentionally not managed by Terraform. The certificate was provisioned outside
+# of Terraform and cannot be imported cleanly (ForceNew on custom_hostname_binding_id
+# causes a replace cycle that Azure blocks with 409). The cert auto-renews and the
+# SSL binding persists in Azure unmanaged.
