@@ -16,8 +16,20 @@ public class TornMarketListingsApiCallHandler(
 
   public override async Task HandleResponseAsync(QueueItemDto item, string content, CancellationToken stoppingToken)
   {
-    var payload = JsonSerializer.Deserialize<ItemMarketPayload>(content)
-        ?? throw new Exception($"Failed to deserialize {nameof(ItemMarketPayload)} from API response.");
+    var payload = JsonSerializer.Deserialize<ItemMarketPayload>(content);
+
+    if (payload is null)
+    {
+      logger.LogError("Failed to deserialize {ItemMarketPayload} from API response.", nameof(ItemMarketPayload));
+      throw new Exception($"Failed to deserialize {nameof(ItemMarketPayload)} from API response.");
+    }
+
+    if (payload.ItemMarket is null)
+    {
+      var errorMessage = payload.Error?.ErrorMessage ?? "Unknown error";
+      logger.LogError("API call resulted in error: {ErrorMessage}", errorMessage);
+      throw new Exception($"API call resulted in error: {errorMessage}");
+    }
 
     var correlationId = Guid.NewGuid();
     var itemId = payload.ItemMarket.Item.Id;

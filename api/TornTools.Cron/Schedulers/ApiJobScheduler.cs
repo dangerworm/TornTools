@@ -46,11 +46,14 @@ public class ApiJobScheduler(
                         // overlapping API calls.
     );
 
-    RecurringJob.AddOrUpdate(
-        nameof(CheckUntouchedMarketItems),
-        () => CheckUntouchedMarketItems(),
-        "0 */1 * * *" // At minute 0 past every 1 hour.
-    );
+    /*
+     * 
+     */
+    //RecurringJob.AddOrUpdate(
+    //    nameof(CheckUntouchedMarketItems),
+    //    () => CheckUntouchedMarketItems(),
+    //    "0 */1 * * *" // At minute 0 past every 1 hour.
+    //);
 
     RecurringJob.AddOrUpdate(
     nameof(UpdateForeignStock),

@@ -69,7 +69,7 @@ if (environmentConfiguration.PopulateQueue)
 }
 else
 {
-  startupLogger.LogInformation("Running locally. Skipping queue initialisation and background processor.");
+  startupLogger.LogInformation("Running locally. Skipping queue initialisation.");
 }
 
 var jobScheduler = scope.ServiceProvider.GetRequiredService<IApiJobScheduler>();
