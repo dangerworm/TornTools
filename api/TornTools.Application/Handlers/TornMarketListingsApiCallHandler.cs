@@ -20,14 +20,14 @@ public class TornMarketListingsApiCallHandler(
 
     if (payload is null)
     {
-      logger.LogError("Failed to deserialize {ItemMarketPayload} from API response.", nameof(ItemMarketPayload));
+      Logger.LogError("Failed to deserialize {ItemMarketPayload} from API response.", nameof(ItemMarketPayload));
       throw new Exception($"Failed to deserialize {nameof(ItemMarketPayload)} from API response.");
     }
 
     if (payload.ItemMarket is null)
     {
       var errorMessage = payload.Error?.ErrorMessage ?? "Unknown error";
-      logger.LogError("API call resulted in error: {ErrorMessage}", errorMessage);
+      Logger.LogError("API call resulted in error: {ErrorMessage}", errorMessage);
       throw new Exception($"API call resulted in error: {errorMessage}");
     }
 

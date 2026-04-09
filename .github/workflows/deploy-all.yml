@@ -74,13 +74,13 @@ jobs:
       api_url: ${{ steps.get_terraform_outputs.outputs.api_url }}
       react_static_site_url: ${{ steps.get_terraform_outputs.outputs.react_static_site_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
 
       - name: Log in to Azure
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
@@ -100,8 +100,11 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
           ARM_TENANT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
         run: |
-          terraform state rm 'azurerm_app_service_managed_certificate.api_managed_cert[0]' 2>/dev/null || true
-          terraform state rm 'azurerm_app_service_certificate_binding.api_cert_binding[0]' 2>/dev/null || true
+          STATE=$(terraform state list 2>/dev/null)
+          echo "$STATE" | grep -qF 'azurerm_app_service_managed_certificate.api_managed_cert' && \
+            terraform state rm 'azurerm_app_service_managed_certificate.api_managed_cert[0]' || true
+          echo "$STATE" | grep -qF 'azurerm_app_service_certificate_binding.api_cert_binding' && \
+            terraform state rm 'azurerm_app_service_certificate_binding.api_cert_binding[0]' || true
         working-directory: infra
 
       - name: Terraform Plan (with lock retry)
@@ -212,7 +215,7 @@ jobs:
     needs: [setup, infra]
     environment: ${{ needs.setup.outputs.github_env_name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Run Flyway Migrations
         env:
@@ -240,10 +243,10 @@ jobs:
     env:
       ENV_DISPLAY_NAME: ${{ needs.setup.outputs.tf_env_name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5.2.0
         with:
           dotnet-version: "9.0.x"
 
@@ -257,7 +260,7 @@ jobs:
           pip install curl_cffi --target api/TornTools.Api/publish/Weav3rPython/libs
 
       - name: Log in to Azure
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
@@ -275,12 +278,12 @@ jobs:
     env:
       ENV_DISPLAY_NAME: ${{ needs.setup.outputs.tf_env_name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Install dependencies and build
         env:
@@ -291,7 +294,7 @@ jobs:
           npm run build
 
       - name: Log in to Azure
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
