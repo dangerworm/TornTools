@@ -45,6 +45,12 @@ public class ApiJobScheduler(
     );
 
     RecurringJob.AddOrUpdate(
+        nameof(SummariseChangeLogs),
+        () => SummariseChangeLogs(),
+        "0 */6 * * *" // At minute 0 past every 6th hour.
+    );
+
+    RecurringJob.AddOrUpdate(
     nameof(UpdateForeignStock),
         () => UpdateForeignStock(),
         "0/10 * * * *" // At every 10th minute from 0 through 59.
@@ -67,6 +73,13 @@ public class ApiJobScheduler(
   {
     _logger.LogInformation("Running Hangfire job {JobName}", nameof(CheckStaleMarketItems));
     await _databaseService.PopulateQueueWithStaleMarketItems(stoppingToken: CancellationToken.None);
+  }
+
+  [DisplayName("Summarise change logs")]
+  public async Task SummariseChangeLogs()
+  {
+    _logger.LogInformation("Running Hangfire job {JobName}", nameof(SummariseChangeLogs));
+    await _databaseService.SummariseChangeLogsAsync(stoppingToken: CancellationToken.None);
   }
 
   [DisplayName("Foreign stock update")]

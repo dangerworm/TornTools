@@ -11,6 +11,7 @@ public interface IDatabaseService
   Task UpsertForeignStockItemsAsync(IEnumerable<ForeignStockItemDto> items, CancellationToken stoppingToken);
 
   Task CreateItemChangeLogAsync(ItemChangeLogDto changeLogDto, CancellationToken stoppingToken);
+  Task SummariseChangeLogsAsync(CancellationToken stoppingToken);
 
   Task<IEnumerable<ItemDto>> GetAllItemsAsync(CancellationToken stoppingToken);
   Task<int> GetNumberOfItemsAsync(CancellationToken stoppingToken);

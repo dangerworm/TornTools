@@ -3,6 +3,7 @@ using TornTools.Application.Interfaces;
 using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Enums;
+using TornTools.Core.Extensions;
 using TornTools.Core.Models.InputModels;
 using TornTools.Cron.Enums;
 using TornTools.Persistence.Interfaces;
@@ -13,15 +14,19 @@ public class DatabaseService(
     ILogger<DatabaseService> logger,
     IForeignStockItemRepository foreignStockItemRepository,
     IItemChangeLogRepository itemChangeLogRepository,
+    IItemChangeLogSummaryRepository itemChangeLogSummaryRepository,
     IItemRepository itemRepository,
     IListingRepository listingRepository,
     IQueueItemRepository queueItemRepository,
     IUserRepository userRepository
 ) : IDatabaseService
 {
+  private const double SummaryBucketSeconds = 6 * 3600;
+
   private readonly ILogger<DatabaseService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
   private readonly IForeignStockItemRepository _foreignStockItemRepository = foreignStockItemRepository ?? throw new ArgumentNullException(nameof(foreignStockItemRepository));
   private readonly IItemChangeLogRepository _itemChangeLogRepository = itemChangeLogRepository ?? throw new ArgumentNullException(nameof(itemChangeLogRepository));
+  private readonly IItemChangeLogSummaryRepository _itemChangeLogSummaryRepository = itemChangeLogSummaryRepository ?? throw new ArgumentNullException(nameof(itemChangeLogSummaryRepository));
   private readonly IItemRepository _itemRepository = itemRepository ?? throw new ArgumentNullException(nameof(itemRepository));
   private readonly IListingRepository _listingRepository = listingRepository ?? throw new ArgumentNullException(nameof(listingRepository));
   private readonly IQueueItemRepository _queueItemRepository = queueItemRepository ?? throw new ArgumentNullException(nameof(queueItemRepository));
@@ -42,6 +47,28 @@ public class DatabaseService(
     return _itemChangeLogRepository.CreateItemChangeLogAsync(changeLogDto, stoppingToken);
   }
 
+  public async Task SummariseChangeLogsAsync(CancellationToken stoppingToken)
+  {
+    var latestBucketStart = await _itemChangeLogSummaryRepository.GetLatestBucketStartAsync(stoppingToken);
+
+    DateTimeOffset fromBucket;
+    if (latestBucketStart.HasValue)
+    {
+      fromBucket = latestBucketStart.Value;
+    }
+    else
+    {
+      var earliestChangeTime = await _itemChangeLogRepository.GetEarliestChangeTimeAsync(stoppingToken);
+      if (earliestChangeTime is null) return;
+      fromBucket = AlignToBucketBoundary(earliestChangeTime.Value, SummaryBucketSeconds);
+    }
+
+    var currentBucketStart = AlignToBucketBoundary(DateTimeOffset.UtcNow, SummaryBucketSeconds);
+    if (fromBucket >= currentBucketStart) return;
+
+    await _itemChangeLogSummaryRepository.BuildSummariesAsync(fromBucket, currentBucketStart, SummaryBucketSeconds, stoppingToken);
+  }
+
   public Task<IEnumerable<ItemDto>> GetAllItemsAsync(CancellationToken stoppingToken)
   {
     return _itemRepository.GetAllItemsAsync(stoppingToken);
@@ -59,12 +86,32 @@ public class DatabaseService(
 
   public Task<IEnumerable<ItemHistoryPointDto>> GetItemPriceHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken)
   {
+    if (window >= HistoryWindow.Month1)
+    {
+      var (range, bucket) = window.ToWindowConfiguration();
+      var now = DateTimeOffset.UtcNow;
+      return _itemChangeLogSummaryRepository.GetPriceHistoryAsync(itemId, now.Subtract(range), now, bucket.TotalSeconds, stoppingToken);
+    }
     return _itemChangeLogRepository.GetItemPriceHistoryAsync(itemId, window, stoppingToken);
   }
 
   public Task<IEnumerable<ItemHistoryPointDto>> GetItemVelocityHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken)
   {
+    if (window >= HistoryWindow.Month1)
+    {
+      var (range, bucket) = window.ToWindowConfiguration();
+      var now = DateTimeOffset.UtcNow;
+      return _itemChangeLogSummaryRepository.GetVelocityHistoryAsync(itemId, now.Subtract(range), now, bucket.TotalSeconds, stoppingToken);
+    }
     return _itemChangeLogRepository.GetItemVelocityHistoryAsync(itemId, window, stoppingToken);
+  }
+
+  private static DateTimeOffset AlignToBucketBoundary(DateTimeOffset time, double bucketSeconds)
+  {
+    var epoch = DateTimeOffset.UnixEpoch;
+    var totalSeconds = (long)(time - epoch).TotalSeconds;
+    var bucketSize = (long)bucketSeconds;
+    return epoch.AddSeconds((totalSeconds / bucketSize) * bucketSize);
   }
 
   public Task CreateListingsAsync(IEnumerable<ListingDto> listings, CancellationToken stoppingToken)

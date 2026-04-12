@@ -210,9 +210,19 @@ regressions can only be caught manually.
 
 **File:** `api/TornTools.Application/Interfaces/IDatabaseService.cs`
 
-~20+ methods covering items, listings, queue, API keys, users, favourites, and themes — a God
-Object. Splitting by domain (`IItemService`, `IQueueService`, `IUserService`) would clarify
-responsibilities and reduce change blast radius.
+~30+ methods covering items, listings, queue, API keys, users, favourites, themes, change logs,
+and summaries — a God Object. Natural seams for splitting:
+
+| Service | Owns |
+|---|---|
+| `IItemService` | Items CRUD, listings, profitable listings, foreign stock |
+| `IItemHistoryService` | Change logs, summaries, price/velocity history |
+| `IQueueService` | Queue CRUD, queue population, `Build*QueueItem` helpers |
+| `IUserService` | Users, API keys, themes, favourites |
+
+Start with `IQueueService` — it has the most real logic and the private builder helpers belong
+there naturally. The rest can follow in one pass. All controllers and `ApiJobScheduler` will need
+re-injection.
 
 ### `QueueProcessor` is single-threaded
 
