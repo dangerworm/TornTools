@@ -39,13 +39,27 @@ var app = builder.Build();
 
 var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
 
-app.UseHangfireDashboard("/hangfire");
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
   app.MapOpenApi();
 }
+
+app.UseHttpsRedirection();
+
+app.UseRouting();
+
+app.UseCors(ApiConstants.CorsPolicy);
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+  Authorization = [new TornTools.Api.Authentication.HangfireAuthorizationFilter()]
+});
+
+app.MapControllers();
 
 using var scope = app.Services.CreateScope();
 if (environmentConfiguration.PopulateQueue)
@@ -75,16 +89,5 @@ else
 var jobScheduler = scope.ServiceProvider.GetRequiredService<IApiJobScheduler>();
 jobScheduler.RegisterRecurringJobs();
 startupLogger.LogInformation("Recurring Hangfire jobs registered.");
-
-app.UseHttpsRedirection();
-
-app.UseRouting();
-
-app.UseCors(ApiConstants.CorsPolicy);
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
 
 await app.RunAsync();
