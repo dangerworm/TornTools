@@ -11,7 +11,6 @@ import type { PurchaseOutlet, SaleOutlet } from '../types/markets'
 import OptionGroup from '../components/OptionGroup'
 import { purchaseOutletOptions, saleOutletOptions } from '../types/common'
 import { getTotalProfit } from '../lib/profitCalculations'
-import { getSecondsSinceLastUpdate } from '../lib/time'
 
 const VALID_PURCHASE_OUTLETS: PurchaseOutlet[] = ['city', 'bazaar', 'market']
 const VALID_SALE_OUTLETS: SaleOutlet[] = ['city', 'bazaar', 'market', 'anonymousMarket']
