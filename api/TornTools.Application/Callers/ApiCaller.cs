@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Text;
 using System.Text.Json;
+using TornTools.Application.Exceptions;
 using TornTools.Application.Interfaces;
 using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Enums;
@@ -67,6 +68,17 @@ public abstract class ApiCaller<TCaller>(
       var apiKeyHint = rawKey?.Length > 4
           ? $"key {rawKey[..4]}****"
           : "unknown key";
+
+      if (ex is TornKeyUnavailableException && rawKey is not null)
+      {
+        Logger.LogWarning(
+            "API key {ApiKeyHint} is unavailable (code {ErrorCode}). Marking as unavailable.",
+            apiKeyHint,
+            ((TornKeyUnavailableException)ex).ErrorCode
+        );
+        await DatabaseService.MarkKeyUnavailableByApiKeyAsync(rawKey, stoppingToken);
+        return false;
+      }
 
       Logger.LogError(
           ex,

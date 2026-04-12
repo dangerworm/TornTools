@@ -216,6 +216,11 @@ public class DatabaseService(
     return _userRepository.MarkKeyUnavailableAsync(userId, stoppingToken);
   }
 
+  public Task MarkKeyUnavailableByApiKeyAsync(string apiKey, CancellationToken stoppingToken)
+  {
+    return _userRepository.MarkKeyUnavailableByApiKeyAsync(apiKey, stoppingToken);
+  }
+
   public Task<UserDto> UpsertUserDetailsAsync(UserDetailsInputModel userDetails, CancellationToken stoppingToken)
   {
     var userDto = new UserDto
