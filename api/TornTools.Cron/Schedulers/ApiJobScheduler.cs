@@ -39,8 +39,8 @@ public class ApiJobScheduler(
     );
 
     RecurringJob.AddOrUpdate(
-        nameof(CheckUntouchedMarketItems),
-        () => CheckUntouchedMarketItems(),
+        nameof(CheckStaleMarketItems),
+        () => CheckStaleMarketItems(),
         "0 */1 * * *" // At minute 0 past every 1 hour.
     );
 
@@ -62,11 +62,11 @@ public class ApiJobScheduler(
     );
   }
 
-  [DisplayName("Untouched item update")]
-  public async Task CheckUntouchedMarketItems()
+  [DisplayName("Stale item update")]
+  public async Task CheckStaleMarketItems()
   {
-    _logger.LogInformation("Running Hangfire job {JobName}", nameof(CheckUntouchedMarketItems));
-    await _databaseService.PopulateQueueWithMarketAndWeav3rCallsForAllItems(stoppingToken: CancellationToken.None);
+    _logger.LogInformation("Running Hangfire job {JobName}", nameof(CheckStaleMarketItems));
+    await _databaseService.PopulateQueueWithStaleMarketItems(stoppingToken: CancellationToken.None);
   }
 
   [DisplayName("Foreign stock update")]

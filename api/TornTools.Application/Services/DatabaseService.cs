@@ -97,22 +97,18 @@ public class DatabaseService(
     return _itemRepository.GetProfitableItemsAsync(stoppingToken);
   }
 
-  public async Task PopulateQueueWithMarketAndWeav3rCallsForAllItems(CancellationToken stoppingToken)
+  public async Task PopulateQueueWithStaleMarketItems(CancellationToken stoppingToken)
   {
-    var items = await _itemRepository.GetMarketItemsAsync(stoppingToken);
-    var itemIds = items
-        .Select(i => i.Id)
-        .ToHashSet();
+    var staleItemIds = await _itemRepository.GetStaleMarketItemIdsAsync(TimeConstants.StaleListingThresholdHours, stoppingToken);
 
-    var queueItems = new List<QueueItemDto>();
+    var queueItems = staleItemIds
+        .SelectMany(id => new[] { BuildTornMarketQueueItem(id), BuildWeav3rQueueItem(id) })
+        .ToList();
 
-    foreach (var itemId in itemIds)
+    if (queueItems.Count > 0)
     {
-      queueItems.Add(BuildTornMarketQueueItem(itemId));
-      queueItems.Add(BuildWeav3rQueueItem(itemId));
+      await _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken);
     }
-
-    await _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken);
   }
 
   public async Task PopulateQueueWithMarketAndWeav3rItemsOfInterest(CancellationToken stoppingToken)

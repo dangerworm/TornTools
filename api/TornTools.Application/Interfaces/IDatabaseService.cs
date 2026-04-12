@@ -25,7 +25,7 @@ public interface IDatabaseService
 
   Task<IEnumerable<ProfitableListingDto>> GetProfitableListingsAsync(CancellationToken stoppingToken);
 
-  Task PopulateQueueWithMarketAndWeav3rCallsForAllItems(CancellationToken stoppingToken);
+  Task PopulateQueueWithStaleMarketItems(CancellationToken stoppingToken);
   Task PopulateQueueWithMarketAndWeav3rItemsOfInterest(CancellationToken stoppingToken);
   Task<QueueItemDto> CreateQueueItem(ApiCallType callType, string endpointUrl, CancellationToken stoppingToken);
   Task<QueueItemDto?> GetNextQueueItem(CancellationToken stoppingToken);

@@ -118,6 +118,19 @@ public class ItemRepository(
     return items.Select(item => item.AsDto());
   }
 
+  public async Task<IEnumerable<int>> GetStaleMarketItemIdsAsync(int thresholdHours, CancellationToken stoppingToken)
+  {
+    var threshold = DateTimeOffset.UtcNow.AddHours(-thresholdHours);
+
+    return await DbContext.Items
+        .AsNoTracking()
+        .Where(i => i.ValueMarketPrice != null)
+        .Where(i => !DbContext.Listings
+            .Any(l => l.ItemId == i.Id && l.TimeSeen >= threshold))
+        .Select(i => i.Id)
+        .ToListAsync(stoppingToken);
+  }
+
   public async Task<ItemDto> GetItemAsync(int id, CancellationToken stoppingToken)
   {
     var item = await GetItemByIdAsync(id, stoppingToken);
