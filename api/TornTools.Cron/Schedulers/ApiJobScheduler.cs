@@ -46,14 +46,11 @@ public class ApiJobScheduler(
                         // overlapping API calls.
     );
 
-    /*
-     * 
-     */
-    //RecurringJob.AddOrUpdate(
-    //    nameof(CheckUntouchedMarketItems),
-    //    () => CheckUntouchedMarketItems(),
-    //    "0 */1 * * *" // At minute 0 past every 1 hour.
-    //);
+    RecurringJob.AddOrUpdate(
+        nameof(CheckUntouchedMarketItems),
+        () => CheckUntouchedMarketItems(),
+        "0 */1 * * *" // At minute 0 past every 1 hour.
+    );
 
     RecurringJob.AddOrUpdate(
     nameof(UpdateForeignStock),
@@ -113,7 +110,7 @@ public class ApiJobScheduler(
   public async Task CheckUntouchedMarketItems()
   {
     _logger.LogInformation("Running Hangfire job {JobName}", nameof(CheckUntouchedMarketItems));
-    await _databaseService.PopulateMarketQueueItemsRemaining(stoppingToken: CancellationToken.None);
+    await _databaseService.PopulateQueueWithMarketAndWeav3rCallsForAllItems(stoppingToken: CancellationToken.None);
   }
 
   [DisplayName("Foreign stock update")]
