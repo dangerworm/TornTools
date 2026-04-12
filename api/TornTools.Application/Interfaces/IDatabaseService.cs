@@ -37,6 +37,7 @@ public interface IDatabaseService
   Task<int> GetApiKeyCountAsync(CancellationToken stoppingToken);
   Task<string> GetNextApiKeyAsync(CancellationToken stoppingToken);
   Task MarkKeyUnavailableAsync(long userId, CancellationToken stoppingToken);
+  Task MarkKeyUnavailableByApiKeyAsync(string apiKey, CancellationToken stoppingToken);
 
   Task<UserDto?> GetUserByIdAsync(long userId, CancellationToken stoppingToken);
   Task<List<UserDto>> GetUsersAsync(CancellationToken stoppingToken);

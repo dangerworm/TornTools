@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using TornTools.Application.Exceptions;
 using TornTools.Application.Interfaces;
 using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Enums;
@@ -26,8 +27,14 @@ public class TornMarketListingsApiCallHandler(
 
     if (payload.ItemMarket is null)
     {
+      var errorCode = payload.Error?.Code ?? 0;
       var errorMessage = payload.Error?.ErrorMessage ?? "Unknown error";
       logger.LogError("API call resulted in error: {ErrorMessage}", errorMessage);
+
+      // Codes 2 (Incorrect key) and 13 (Owner inactivity) mean this key will never work again.
+      if (errorCode is 2 or 13)
+        throw new TornKeyUnavailableException(errorCode, errorMessage);
+
       throw new Exception($"API call resulted in error: {errorMessage}");
     }
 

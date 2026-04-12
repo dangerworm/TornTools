@@ -65,6 +65,18 @@ public class UserRepository(
     }
   }
 
+  public async Task MarkKeyUnavailableByApiKeyAsync(string apiKey, CancellationToken stoppingToken)
+  {
+    var user = await DbContext.Users
+        .FirstOrDefaultAsync(u => u.ApiKey == apiKey, stoppingToken);
+
+    if (user is not null)
+    {
+      user.KeyAvailable = false;
+      await DbContext.SaveChangesAsync(stoppingToken);
+    }
+  }
+
   public async Task<UserDto> UpsertUserDetailsAsync(UserDto userDto, CancellationToken stoppingToken)
   {
     var userEntity = await DbContext.Users
