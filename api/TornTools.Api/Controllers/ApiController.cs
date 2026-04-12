@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using TornTools.Application.Interfaces;
 using TornTools.Core.Models.InputModels;
 
@@ -99,6 +100,9 @@ public class ApiController(
   [ProducesResponseType(StatusCodes.Status500InternalServerError)]
   public async Task<IActionResult> PostToggleUserFavourite([FromBody] UserFavouriteInputModel userFavouriteModel)
   {
+    if (!TryGetAuthenticatedUserId(out var authenticatedUserId) || authenticatedUserId != userFavouriteModel.UserId)
+      return Unauthorized();
+
     try
     {
       var user = await _databaseService.ToggleUserFavourite(userFavouriteModel, CancellationToken.None);
@@ -163,6 +167,9 @@ public class ApiController(
   [ProducesResponseType(StatusCodes.Status500InternalServerError)]
   public async Task<IActionResult> PostUserThemeSelection([FromBody] UserThemeSelectionInputModel themeSelection)
   {
+    if (!TryGetAuthenticatedUserId(out var authenticatedUserId) || authenticatedUserId != themeSelection.UserId)
+      return Unauthorized();
+
     try
     {
       var user = await _databaseService.UpdateUserPreferredThemeAsync(themeSelection, CancellationToken.None);
@@ -176,5 +183,11 @@ public class ApiController(
         message = "An error occurred while saving user settings."
       });
     }
+  }
+
+  private bool TryGetAuthenticatedUserId(out long userId)
+  {
+    var sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    return long.TryParse(sub, out userId);
   }
 }

@@ -39,7 +39,10 @@ var app = builder.Build();
 
 var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
 
-app.UseHangfireDashboard("/hangfire");
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+  Authorization = [new TornTools.Api.Authentication.HangfireAuthorizationFilter()]
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

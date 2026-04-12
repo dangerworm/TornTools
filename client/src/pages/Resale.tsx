@@ -59,9 +59,9 @@ const Resale = () => {
   }
 
   const sortedRows = useMemo(() => saleOutlet === 'city'
-    ? rows.sort((a, b) => b.cityProfit - a.cityProfit) 
-    : rows.sort((a, b) => b.marketProfit(taxType) - a.marketProfit(taxType)),
-  [rows, saleOutlet])
+    ? [...rows].sort((a, b) => b.cityProfit - a.cityProfit)
+    : [...rows].sort((a, b) => b.marketProfit(taxType) - a.marketProfit(taxType)),
+  [rows, saleOutlet, taxType])
 
   if (!rows) return <Loading message="Loading resale opportunities..." />
 
