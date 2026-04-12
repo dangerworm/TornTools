@@ -118,15 +118,19 @@ public class DatabaseService(
     await _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken);
   }
 
-  public async Task PopulateMarketQueueItemsOfInterest(CancellationToken stoppingToken)
+  public async Task PopulateQueueWithMarketAndWeav3rItemsOfInterest(CancellationToken stoppingToken)
   {
     // Anything appearing in the profitable listings should be prioritized.
     // Anything that has changed recently will also be useful to scan.
     var (profitableItemIds, groupedChanges) = await GetItemChangeData(stoppingToken);
 
-    var profitableQueueItems = profitableItemIds
-        .Select(BuildTornMarketQueueItem)
-        .ToList();
+    var profitableMarketQueueItems = profitableItemIds
+      .Select(BuildTornMarketQueueItem)
+      .ToList();
+
+    var profitableWeav3rQueueItems = profitableItemIds
+      .Select(BuildWeav3rQueueItem)
+      .ToList();
 
     // Build the final queue, starting with the most frequently changing markets.
     // Repeat calls for the profitable and grouped items, with small batches of
@@ -140,19 +144,24 @@ public class DatabaseService(
         // Ensure that markets which change regularly are checked most often
         var itemsToProcess = groupedChanges
             .Where(kv => kv.Value >= weight)
-            .Select(kv => kv.Key)
-            .Select(BuildTornMarketQueueItem);
+            .Select(kv => kv.Key);
 
-        queueItems.AddRange(itemsToProcess);
+        var marketQueueItems = BuildTornMarketQueueItems(itemsToProcess);
+        queueItems.AddRange(marketQueueItems);
+
+        var weav3rQueueItems = BuildWeav3rQueueItems(itemsToProcess);
+        queueItems.AddRange(weav3rQueueItems);
 
         // Include anything appearing in the profitable listings
         // so we don't leave old entries in the list for too long
-        queueItems.AddRange(profitableQueueItems);
+        queueItems.AddRange(profitableMarketQueueItems);
+        queueItems.AddRange(profitableWeav3rQueueItems);
       }
     }
     else
     {
-      queueItems.AddRange(profitableQueueItems);
+      queueItems.AddRange(profitableMarketQueueItems);
+      queueItems.AddRange(profitableWeav3rQueueItems);
     }
 
     await _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken);
@@ -292,6 +301,36 @@ public class DatabaseService(
         .ToDictionary(x => x.ItemId, x => x.Weight);
 
     return (profitableItemIds, groupedChanges);
+  }
+
+  private static IEnumerable<QueueItemDto> BuildTornMarketQueueItems(IEnumerable<int> itemIds)
+  {
+    foreach (var itemId in itemIds)
+    {
+      yield return new QueueItemDto
+      {
+        CallType = ApiCallType.TornMarketListings,
+        EndpointUrl = string.Format(TornApiConstants.ItemListings, itemId),
+        HttpMethod = "GET",
+        ItemStatus = nameof(QueueStatus.Pending),
+        CreatedAt = DateTime.UtcNow
+      };
+    }
+  }
+
+  private static IEnumerable<QueueItemDto> BuildWeav3rQueueItems(IEnumerable<int> itemIds)
+  {
+    foreach (var itemId in itemIds)
+    {
+      yield return new QueueItemDto
+      {
+        CallType = ApiCallType.Weav3rBazaarListings,
+        EndpointUrl = string.Format(Weav3rApiConstants.BazaarListings, itemId),
+        HttpMethod = "GET",
+        ItemStatus = nameof(QueueStatus.Pending),
+        CreatedAt = DateTime.UtcNow
+      };
+    }
   }
 
   private static QueueItemDto BuildTornMarketQueueItem(int itemId)
