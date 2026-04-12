@@ -11,6 +11,7 @@ public interface IDatabaseService
   Task UpsertForeignStockItemsAsync(IEnumerable<ForeignStockItemDto> items, CancellationToken stoppingToken);
 
   Task CreateItemChangeLogAsync(ItemChangeLogDto changeLogDto, CancellationToken stoppingToken);
+  Task SummariseChangeLogsAsync(CancellationToken stoppingToken);
 
   Task<IEnumerable<ItemDto>> GetAllItemsAsync(CancellationToken stoppingToken);
   Task<int> GetNumberOfItemsAsync(CancellationToken stoppingToken);
@@ -22,10 +23,13 @@ public interface IDatabaseService
   Task<IEnumerable<ListingDto>> GetListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken);
   Task DeleteListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken);
   Task ReplaceListingsAsync(Source source, int itemId, IEnumerable<ListingDto> newListings, CancellationToken stoppingToken);
+  Task TouchListingsTimestampAsync(Source source, int itemId, DateTimeOffset timestamp, CancellationToken stoppingToken);
+  Task ProcessListingsAsync(Source source, int itemId, List<ListingDto> newListings, CancellationToken stoppingToken);
 
   Task<IEnumerable<ProfitableListingDto>> GetProfitableListingsAsync(CancellationToken stoppingToken);
+  Task<IEnumerable<BazaarSummaryDto>> GetBazaarSummariesAsync(CancellationToken stoppingToken);
 
-  Task PopulateQueueWithMarketAndWeav3rCallsForAllItems(CancellationToken stoppingToken);
+  Task PopulateQueueWithStaleMarketItems(CancellationToken stoppingToken);
   Task PopulateQueueWithMarketAndWeav3rItemsOfInterest(CancellationToken stoppingToken);
   Task<QueueItemDto> CreateQueueItem(ApiCallType callType, string endpointUrl, CancellationToken stoppingToken);
   Task<QueueItemDto?> GetNextQueueItem(CancellationToken stoppingToken);

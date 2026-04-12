@@ -11,9 +11,9 @@ public static class HistoryWindowExtensions
             { HistoryWindow.Hours4, (TimeSpan.FromHours(4), TimeSpan.FromMinutes(10)) },
             { HistoryWindow.Day1, (TimeSpan.FromDays(1), TimeSpan.FromHours(1)) },
             { HistoryWindow.Week1, (TimeSpan.FromDays(7), TimeSpan.FromHours(6)) },
-            { HistoryWindow.Month1, (TimeSpan.FromDays(30), TimeSpan.FromDays(1)) },
-            { HistoryWindow.Months3, (TimeSpan.FromDays(90), TimeSpan.FromDays(3)) },
-            { HistoryWindow.Year1, (TimeSpan.FromDays(365), TimeSpan.FromDays(7)) }
+            { HistoryWindow.Month1, (TimeSpan.FromDays(30), TimeSpan.FromHours(6)) },
+            { HistoryWindow.Months3, (TimeSpan.FromDays(90), TimeSpan.FromHours(12)) },
+            { HistoryWindow.Year1, (TimeSpan.FromDays(365), TimeSpan.FromHours(24)) }
       };
 
   public static HistoryWindow Default => HistoryWindow.Day1;

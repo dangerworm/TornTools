@@ -2,6 +2,7 @@ import { API_BASE_URL } from "../constants/apiConstants";
 import type { ForeignStockItem } from "../types/foreignStockItems";
 import type { Item } from "../types/items";
 import type { HistoryResult, HistoryWindow } from "../types/history";
+import type { BazaarSummary } from "../types/bazaarSummaries";
 import type { ProfitableListing } from "../types/profitableListings";
 import type { ThemeDefinition, ThemeInput } from "../types/themes";
 
@@ -18,6 +19,8 @@ export interface DotNetUserDetails {
 const URL_ITEMS = `${API_BASE_URL}/GetItems`;
 const URL_FOREIGN_STOCK_ITEMS = `${API_BASE_URL}/GetForeignStockItems`;
 const URL_PROFITABLE_LISTINGS = `${API_BASE_URL}/GetProfitableListings`;
+const URL_BAZAAR_SUMMARIES = `${API_BASE_URL}/GetBazaarSummaries`;
+const URL_POST_WEAV3R_LISTINGS = `${API_BASE_URL}/PostWeav3rListings`;
 const URL_POST_TOGGLE_USER_FAVOURITE = `${API_BASE_URL}/PostToggleUserFavourite`;
 const URL_GET_THEMES = `${API_BASE_URL}/GetThemes`;
 const URL_POST_THEME = `${API_BASE_URL}/PostTheme`;
@@ -99,6 +102,28 @@ export async function fetchItemVelocityHistory(
 export async function fetchForeignStockItems(): Promise<ForeignStockItem[]> {
   const res = await fetch(URL_FOREIGN_STOCK_ITEMS, { headers: { accept: "application/json" } });
   let data: ForeignStockItem[] = [];
+  try {
+    data = await res.json();
+  } catch {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  }
+  return data;
+}
+
+export async function postWeav3rListings(
+  itemId: number,
+  listings: Array<{ playerId: number; quantity: number; price: number }>,
+): Promise<void> {
+  await fetch(URL_POST_WEAV3R_LISTINGS, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ itemId, listings }),
+  })
+}
+
+export async function fetchBazaarSummaries(): Promise<BazaarSummary[]> {
+  const res = await fetch(URL_BAZAAR_SUMMARIES, { headers: { accept: "application/json" } });
+  let data: BazaarSummary[] = [];
   try {
     data = await res.json();
   } catch {

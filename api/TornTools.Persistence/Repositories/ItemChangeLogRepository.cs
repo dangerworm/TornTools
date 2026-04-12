@@ -38,6 +38,13 @@ public class ItemChangeLogRepository(
     return itemChangeLog.AsDto();
   }
 
+  public async Task<DateTimeOffset?> GetEarliestChangeTimeAsync(CancellationToken stoppingToken)
+  {
+    return await DbContext.ItemChangeLogs
+        .AsNoTracking()
+        .MinAsync(cl => (DateTimeOffset?)cl.ChangeTime, stoppingToken);
+  }
+
   public async Task<IEnumerable<ItemChangeLogDto>> GetRecentItemChangeLogsAsync(int timeWindowHours, CancellationToken stoppingToken)
   {
     var cutoffDate = DateTime.UtcNow.AddHours(-timeWindowHours);

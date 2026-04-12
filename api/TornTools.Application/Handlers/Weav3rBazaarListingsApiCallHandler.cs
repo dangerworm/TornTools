@@ -21,7 +21,6 @@ public class Weav3rBazaarListingsApiCallHandler(
 
     var correlationId = Guid.NewGuid();
     var itemId = payload.ItemId;
-    var previousListings = await GetPreviousListings(Source.Weav3r, itemId, stoppingToken);
 
     var newListings = payload.Listings
         .Select((listing, index) =>
@@ -33,6 +32,6 @@ public class Weav3rBazaarListingsApiCallHandler(
         )
         .ToList();
 
-    await ProcessListings(itemId, Source.Weav3r, previousListings, newListings, stoppingToken);
+    await DatabaseService.ProcessListingsAsync(Source.Weav3r, itemId, newListings, stoppingToken);
   }
 }

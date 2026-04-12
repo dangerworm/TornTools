@@ -1,16 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { fetchProfitableListings } from "../lib/dotnetapi";
-import type { ProfitableListing, ProfitableListingResponse } from "../types/profitableListings";
-
-export type RowStatus = "queued" | "fetching" | "cached" | "done" | "error";
+import type { ProfitableListing } from "../types/profitableListings";
 
 interface ResaleScanOptions {
-  intervalMs?: number; // one call per interval (keeps us <100/min by default)
+  intervalMs?: number;
 }
 
-export function useResaleScan(
-  opts?: ResaleScanOptions
-) {
+export function useResaleScan(opts?: ResaleScanOptions) {
   const { intervalMs = 5000 } = opts || {};
 
   const [rows, setRows] = useState<ProfitableListing[]>([]);
@@ -23,13 +19,8 @@ export function useResaleScan(
 
     const tick = async () => {
       fetchProfitableListings()
-        .then((data: ProfitableListingResponse[]) => {
-          const newRows = data.map(listing => ({
-            ...listing,
-            cityProfit: (listing.cityPrice * listing.quantity) - listing.totalCost,
-            marketProfit: (tax: number) => (listing.marketPrice * listing.quantity * (1 - tax)) - listing.totalCost,
-          } as ProfitableListing));
-          setRows(newRows)
+        .then((data: ProfitableListing[]) => {
+          setRows(Array.isArray(data) ? data : []);
         })
         .catch(err => {
           setError(err.message);
@@ -37,18 +28,15 @@ export function useResaleScan(
         });
     };
 
-    // Start interval
     timerRef.current = window.setInterval(tick, intervalMs);
     void tick();
 
-    // Cleanup on unmount or when deps change
     return () => {
       if (timerRef.current !== null) {
         window.clearInterval(timerRef.current);
         timerRef.current = null;
       }
     };
-
   }, [intervalMs]);
 
   return { rows, error };

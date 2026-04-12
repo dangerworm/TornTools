@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  Box,
   TableRow,
   TableCell,
   Chip,
@@ -18,11 +19,20 @@ import { useUser } from "../hooks/useUser";
 import { getFormattedText } from "../lib/textFormat";
 import { timeAgo } from "../lib/time";
 import ItemDetails from "../pages/ItemDetails";
-import {
-  isForeignStockItemProfitable,
-  type ForeignStockItem,
-} from "../types/foreignStockItems";
+import { type SortableForeignStockItem } from "../types/foreignStockItems";
 import ItemCell from "./ItemCell";
+
+const ProfitChip = ({ profit }: { profit: number | null }) => {
+  if (profit === null) return <Chip label="N/A" size="small" sx={{ opacity: 0.3, whiteSpace: 'nowrap' }} />;
+  return (
+    <Chip
+      label={getFormattedText("$", profit, "")}
+      color={profit >= 0 ? "success" : "error"}
+      size="small"
+      sx={{ whiteSpace: 'nowrap' }}
+    />
+  );
+};
 
 const openTornMarketPage = (itemId: number) => {
   window.open(
@@ -32,12 +42,11 @@ const openTornMarketPage = (itemId: number) => {
 };
 
 interface ForeignMarketItemsTableRowProps {
-  item: ForeignStockItem;
+  item: SortableForeignStockItem;
+  showCountry?: boolean;
 }
 
-const ForeignMarketItemsTableRow = ({
-  item,
-}: ForeignMarketItemsTableRowProps) => {
+const ForeignMarketItemsTableRow = ({ item, showCountry = false }: ForeignMarketItemsTableRowProps) => {
   const navigate = useNavigate();
   const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser();
 
@@ -81,12 +90,25 @@ const ForeignMarketItemsTableRow = ({
           {item.item.type}
         </TableCell>
 
+        {showCountry && (
+          <TableCell onClick={() => navigate(`/item/${item.itemId}`)}>
+            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
+              <img
+                src={`/${item.country.toLowerCase().replace(' ', '-')}.svg`}
+                alt={`Flag of ${item.country}`}
+                style={{ width: '1.2em', height: '1.2em', borderRadius: '50%', objectFit: 'cover' }}
+              />
+              {item.country}
+            </Box>
+          </TableCell>
+        )}
+
         <TableCell
           align="right"
           onClick={() => navigate(`/item/${item.itemId}`)}
         >
           {item.cost ? (
-            <span>{getFormattedText("$", item.cost!, "")}</span>
+            <span>{getFormattedText("$", item.cost, "")}</span>
           ) : (
             <span>&mdash;</span>
           )}
@@ -96,38 +118,15 @@ const ForeignMarketItemsTableRow = ({
           align="right"
           onClick={() => navigate(`/item/${item.itemId}`)}
         >
-          {item.item.valueMarketPrice ? (
-            <span>{getFormattedText("$", item.item.valueMarketPrice, "")}</span>
+          {item.sellPrice != null ? (
+            <span>{getFormattedText("$", item.sellPrice, "")}</span>
           ) : (
             <span>&mdash;</span>
           )}
         </TableCell>
 
-        <TableCell
-          align="right"
-          onClick={() => navigate(`/item/${item.itemId}`)}
-        >
-          {isForeignStockItemProfitable(item) ? (
-            <Chip
-              label={getFormattedText(
-                "$",
-                (item.item.valueMarketPrice ?? 0) - (item.cost ?? 0),
-                ""
-              )}
-              color={"success"}
-              size="small"
-            />
-          ) : item.cost && item.item.valueMarketPrice ? (
-            <span>
-              {getFormattedText(
-                "$",
-                item.item.valueMarketPrice - item.cost,
-                ""
-              )}
-            </span>
-          ) : (
-            <span>&mdash;</span>
-          )}
+        <TableCell align="right" onClick={() => navigate(`/item/${item.itemId}`)}>
+          <ProfitChip profit={item.profit} />
         </TableCell>
 
         <TableCell
@@ -156,7 +155,7 @@ const ForeignMarketItemsTableRow = ({
         </TableCell>
       </TableRow>
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={10}>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={showCountry ? 11 : 10}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <ItemDetails inputItem={item.item} inlineView={true} />
           </Collapse>

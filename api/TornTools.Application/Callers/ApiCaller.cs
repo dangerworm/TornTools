@@ -69,12 +69,12 @@ public abstract class ApiCaller<TCaller>(
           ? $"key {rawKey[..4]}****"
           : "unknown key";
 
-      if (ex is TornKeyUnavailableException && rawKey is not null)
+      if (ex is TornKeyUnavailableException exception && rawKey is not null)
       {
         Logger.LogWarning(
             "API key {ApiKeyHint} is unavailable (code {ErrorCode}). Marking as unavailable.",
             apiKeyHint,
-            ((TornKeyUnavailableException)ex).ErrorCode
+            exception.ErrorCode
         );
         await DatabaseService.MarkKeyUnavailableByApiKeyAsync(rawKey, stoppingToken);
         return false;

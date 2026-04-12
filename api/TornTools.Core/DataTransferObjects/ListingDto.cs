@@ -39,7 +39,7 @@ public class ListingDto
     PlayerId = listing.PlayerId;
     ItemId = listing.ItemId;
     ListingPosition = listingPosition;
-    TimeSeen = new DateTime(DateTimeOffset.FromUnixTimeSeconds(listing.ContentUpdated).Ticks);
+    TimeSeen = DateTimeOffset.UtcNow;
     Price = listing.Price;
     Quantity = listing.Quantity;
   }

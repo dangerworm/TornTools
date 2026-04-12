@@ -18,14 +18,17 @@
   ([Trello](https://trello.com/c/02MvgY6i))
 - **Improve Markets page UI** — clearer than YATA competitors
   ([Trello](https://trello.com/c/VkQsEZOC))
-- **Persist slider values between page loads** — min profit, price range, etc.
-  ([Trello](https://trello.com/c/96CIJE0B))
+- **Persist slider values between page loads** — min profit, price range, etc. Outlet
+  and checkbox toggles are done for Resale, City Markets, and Foreign Markets; sliders
+  still pending. ([Trello](https://trello.com/c/96CIJE0B))
 - **Remove deleted keys** — if the API returns an error saying the key no longer exists
   ([Trello](https://trello.com/c/QGYI5sPx))
 - **Add armour** — add armour as a tracked item type ([Trello](https://trello.com/c/PRmX5Ped))
 
 ### Resale Page
 
+- **Bazaar sell chip** — "Sell at bazaar" profit is not shown because the user sets their own
+  price; implement as a calculator modal (see UI/UX: Bazaar sell calculator modal).
 - **Price alerts** — alert when an item drops below a given price, even before a profit exists
   (anticipating future profit) ([Trello](https://trello.com/c/wLJqUtW1))
 - **Profit source indicator** — show profit from City, Bazaar, and Item Market (with 5%/15% tax +
@@ -59,6 +62,13 @@
 - **Model typical quality distribution** (Poisson-like) for given items
   ([Trello](https://trello.com/c/4vt8kLTn))
 
+### City Markets Page
+
+- **Use live listing price for market/anon outlets** — City Markets bazaar sell price now uses live
+  data via `BazaarSummariesContext`. The market and anonymous market outlets still use
+  `value_market_price` (Torn's daily average). Joining the `profitable_listings` view (or a new
+  endpoint) would let those outlets also show the real current lowest listing price.
+
 ### Item Details Page
 
 - **Add link to market and shop** where applicable ([Trello](https://trello.com/c/32izh7of))
@@ -67,10 +77,12 @@
 
 ### Foreign Markets
 
-- **See all products in all countries** — one consolidated table
+- **Single ungrouped table option** — done; "Show all countries in one table" checkbox added
+  (persisted), renders flat table with Country column (flag + name, sortable).
   ([Trello](https://trello.com/c/IX5d3Suy))
-- **Order by price** ([Trello](https://trello.com/c/gXCGOpJI))
-- **Don't show out of stock** ([Trello](https://trello.com/c/jEhH3v6x))
+- **Column sorting** — done for per-country sub-tables. Will need revisiting when the single
+  ungrouped table option is added (Country column sort key not yet present).
+- **Don't show out of stock** — done; "Hide Out of Stock" checkbox added (default on), persisted. ([Trello](https://trello.com/c/jEhH3v6x))
 - **Add stock refill times** ([Trello](https://trello.com/c/6RIEi31r))
 - **Different flight times by transport mode** — is that overkill?
   ([Trello](https://trello.com/c/4vSsfOrH))
@@ -87,6 +99,15 @@
 
 ### UI / UX Enhancements
 
+- **Column sorting on all tables** — `CityMarketItemsTable` is fully sortable; `ForeignMarketItemsTable`,
+  `ResaleItemsTable`, `FavouriteMarketsTable`, and `Weav3rListingTable` have no sortable headers.
+  `ResaleItemsTable` is the trickiest since sort currently lives in `Resale.tsx`; the others are
+  straightforward — define a sort key type, add state + `stableSort`, swap plain `TableCell`
+  headers for `TableSortCell`.
+- **Bazaar sell calculator modal** — on any item row, open a small modal where the user enters
+  their intended bazaar price and sees: estimated profit, how it compares to the current cheapest
+  bazaar listing, and a likelihood-of-sale indicator based on historical velocity. Deferred from
+  Resale / City Markets / Foreign Markets profit chip work.
 - **Persist user settings locally** — sliders, filters, favourites
   ([Trello](https://trello.com/c/FIGyufMq))
 - **Add expected time-to-sell estimate** using historical data
@@ -111,35 +132,6 @@
 ### Market price chart sometimes hides Y-axis values
 
 **File:** client (chart component) ([Trello](https://trello.com/c/fxFTT2gN))
-
-### `ORDER BY` inside a CTE is a no-op in PostgreSQL
-
-**File:** `.docker/flyway/sql/Repeatable/R__view_market_velocity.sql:15–20`
-
-```sql
-ORDER BY COUNT(icl.id) DESC
-```
-
-PostgreSQL does not preserve CTE row order — the outer query's `ORDER BY` is what matters. The inner
-ordering is silently discarded.
-
-### Hard-coded item exclusion with no explanation
-
-**File:** `.docker/flyway/sql/Repeatable/R__view_profitable_listings_view.sql:28`
-
-```sql
-WHERE i.id <> 335
-```
-
-Item 335 is excluded with no comment. Should either have a comment explaining why, or be handled via
-the existing `is_masked` flag on the `items` table.
-
-### `TornApiMultiKeyCaller` used for one-shot `TornItems` fetch
-
-**File:** `api/TornTools.Application/Callers/TornApiMultiKeyCaller.cs:15–18`
-
-`TornItems` (the full catalogue) is a one-shot call and doesn't benefit from multi-key round-robin.
-It unnecessarily consumes from the shared pool. `TornApiSingleKeyCaller` would be more appropriate.
 
 ---
 
@@ -210,9 +202,19 @@ regressions can only be caught manually.
 
 **File:** `api/TornTools.Application/Interfaces/IDatabaseService.cs`
 
-~20+ methods covering items, listings, queue, API keys, users, favourites, and themes — a God
-Object. Splitting by domain (`IItemService`, `IQueueService`, `IUserService`) would clarify
-responsibilities and reduce change blast radius.
+~30+ methods covering items, listings, queue, API keys, users, favourites, themes, change logs,
+and summaries — a God Object. Natural seams for splitting:
+
+| Service | Owns |
+|---|---|
+| `IItemService` | Items CRUD, listings, profitable listings, foreign stock |
+| `IItemHistoryService` | Change logs, summaries, price/velocity history |
+| `IQueueService` | Queue CRUD, queue population, `Build*QueueItem` helpers |
+| `IUserService` | Users, API keys, themes, favourites |
+
+Start with `IQueueService` — it has the most real logic and the private builder helpers belong
+there naturally. The rest can follow in one pass. All controllers and `ApiJobScheduler` will need
+re-injection.
 
 ### `QueueProcessor` is single-threaded
 

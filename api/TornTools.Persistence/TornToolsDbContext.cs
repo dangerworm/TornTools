@@ -10,8 +10,10 @@ public class TornToolsDbContext(
 {
   public DbSet<ForeignStockItemEntity> ForeignStockItems { get; set; } = null!;
   public DbSet<ItemChangeLogEntity> ItemChangeLogs { get; set; } = null!;
+  public DbSet<ItemChangeLogSummaryEntity> ItemChangeLogSummaries { get; set; } = null!;
   public DbSet<ItemEntity> Items { get; set; } = null!;
   public DbSet<ListingEntity> Listings { get; set; } = null!;
+  public DbSet<BazaarSummaryView> BazaarSummaries { get; set; } = null!;
   public DbSet<ProfitableListingView> ProfitableListings { get; set; } = null!;
   public DbSet<QueueItemEntity> QueueItems { get; set; } = null!;
   public DbSet<UserEntity> Users { get; set; } = null!;
@@ -36,6 +38,11 @@ public class TornToolsDbContext(
               .WithMany(i => i.ForeignStockItems)
               .HasForeignKey(fsi => fsi.ItemId)
               .HasPrincipalKey(i => i.Id);
+    });
+
+    modelBuilder.Entity<ItemChangeLogSummaryEntity>(e =>
+    {
+      e.HasKey(x => new { x.ItemId, x.Source, x.BucketStart });
     });
 
     modelBuilder.Entity<ItemChangeLogEntity>(e =>
@@ -137,6 +144,8 @@ public class TornToolsDbContext(
     });
 
     // View mapping
+
+    modelBuilder.Entity<BazaarSummaryView>().HasNoKey();
 
     modelBuilder.Entity<ProfitableListingView>(e =>
     {

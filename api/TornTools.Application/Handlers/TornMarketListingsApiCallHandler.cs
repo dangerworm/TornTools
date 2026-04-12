@@ -21,7 +21,7 @@ public class TornMarketListingsApiCallHandler(
 
     if (payload is null)
     {
-      logger.LogError("Failed to deserialize {ItemMarketPayload} from API response.", nameof(ItemMarketPayload));
+      Logger.LogError("Failed to deserialize {ItemMarketPayload} from API response.", nameof(ItemMarketPayload));
       throw new Exception($"Failed to deserialize {nameof(ItemMarketPayload)} from API response.");
     }
 
@@ -29,7 +29,7 @@ public class TornMarketListingsApiCallHandler(
     {
       var errorCode = payload.Error?.Code ?? 0;
       var errorMessage = payload.Error?.ErrorMessage ?? "Unknown error";
-      logger.LogError("API call resulted in error: {ErrorMessage}", errorMessage);
+      Logger.LogError("API call resulted in error: {ErrorMessage}", errorMessage);
 
       // Codes 2 (Incorrect key) and 13 (Owner inactivity) mean this key will never work again.
       if (errorCode is 2 or 13)
@@ -40,7 +40,6 @@ public class TornMarketListingsApiCallHandler(
 
     var correlationId = Guid.NewGuid();
     var itemId = payload.ItemMarket.Item.Id;
-    var previousListings = await GetPreviousListings(Source.Torn, itemId, stoppingToken);
 
     var newListings = payload.ItemMarket.Listings
         .Select((listing, index) =>
@@ -53,6 +52,6 @@ public class TornMarketListingsApiCallHandler(
         )
         .ToList();
 
-    await ProcessListings(itemId, Source.Torn, previousListings, newListings, stoppingToken);
+    await DatabaseService.ProcessListingsAsync(Source.Torn, itemId, newListings, stoppingToken);
   }
 }

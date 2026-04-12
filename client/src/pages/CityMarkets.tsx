@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { useItems } from '../hooks/useItems'
+import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
 import {
   Box,
   Checkbox,
@@ -7,23 +8,36 @@ import {
   Divider,
   FormControlLabel,
   FormGroup,
+  FormLabel,
   Grid,
+  TextField,
   Typography,
 } from '@mui/material'
 import Loading from '../components/Loading'
 import CityMarketItemsTable from '../components/CityMarketItemsTable'
 import { isItemProfitableOnMarket } from '../types/items'
 import OptionGroup from '../components/OptionGroup'
-import { taxTypeOptions } from '../types/common'
-import type { TaxType } from '../types/markets'
+import { saleOutletOptions } from '../types/common'
+import type { SaleOutlet } from '../types/markets'
+
+const VALID_CM_SALE_OUTLETS: SaleOutlet[] = ['bazaar', 'market', 'anonymousMarket']
 
 const CityMarkets = () => {
   const { items, refresh } = useItems()
+  const { summaries: bazaarSummaries } = useBazaarSummaries()
 
   const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>([])
   const [selectedVendors, setSelectedVendors] = useState<string[]>([])
-  const [showProfitableOnly, setShowProfitableOnly] = useState(true)
-  const [taxType, setTaxType] = useState<TaxType>(0.05)
+  const [showProfitableOnly, setShowProfitableOnly] = useState(
+    () => localStorage.getItem('torntools:city-markets:show-profitable-only:v1') !== 'false',
+  )
+  const [saleOutlet, setSaleOutlet] = useState<SaleOutlet>(() => {
+    const stored = localStorage.getItem('torntools:city-markets:sale-outlet:v1') as SaleOutlet | null
+    return stored && VALID_CM_SALE_OUTLETS.includes(stored) ? stored : 'market'
+  })
+  const [searchTerm, setSearchTerm] = useState('')
+
+  const marketSaleOutletOptions = saleOutletOptions.filter((o) => o.value !== 'city')
 
   useEffect(() => {
     refresh()
@@ -32,7 +46,7 @@ const CityMarkets = () => {
   const countries = useMemo(() => {
     if (!items) return []
     return Array.from(new Set(items.map((i) => i.valueVendorCountry)))
-      .filter((country: string | undefined) => !country || country === 'Torn')
+      .filter((country: string | undefined) => country === 'Torn')
       .sort()
   }, [items])
 
@@ -64,15 +78,17 @@ const CityMarkets = () => {
     if (!items) return []
     return items.filter(
       (i) =>
-        (!showProfitableOnly || isItemProfitableOnMarket(i, taxType)) &&
+        (!showProfitableOnly || isItemProfitableOnMarket(i, saleOutlet, bazaarSummaries[i.id]?.minPrice)) &&
         (selectedItemTypes.length === 0 || selectedItemTypes.includes(i.type!)) &&
         (selectedVendors.length === 0 ||
           (i.valueVendorName && selectedVendors.includes(i.valueVendorName))),
     )
-  }, [items, showProfitableOnly, selectedItemTypes, selectedVendors, taxType])
+  }, [items, showProfitableOnly, selectedItemTypes, selectedVendors, saleOutlet, bazaarSummaries])
 
-  const handleTaxTypeChange = (_: React.MouseEvent<HTMLElement>, newTaxType: string | number) => {
-    setTaxType(newTaxType as TaxType)
+  const handleSaleOutletChange = (_: React.MouseEvent<HTMLElement>, newOutlet: string | number) => {
+    const outlet = newOutlet as SaleOutlet
+    setSaleOutlet(outlet)
+    localStorage.setItem('torntools:city-markets:sale-outlet:v1', outlet)
   }
 
   if (!items) return <Loading message="Loading items..." />
@@ -152,11 +168,11 @@ const CityMarkets = () => {
       <Grid container spacing={2} alignItems="top">
         <Grid size={{ xs: 12, sm: "auto" }} sx={{ minWidth: '22em' }}>
           <OptionGroup
-            options={taxTypeOptions}
-            selectedOption={taxType}
-            title={'Market tax'}
+            options={marketSaleOutletOptions}
+            selectedOption={saleOutlet}
+            title={'Sell via'}
             titleInline={true}
-            handleOptionChange={handleTaxTypeChange}
+            handleOptionChange={handleSaleOutletChange}
           />
         </Grid>
 
@@ -166,7 +182,11 @@ const CityMarkets = () => {
               control={
                 <Checkbox
                   checked={showProfitableOnly}
-                  onChange={() => setShowProfitableOnly(!showProfitableOnly)}
+                  onChange={() => {
+                    const next = !showProfitableOnly
+                    setShowProfitableOnly(next)
+                    localStorage.setItem('torntools:city-markets:show-profitable-only:v1', String(next))
+                  }}
                 />
               }
               label="Show Profitable Items Only"
@@ -174,6 +194,31 @@ const CityMarkets = () => {
           </FormGroup>
         </Grid>
       </Grid>
+
+      {(saleOutlet === 'market' || saleOutlet === 'anonymousMarket') && (
+        <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
+          Note: sell prices are based on Torn's daily average market price, not the most recent market scan.
+        </Typography>
+      )}
+      {saleOutlet === 'bazaar' && (
+        <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
+          Note: bazaar sell prices show the current cheapest listing from the most recent Weav3r scan. Items with no scan data show no sell price.
+        </Typography>
+      )}
+
+      <Box sx={{ my: 2 }}>
+        <FormGroup>
+          <FormLabel sx={{ mb: 1 }}>Search items:</FormLabel>
+          <TextField
+            label="Search"
+            variant="outlined"
+            size="small"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{ mb: 1, minWidth: 400 }}
+          />
+        </FormGroup>
+      </Box>
 
       {countries.map((country: string | undefined) => (
         <Fragment key={country}>
@@ -186,9 +231,10 @@ const CityMarkets = () => {
 
             <CityMarketItemsTable
               items={filteredItems.filter((i) => i.valueVendorCountry === country)}
+              searchTerm={searchTerm}
               showCityPrice={!!country}
               showVendor={!!country}
-              taxType={taxType}
+              saleOutlet={saleOutlet}
             />
           </Box>
         </Fragment>
