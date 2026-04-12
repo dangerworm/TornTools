@@ -84,26 +84,28 @@ public class DatabaseService(
     return _itemRepository.UpsertItemsAsync(items, stoppingToken);
   }
 
-  public Task<IEnumerable<ItemHistoryPointDto>> GetItemPriceHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken)
+  public async Task<IEnumerable<ItemHistoryPointDto>> GetItemPriceHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken)
   {
     if (window >= HistoryWindow.Month1)
     {
       var (range, bucket) = window.ToWindowConfiguration();
       var now = DateTimeOffset.UtcNow;
-      return _itemChangeLogSummaryRepository.GetPriceHistoryAsync(itemId, now.Subtract(range), now, bucket.TotalSeconds, stoppingToken);
+      var summary = await _itemChangeLogSummaryRepository.GetPriceHistoryAsync(itemId, now.Subtract(range), now, bucket.TotalSeconds, stoppingToken);
+      if (summary.Any()) return summary;
     }
-    return _itemChangeLogRepository.GetItemPriceHistoryAsync(itemId, window, stoppingToken);
+    return await _itemChangeLogRepository.GetItemPriceHistoryAsync(itemId, window, stoppingToken);
   }
 
-  public Task<IEnumerable<ItemHistoryPointDto>> GetItemVelocityHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken)
+  public async Task<IEnumerable<ItemHistoryPointDto>> GetItemVelocityHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken)
   {
     if (window >= HistoryWindow.Month1)
     {
       var (range, bucket) = window.ToWindowConfiguration();
       var now = DateTimeOffset.UtcNow;
-      return _itemChangeLogSummaryRepository.GetVelocityHistoryAsync(itemId, now.Subtract(range), now, bucket.TotalSeconds, stoppingToken);
+      var summary = await _itemChangeLogSummaryRepository.GetVelocityHistoryAsync(itemId, now.Subtract(range), now, bucket.TotalSeconds, stoppingToken);
+      if (summary.Any()) return summary;
     }
-    return _itemChangeLogRepository.GetItemVelocityHistoryAsync(itemId, window, stoppingToken);
+    return await _itemChangeLogRepository.GetItemVelocityHistoryAsync(itemId, window, stoppingToken);
   }
 
   private static DateTimeOffset AlignToBucketBoundary(DateTimeOffset time, double bucketSeconds)
@@ -219,10 +221,12 @@ public class DatabaseService(
 
   public async Task PopulateQueueWithStaleMarketItems(CancellationToken stoppingToken)
   {
-    var staleItemIds = await _itemRepository.GetStaleMarketItemIdsAsync(TimeConstants.StaleListingThresholdHours, stoppingToken);
+    var staleItems = await _itemRepository.GetStaleMarketItemIdsAsync(TimeConstants.StaleListingThresholdHours, stoppingToken);
 
-    var queueItems = staleItemIds
-        .SelectMany(id => new[] { BuildTornMarketQueueItem(id), BuildWeav3rQueueItem(id) })
+    var queueItems = staleItems
+        .Select(item => item.Source == Source.Torn.ToString()
+            ? BuildTornMarketQueueItem(item.ItemId)
+            : BuildWeav3rQueueItem(item.ItemId))
         .ToList();
 
     if (queueItems.Count > 0)

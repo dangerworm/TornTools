@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { fetchBazaarSummaries } from "../lib/dotnetapi";
 import { BazaarSummariesContext, type BazaarSummariesContextModel } from "../hooks/useBazaarSummaries";
 import type { BazaarSummariesMap, BazaarSummary } from "../types/bazaarSummaries";
@@ -35,16 +35,7 @@ export const BazaarSummariesProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: Pr
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const cached = getCached(ttlMs);
-    if (cached) {
-      setSummaries(cached);
-      return;
-    }
-    void load();
-  }, [ttlMs]);
-
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -60,7 +51,15 @@ export const BazaarSummariesProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: Pr
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const cached = getCached(ttlMs);
+    if (!cached) void load();
+
+    const intervalId = setInterval(() => { void load(); }, ttlMs);
+    return () => clearInterval(intervalId);
+  }, [ttlMs, load]);
 
   const contextValue = useMemo<BazaarSummariesContextModel>(
     () => ({ summaries, loading, error }),

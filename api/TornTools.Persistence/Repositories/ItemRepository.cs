@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System.Data;
 using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
+using TornTools.Core.Enums;
 using TornTools.Persistence.Entities;
 using TornTools.Persistence.Interfaces;
 
@@ -118,17 +119,26 @@ public class ItemRepository(
     return items.Select(item => item.AsDto());
   }
 
-  public async Task<IEnumerable<int>> GetStaleMarketItemIdsAsync(int thresholdHours, CancellationToken stoppingToken)
+  public async Task<IEnumerable<(int ItemId, string Source)>> GetStaleMarketItemIdsAsync(int thresholdHours, CancellationToken stoppingToken)
   {
     var threshold = DateTimeOffset.UtcNow.AddHours(-thresholdHours);
+    var result = new List<(int, string)>();
 
-    return await DbContext.Items
-        .AsNoTracking()
-        .Where(i => i.ValueMarketPrice != null)
-        .Where(i => !DbContext.Listings
-            .Any(l => l.ItemId == i.Id && l.TimeSeen >= threshold))
-        .Select(i => i.Id)
-        .ToListAsync(stoppingToken);
+    foreach (var source in new[] { Source.Torn, Source.Weav3r })
+    {
+      var sourceName = source.ToString();
+      var staleIds = await DbContext.Items
+          .AsNoTracking()
+          .Where(i => i.ValueMarketPrice != null)
+          .Where(i => !DbContext.Listings
+              .Any(l => l.ItemId == i.Id && l.Source == sourceName && l.TimeSeen >= threshold))
+          .Select(i => i.Id)
+          .ToListAsync(stoppingToken);
+
+      result.AddRange(staleIds.Select(id => (id, sourceName)));
+    }
+
+    return result;
   }
 
   public async Task<ItemDto> GetItemAsync(int id, CancellationToken stoppingToken)
