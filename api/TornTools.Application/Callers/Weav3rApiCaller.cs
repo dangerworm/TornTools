@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using TornTools.Application.Interfaces;
 using TornTools.Core.Constants;
@@ -42,12 +43,13 @@ public class Weav3rApiCaller(
     var url = requestMessage.RequestUri.ToString();
 
     // In production the deploy workflow compiles bazaar_fetch.py into a self-contained
-    // binary (no Python required on the host). Fall back to python3 + script for local dev.
+    // binary (no Python required on the host). Fall back to the platform Python + script for local dev.
     bool useCompiled = File.Exists(compiledFetcher);
+    string pythonExe = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "python" : "python3";
 
     var psi = new ProcessStartInfo
     {
-      FileName = useCompiled ? compiledFetcher : "python3",
+      FileName = useCompiled ? compiledFetcher : pythonExe,
       EnvironmentVariables =
       {
         ["FETCH_HEADERS"] = JsonSerializer.Serialize(headers),
