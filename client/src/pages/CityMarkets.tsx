@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { useItems } from '../hooks/useItems'
+import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
 import {
   Box,
   Checkbox,
@@ -23,6 +24,7 @@ const VALID_CM_SALE_OUTLETS: SaleOutlet[] = ['bazaar', 'market', 'anonymousMarke
 
 const CityMarkets = () => {
   const { items, refresh } = useItems()
+  const { summaries: bazaarSummaries } = useBazaarSummaries()
 
   const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>([])
   const [selectedVendors, setSelectedVendors] = useState<string[]>([])
@@ -76,12 +78,12 @@ const CityMarkets = () => {
     if (!items) return []
     return items.filter(
       (i) =>
-        (!showProfitableOnly || isItemProfitableOnMarket(i, saleOutlet)) &&
+        (!showProfitableOnly || isItemProfitableOnMarket(i, saleOutlet, bazaarSummaries[i.id]?.minPrice)) &&
         (selectedItemTypes.length === 0 || selectedItemTypes.includes(i.type!)) &&
         (selectedVendors.length === 0 ||
           (i.valueVendorName && selectedVendors.includes(i.valueVendorName))),
     )
-  }, [items, showProfitableOnly, selectedItemTypes, selectedVendors, saleOutlet])
+  }, [items, showProfitableOnly, selectedItemTypes, selectedVendors, saleOutlet, bazaarSummaries])
 
   const handleSaleOutletChange = (_: React.MouseEvent<HTMLElement>, newOutlet: string | number) => {
     const outlet = newOutlet as SaleOutlet

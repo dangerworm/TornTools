@@ -40,13 +40,21 @@ export type SortableItem = Item & {
   profitPerCost: number
 }
 
-export const isItemProfitableOnMarket = (item: Item, saleOutlet: SaleOutlet): boolean => {
+export const isItemProfitableOnMarket = (
+  item: Item,
+  saleOutlet: SaleOutlet,
+  bazaarMinPrice?: number | null,
+): boolean => {
+  if (!item.isTradable || !item.valueBuyPrice) return false
+
+  if (saleOutlet === 'bazaar') {
+    return bazaarMinPrice != null && bazaarMinPrice > item.valueBuyPrice
+  }
+
   return (
-    item.isTradable &&
-    !!item.valueBuyPrice &&
     !!item.valueMarketPrice &&
     (item.valueMarketPrice * (1 - SALE_TAX[saleOutlet])) > item.valueBuyPrice
-  );
+  )
 }
 
 export const isItemProfitableInBazaar = (item: Item, listing: Weav3rMarketplaceListing): boolean => {

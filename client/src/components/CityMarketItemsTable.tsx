@@ -125,7 +125,7 @@ const CityMarketItemsTable = ({
             : null
         return { ...item, sellPrice, profit, profitPerCost } as SortableItem
       })
-  }, [items, searchTerm, saleOutlet, showCityPrice])
+  }, [items, searchTerm, saleOutlet, showCityPrice, bazaarSummaries])
 
   const sortedItems = useMemo(
     () => stableSort(filteredItems, getComparator(orderDirection, orderBy)),
