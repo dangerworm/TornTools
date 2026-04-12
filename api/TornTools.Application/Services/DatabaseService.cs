@@ -97,7 +97,7 @@ public class DatabaseService(
     return _itemRepository.GetProfitableItemsAsync(stoppingToken);
   }
 
-  public async Task PopulateQueueWithMarketAndWeav3rCalls(CancellationToken stoppingToken)
+  public async Task PopulateQueueWithMarketAndWeav3rCallsForAllItems(CancellationToken stoppingToken)
   {
     var items = await _itemRepository.GetMarketItemsAsync(stoppingToken);
     var itemIds = items
@@ -108,11 +108,8 @@ public class DatabaseService(
 
     foreach (var itemId in itemIds)
     {
-      var queueItem = BuildTornMarketQueueItem(itemId);
-      queueItems.Add(queueItem);
-
-      var weav3rQueueItem = BuildWeav3rQueueItem(itemId);
-      queueItems.Add(weav3rQueueItem);
+      queueItems.Add(BuildTornMarketQueueItem(itemId));
+      queueItems.Add(BuildWeav3rQueueItem(itemId));
     }
 
     await _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken);
@@ -146,11 +143,8 @@ public class DatabaseService(
             .Where(kv => kv.Value >= weight)
             .Select(kv => kv.Key);
 
-        var marketQueueItems = BuildTornMarketQueueItems(itemsToProcess);
-        queueItems.AddRange(marketQueueItems);
-
-        var weav3rQueueItems = BuildWeav3rQueueItems(itemsToProcess);
-        queueItems.AddRange(weav3rQueueItems);
+        queueItems.AddRange(BuildTornMarketQueueItems(itemsToProcess));
+        queueItems.AddRange(BuildWeav3rQueueItems(itemsToProcess));
 
         // Include anything appearing in the profitable listings
         // so we don't leave old entries in the list for too long
@@ -163,21 +157,6 @@ public class DatabaseService(
       queueItems.AddRange(profitableMarketQueueItems);
       queueItems.AddRange(profitableWeav3rQueueItems);
     }
-
-    await _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken);
-  }
-
-  public async Task PopulateMarketQueueItemsRemaining(CancellationToken stoppingToken)
-  {
-    var (profitableItemIds, groupedChanges) = await GetItemChangeData(stoppingToken);
-
-    var marketItems = await _itemRepository.GetMarketItemsAsync(stoppingToken);
-    var queueItems = marketItems
-        .Select(item => item.Id)
-        .Except(profitableItemIds)
-        .Except(groupedChanges.Keys)
-        .Select(BuildTornMarketQueueItem)
-        .ToList();
 
     await _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken);
   }
