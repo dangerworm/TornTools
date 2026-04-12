@@ -102,7 +102,7 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
         localStorage.setItem(LOCAL_STORAGE_KEY_TORN_USER_DETAILS, JSON.stringify(profile))
         updateCacheTimestamp()
       } catch (e) {
-        if ((e as any)?.name === 'AbortError') {
+        if (e instanceof DOMException && e.name === 'AbortError') {
           return
         }
         if (e instanceof Error) {
@@ -140,7 +140,7 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
 
   const confirmApiKeyAsync = useCallback(async () => {
     if (!apiKey) {
-      console.warn('Cannot confirm API key: missing apiKey')
+      setErrorDotNetUserDetails('No API key set.')
       return
     }
 
@@ -170,7 +170,6 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
   const toggleFavouriteItemAsync = useCallback(
     async (itemId: number) => {
       if (!dotNetUserDetails) {
-        console.warn('toggleFavouriteItemAsync called but dotNetUserDetails is null')
         return
       }
 
@@ -225,7 +224,7 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
       try {
         setTornUserProfile(JSON.parse(cachedTornProfile))
       } catch {
-        console.warn('Failed to parse cached Torn user profile')
+        // Cached value is unparseable — leave tornUserProfile as null
       }
     }
   }, [ttlMs])
