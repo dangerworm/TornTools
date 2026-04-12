@@ -19,13 +19,20 @@ import OptionGroup from '../components/OptionGroup'
 import { saleOutletOptions } from '../types/common'
 import type { SaleOutlet } from '../types/markets'
 
+const VALID_CM_SALE_OUTLETS: SaleOutlet[] = ['bazaar', 'market', 'anonymousMarket']
+
 const CityMarkets = () => {
   const { items, refresh } = useItems()
 
   const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>([])
   const [selectedVendors, setSelectedVendors] = useState<string[]>([])
-  const [showProfitableOnly, setShowProfitableOnly] = useState(true)
-  const [saleOutlet, setSaleOutlet] = useState<SaleOutlet>('market')
+  const [showProfitableOnly, setShowProfitableOnly] = useState(
+    () => localStorage.getItem('torntools:city-markets:show-profitable-only:v1') !== 'false',
+  )
+  const [saleOutlet, setSaleOutlet] = useState<SaleOutlet>(() => {
+    const stored = localStorage.getItem('torntools:city-markets:sale-outlet:v1') as SaleOutlet | null
+    return stored && VALID_CM_SALE_OUTLETS.includes(stored) ? stored : 'market'
+  })
   const [searchTerm, setSearchTerm] = useState('')
 
   const marketSaleOutletOptions = saleOutletOptions.filter((o) => o.value !== 'city')
@@ -37,7 +44,7 @@ const CityMarkets = () => {
   const countries = useMemo(() => {
     if (!items) return []
     return Array.from(new Set(items.map((i) => i.valueVendorCountry)))
-      .filter((country: string | undefined) => !country || country === 'Torn')
+      .filter((country: string | undefined) => country === 'Torn')
       .sort()
   }, [items])
 
@@ -77,7 +84,9 @@ const CityMarkets = () => {
   }, [items, showProfitableOnly, selectedItemTypes, selectedVendors, saleOutlet])
 
   const handleSaleOutletChange = (_: React.MouseEvent<HTMLElement>, newOutlet: string | number) => {
-    setSaleOutlet(newOutlet as SaleOutlet)
+    const outlet = newOutlet as SaleOutlet
+    setSaleOutlet(outlet)
+    localStorage.setItem('torntools:city-markets:sale-outlet:v1', outlet)
   }
 
   if (!items) return <Loading message="Loading items..." />
@@ -171,7 +180,11 @@ const CityMarkets = () => {
               control={
                 <Checkbox
                   checked={showProfitableOnly}
-                  onChange={() => setShowProfitableOnly(!showProfitableOnly)}
+                  onChange={() => {
+                    const next = !showProfitableOnly
+                    setShowProfitableOnly(next)
+                    localStorage.setItem('torntools:city-markets:show-profitable-only:v1', String(next))
+                  }}
                 />
               }
               label="Show Profitable Items Only"

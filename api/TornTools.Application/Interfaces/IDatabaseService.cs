@@ -23,6 +23,8 @@ public interface IDatabaseService
   Task<IEnumerable<ListingDto>> GetListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken);
   Task DeleteListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken);
   Task ReplaceListingsAsync(Source source, int itemId, IEnumerable<ListingDto> newListings, CancellationToken stoppingToken);
+  Task TouchListingsTimestampAsync(Source source, int itemId, DateTimeOffset timestamp, CancellationToken stoppingToken);
+  Task ProcessListingsAsync(Source source, int itemId, List<ListingDto> newListings, CancellationToken stoppingToken);
 
   Task<IEnumerable<ProfitableListingDto>> GetProfitableListingsAsync(CancellationToken stoppingToken);
   Task<IEnumerable<BazaarSummaryDto>> GetBazaarSummariesAsync(CancellationToken stoppingToken);

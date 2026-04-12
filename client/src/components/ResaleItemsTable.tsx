@@ -15,7 +15,7 @@ import {
 } from '@mui/material'
 import { useUser } from '../hooks/useUser'
 import { getSecondsSinceLastUpdate } from '../lib/time'
-import { getBuyPrice, getLastUpdated, getTotalProfit } from '../lib/profitCalculations'
+import { getBuyPriceRange, getLastUpdated, getTotalProfit } from '../lib/profitCalculations'
 import type { ProfitableListing } from '../types/profitableListings'
 import type { PurchaseOutlet, SaleOutlet } from '../types/markets'
 import ResaleItemsTableRow from './ResaleItemsTableRow'
@@ -59,8 +59,8 @@ const ResaleItemsTable = ({
     const totalProfit = getTotalProfit(r, purchaseOutlet, saleOutlet)
     if (totalProfit === null) return false
 
-    const buyPrice = getBuyPrice(r, purchaseOutlet)
-    if (buyPrice === null || buyPrice > maxBuyPrice) return false
+    const buyPriceRange = getBuyPriceRange(r, purchaseOutlet, saleOutlet)
+    if (buyPriceRange === null || buyPriceRange.min > maxBuyPrice) return false
 
     if (minProfit > 0 && totalProfit < minProfit) return false
 

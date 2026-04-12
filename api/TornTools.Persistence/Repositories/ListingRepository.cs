@@ -83,6 +83,13 @@ public class ListingRepository(
         .ExecuteDeleteAsync(stoppingToken);
   }
 
+  public async Task TouchListingsTimestampAsync(Source source, int itemId, DateTimeOffset timestamp, CancellationToken stoppingToken)
+  {
+    await DbContext.Listings
+        .Where(l => l.Source == source.ToString() && l.ItemId == itemId)
+        .ExecuteUpdateAsync(l => l.SetProperty(x => x.TimeSeen, timestamp.ToUniversalTime()), stoppingToken);
+  }
+
   public async Task ReplaceListingsAsync(Source source, int itemId, IEnumerable<ListingDto> newListings, CancellationToken stoppingToken)
   {
     await using var transaction = await DbContext.Database.BeginTransactionAsync(stoppingToken);

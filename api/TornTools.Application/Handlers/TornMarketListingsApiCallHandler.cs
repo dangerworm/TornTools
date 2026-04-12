@@ -40,7 +40,6 @@ public class TornMarketListingsApiCallHandler(
 
     var correlationId = Guid.NewGuid();
     var itemId = payload.ItemMarket.Item.Id;
-    var previousListings = await GetPreviousListings(Source.Torn, itemId, stoppingToken);
 
     var newListings = payload.ItemMarket.Listings
         .Select((listing, index) =>
@@ -53,6 +52,6 @@ public class TornMarketListingsApiCallHandler(
         )
         .ToList();
 
-    await ProcessListings(itemId, Source.Torn, previousListings, newListings, stoppingToken);
+    await DatabaseService.ProcessListingsAsync(Source.Torn, itemId, newListings, stoppingToken);
   }
 }

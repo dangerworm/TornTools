@@ -6,7 +6,7 @@ import { useThemeSettings } from '../hooks/useThemeSettings'
 import { useUser } from '../hooks/useUser'
 import { getFormattedText } from '../lib/textFormat'
 import { getSecondsSinceLastUpdate, timeAgo } from '../lib/time'
-import { getBuyPrice, getLastUpdated, getQuantity, getTotalProfit, getSellRevenue } from '../lib/profitCalculations'
+import { getBuyPriceRange, getLastUpdated, getQuantity, getTotalProfit, getSellRevenue } from '../lib/profitCalculations'
 import type { ProfitableListing } from '../types/profitableListings'
 import type { PurchaseOutlet, SaleOutlet } from '../types/markets'
 import ItemCell from './ItemCell'
@@ -37,12 +37,12 @@ const ResaleItemsTableRow = ({ isNew, row, purchaseOutlet, saleOutlet }: ResaleI
   const { availableThemes, selectedThemeId } = useThemeSettings()
   const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser()
 
-  const buyPrice = getBuyPrice(row, purchaseOutlet)
+  const buyPriceRange = getBuyPriceRange(row, purchaseOutlet, saleOutlet)
   const sellRevenue = getSellRevenue(row, saleOutlet)
   const totalProfit = getTotalProfit(row, purchaseOutlet, saleOutlet)
   const lastUpdated = getLastUpdated(row, purchaseOutlet)
 
-  const quantity = getQuantity(row, purchaseOutlet)
+  const quantity = getQuantity(row, purchaseOutlet, saleOutlet)
 
   const rowColor = (date: Date | null): string => {
     if (date === null) return `rgba(128, 128, 128, 0.87)`
@@ -88,7 +88,11 @@ const ResaleItemsTableRow = ({ isNew, row, purchaseOutlet, saleOutlet }: ResaleI
       </TableCell>
 
       <TableCell align="right" onClick={() => openTornMarketPage(row.itemId)} style={{ color: rgbToHex(color) }}>
-        {buyPrice !== null ? getFormattedText('$', buyPrice, '') : '—'}
+        {buyPriceRange !== null
+          ? buyPriceRange.min === buyPriceRange.max
+            ? getFormattedText('$', buyPriceRange.min, '')
+            : `${getFormattedText('$', buyPriceRange.min, '')}–${getFormattedText('$', buyPriceRange.max, '')}`
+          : '—'}
       </TableCell>
 
       <TableCell align="right" onClick={() => openTornMarketPage(row.itemId)} style={{ color: rgbToHex(color) }}>

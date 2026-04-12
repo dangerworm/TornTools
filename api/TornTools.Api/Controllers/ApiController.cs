@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using TornTools.Application.Interfaces;
 using TornTools.Core.DataTransferObjects;
+using TornTools.Core.Enums;
 using TornTools.Core.Models.InputModels;
 
 namespace TornTools.Api.Controllers;
@@ -107,6 +108,44 @@ public class ApiController(
       return StatusCode(StatusCodes.Status500InternalServerError, new
       {
         message = string.Format(ErrorMessage, "bazaar summaries")
+      });
+    }
+  }
+
+  [HttpPost(Name = "PostWeav3rListings")]
+  [ProducesResponseType(StatusCodes.Status200OK)]
+  [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+  public async Task<IActionResult> PostWeav3rListings([FromBody] WeakListingsInputModel payload, CancellationToken cancellationToken)
+  {
+    if (payload.Listings.Count == 0)
+      return Ok();
+
+    try
+    {
+      var correlationId = Guid.NewGuid();
+      var listings = payload.Listings
+          .Select((l, i) => new ListingDto
+          {
+            CorrelationId = correlationId,
+            Source = Source.Weav3r,
+            PlayerId = l.PlayerId,
+            ItemId = payload.ItemId,
+            ListingPosition = i,
+            TimeSeen = DateTimeOffset.UtcNow,
+            Price = l.Price,
+            Quantity = l.Quantity,
+          })
+          .ToList();
+
+      await _databaseService.ProcessListingsAsync(Source.Weav3r, payload.ItemId, listings, cancellationToken);
+      return Ok();
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "An error occurred while processing Weav3r listings for item {ItemId}.", payload.ItemId);
+      return StatusCode(StatusCodes.Status500InternalServerError, new
+      {
+        message = string.Format(ErrorMessage, "Weav3r listings")
       });
     }
   }

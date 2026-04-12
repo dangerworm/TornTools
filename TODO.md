@@ -18,9 +18,9 @@
   ([Trello](https://trello.com/c/02MvgY6i))
 - **Improve Markets page UI** — clearer than YATA competitors
   ([Trello](https://trello.com/c/VkQsEZOC))
-- **Persist slider values between page loads** — min profit, price range, etc.; also
-  purchase/sale outlet selections and all other per-page option toggles, so the user's
-  last-used settings are restored on return. ([Trello](https://trello.com/c/96CIJE0B))
+- **Persist slider values between page loads** — min profit, price range, etc. Outlet
+  and checkbox toggles are done for Resale, City Markets, and Foreign Markets; sliders
+  still pending. ([Trello](https://trello.com/c/96CIJE0B))
 - **Remove deleted keys** — if the API returns an error saying the key no longer exists
   ([Trello](https://trello.com/c/QGYI5sPx))
 - **Add armour** — add armour as a tracked item type ([Trello](https://trello.com/c/PRmX5Ped))
@@ -64,11 +64,10 @@
 
 ### City Markets Page
 
-- **Use live listing price instead of Torn average** — City Markets currently uses `value_market_price`
-  (Torn's daily average) for both the market and bazaar sell price columns. The `Item` type does not
-  carry live bazaar price data (only `ProfitableListing` does), so both outlets share the same
-  reference price. Joining the `profitable_listings` view (or a new endpoint) would let it show the
-  real current lowest listing/bazaar price, matching the Resale page.
+- **Use live listing price for market/anon outlets** — City Markets bazaar sell price now uses live
+  data via `BazaarSummariesContext`. The market and anonymous market outlets still use
+  `value_market_price` (Torn's daily average). Joining the `profitable_listings` view (or a new
+  endpoint) would let those outlets also show the real current lowest listing price.
 
 ### Item Details Page
 
@@ -78,19 +77,12 @@
 
 ### Foreign Markets
 
-- **Profit chips (City / Market 5% / Anon 15%)** — currently shows profit with no fee applied at
-  all; replace the single Profit column with three chips using the same `getSellRevenue` logic as
-  the Resale page. Add a sale outlet toggle for sort/filter.
-- **"Show profitable items only" checkbox** — same as the City Markets page already has; filter
-  out rows where no sell outlet produces a positive profit given the current sale outlet selection.
-- **Single ungrouped table option** — checkbox/toggle to collapse all country sub-tables into one
-  flat table with an additional Country column, so users can sort across all countries at once.
-  Consolidates the existing "See all products in all countries" Trello item.
+- **Single ungrouped table option** — done; "Show all countries in one table" checkbox added
+  (persisted), renders flat table with Country column (flag + name, sortable).
   ([Trello](https://trello.com/c/IX5d3Suy))
-- **Column sorting** — the table currently has no sortable headers; add `TableSortCell` + `stableSort`
-  across all columns (Item, Type, Country, Buy Price, Market Price, Profit, Available, Last Updated).
-  Most valuable when the ungrouped table option is active.
-- **Don't show out of stock** ([Trello](https://trello.com/c/jEhH3v6x))
+- **Column sorting** — done for per-country sub-tables. Will need revisiting when the single
+  ungrouped table option is added (Country column sort key not yet present).
+- **Don't show out of stock** — done; "Hide Out of Stock" checkbox added (default on), persisted. ([Trello](https://trello.com/c/jEhH3v6x))
 - **Add stock refill times** ([Trello](https://trello.com/c/6RIEi31r))
 - **Different flight times by transport mode** — is that overkill?
   ([Trello](https://trello.com/c/4vSsfOrH))
@@ -107,8 +99,6 @@
 
 ### UI / UX Enhancements
 
-- **Consistent search box width** — search fields are currently full-width on some pages and
-  half-width on others; standardise to a single shared behaviour across all tables and pages.
 - **Column sorting on all tables** — `CityMarketItemsTable` is fully sortable; `ForeignMarketItemsTable`,
   `ResaleItemsTable`, `FavouriteMarketsTable`, and `Weav3rListingTable` have no sortable headers.
   `ResaleItemsTable` is the trickiest since sort currently lives in `Resale.tsx`; the others are

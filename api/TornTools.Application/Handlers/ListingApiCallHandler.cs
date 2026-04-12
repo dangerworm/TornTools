@@ -1,8 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
-using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
-using TornTools.Core.Enums;
 
 namespace TornTools.Application.Handlers;
 
@@ -12,84 +10,4 @@ public abstract class ListingApiCallHandler<TCallHandler>(
 ) : ApiCallHandler<TCallHandler>(logger, databaseService)
     where TCallHandler : IApiCallHandler
 {
-  protected async Task<List<ListingDto>> GetPreviousListings(Source source, int itemId, CancellationToken stoppingToken)
-  {
-    var previousListings = await DatabaseService.GetListingsBySourceAndItemIdAsync(
-        source,
-        itemId,
-        stoppingToken
-    );
-
-    return [.. previousListings];
-  }
-
-  protected async Task ProcessListings(
-      int itemId,
-      Source source,
-      List<ListingDto> previousListings,
-      List<ListingDto> newListings,
-      CancellationToken stoppingToken)
-  {
-    newListings = [.. newListings
-            .Where(nl => nl is not null)
-            .OrderBy(l => l.Price)
-            .Take(QueryConstants.NumberOfListingsToStorePerItem)];
-
-    if (newListings.Count == 0)
-    {
-      return;
-    }
-
-    if (previousListings.Count == 0)
-    {
-      await DatabaseService.CreateListingsAsync(newListings, stoppingToken);
-      return;
-    }
-
-    previousListings = [.. previousListings
-            .OrderBy(l => l.Price)
-            .Take(QueryConstants.NumberOfListingsToStorePerItem)];
-
-    var previousMinimumPrice = previousListings.First().Price;
-    var newMinimumPrice = newListings.Min(l => l.Price);
-
-    // There are a maximum of 100 items returned.
-    // This is a little optimisation to avoid iterating all listings unnecessarily.
-    var hasMarketChanged = previousListings.Count != newListings.Count;
-    var hasMinimumPriceChanged = previousMinimumPrice != newMinimumPrice;
-
-    if (!hasMarketChanged && !hasMinimumPriceChanged)
-    {
-      var i = 0;
-      while (i < previousListings.Count)
-      {
-        var previousListing = previousListings[i];
-        var newListing = newListings[i];
-        if (previousListing.Price != newListing.Price || previousListing.Quantity != newListing.Quantity)
-        {
-          hasMarketChanged = true;
-          break;
-        }
-        i++;
-      }
-    }
-
-    if (hasMarketChanged || hasMinimumPriceChanged)
-    {
-      Logger.LogInformation(
-          "Market change detected for item {ItemId}: minimum price {PreviousPrice} → {NewPrice}.",
-          itemId, previousMinimumPrice, newMinimumPrice);
-
-      var itemChangeLog = new ItemChangeLogDto
-      {
-        ItemId = itemId,
-        Source = source,
-        NewPrice = newMinimumPrice,
-        ChangeTime = DateTime.UtcNow,
-      };
-
-      await DatabaseService.CreateItemChangeLogAsync(itemChangeLog, stoppingToken);
-      await DatabaseService.ReplaceListingsAsync(source, itemId, newListings, stoppingToken);
-    }
-  }
 }

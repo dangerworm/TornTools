@@ -1,16 +1,21 @@
 import { Grid } from '@mui/material'
 import { isItemProfitableInBazaar, isItemProfitableOnMarket, type Item } from '../types/items'
 
-import InfoCard from './InfoCard'
+import { SALE_TAX } from '../lib/profitCalculations'
 import type { Weav3rMarketplaceListing } from '../types/weav3r'
+import InfoCard from './InfoCard'
 
 interface ItemDetailsInfoCardsProps {
-  item: Item,
+  item: Item
   inlineView?: boolean
   firstBazaarListing?: Weav3rMarketplaceListing
 }
 
-const ItemDetailsInfoCards = ({ item, inlineView = false, firstBazaarListing }: ItemDetailsInfoCardsProps) => {
+const ItemDetailsInfoCards = ({
+  item,
+  inlineView = false,
+  firstBazaarListing,
+}: ItemDetailsInfoCardsProps) => {
   const bazaarDataAvailable = firstBazaarListing !== undefined
 
   return (
@@ -38,8 +43,8 @@ const ItemDetailsInfoCards = ({ item, inlineView = false, firstBazaarListing }: 
         <InfoCard
           heading="Market Price"
           isCurrency={true}
-          isProfitable={isItemProfitableOnMarket(item, 0.05)}
-          taxType={0.05}
+          isProfitable={isItemProfitableOnMarket(item, 'market')}
+          taxType={SALE_TAX['market']}
           value={item?.valueMarketPrice}
         />
       </Grid>

@@ -17,6 +17,7 @@ import ForeignMarketItemsTable from '../components/ForeignMarketItemsTable'
 import OptionGroup from '../components/OptionGroup'
 import { useUser } from '../hooks/useUser'
 import { useForeignMarketsScan } from '../hooks/useForeignMarketsScan'
+import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
 import Loading from '../components/Loading'
 import {
   prettyPrintFlightTime,
@@ -30,23 +31,41 @@ import type { SaleOutlet } from '../types/markets'
 
 const itemTypesOfInterest = ['Drug', 'Flower', 'Plushie']
 
+const VALID_FM_SALE_OUTLETS: SaleOutlet[] = ['bazaar', 'market', 'anonymousMarket']
+
 const ForeignMarkets = () => {
   const { rows, error } = useForeignMarketsScan({ intervalMs: 60000 })
   const { apiKey, tornUserProfile, fetchTornProfileAsync } = useUser()
+  const { summaries: bazaarSummaries } = useBazaarSummaries()
 
-  const [orderByFlightTime, setOrderByFlightTime] = useState(false)
+  const [orderByFlightTime, setOrderByFlightTime] = useState(
+    () => localStorage.getItem('torntools:foreign-markets:order-by-flight-time:v1') === 'true',
+  )
 
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
   const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>(itemTypesOfInterest)
-  const [saleOutlet, setSaleOutlet] = useState<SaleOutlet>('market')
-  const [showProfitableOnly, setShowProfitableOnly] = useState(true)
+  const [saleOutlet, setSaleOutlet] = useState<SaleOutlet>(() => {
+    const stored = localStorage.getItem('torntools:foreign-markets:sale-outlet:v1') as SaleOutlet | null
+    return stored && VALID_FM_SALE_OUTLETS.includes(stored) ? stored : 'market'
+  })
+  const [showProfitableOnly, setShowProfitableOnly] = useState(
+    () => localStorage.getItem('torntools:foreign-markets:show-profitable-only:v1') !== 'false',
+  )
+  const [hideOutOfStock, setHideOutOfStock] = useState(
+    () => localStorage.getItem('torntools:foreign-markets:hide-out-of-stock:v1') !== 'false',
+  )
+  const [showAllCountries, setShowAllCountries] = useState(
+    () => localStorage.getItem('torntools:foreign-markets:show-all-countries:v1') === 'true',
+  )
 
   const [searchTerm, setSearchTerm] = useState('')
 
   const foreignSaleOutletOptions = saleOutletOptions.filter((o) => o.value !== 'city')
 
   const handleSaleOutletChange = (_: React.MouseEvent<HTMLElement>, newOutlet: string | number) => {
-    setSaleOutlet(newOutlet as SaleOutlet)
+    const outlet = newOutlet as SaleOutlet
+    setSaleOutlet(outlet)
+    localStorage.setItem('torntools:foreign-markets:sale-outlet:v1', outlet)
   }
 
   useEffect(() => {
@@ -79,13 +98,14 @@ const ForeignMarkets = () => {
     const lowerSearchTerm = searchTerm.toLowerCase()
     return rows.filter(
       (row) =>
-        (!showProfitableOnly || isForeignStockItemProfitable(row, saleOutlet)) &&
+        (!hideOutOfStock || row.quantity > 0) &&
+        (!showProfitableOnly || isForeignStockItemProfitable(row, saleOutlet, bazaarSummaries[row.itemId]?.minPrice)) &&
         (selectedItemTypes.length === 0 || selectedItemTypes.includes(row.item.type!)) &&
         (row.itemName.toLowerCase().includes(lowerSearchTerm) ||
           row.item.type?.toLowerCase().includes(lowerSearchTerm) ||
           row.item.subType?.toLowerCase().includes(lowerSearchTerm)),
     )
-  }, [rows, searchTerm, selectedItemTypes, showProfitableOnly, saleOutlet])
+  }, [rows, searchTerm, selectedItemTypes, showProfitableOnly, hideOutOfStock, saleOutlet, bazaarSummaries])
 
   const sortedDestinations = useMemo(() => {
     if (orderByFlightTime) {
@@ -148,15 +168,33 @@ const ForeignMarkets = () => {
         Filters
       </Typography>
 
-      <FormGroup sx={{ mb: 2 }}>
+      <FormGroup row sx={{ mb: 2 }}>
         <FormControlLabel
           control={
             <Checkbox
               checked={orderByFlightTime}
-              onChange={() => setOrderByFlightTime(!orderByFlightTime)}
+              onChange={() => {
+                const next = !orderByFlightTime
+                setOrderByFlightTime(next)
+                localStorage.setItem('torntools:foreign-markets:order-by-flight-time:v1', String(next))
+              }}
             />
           }
           label="Order by flight time"
+          sx={{ mr: 3 }}
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={showAllCountries}
+              onChange={() => {
+                const next = !showAllCountries
+                setShowAllCountries(next)
+                localStorage.setItem('torntools:foreign-markets:show-all-countries:v1', String(next))
+              }}
+            />
+          }
+          label="Show all countries in one table"
         />
       </FormGroup>
 
@@ -253,15 +291,33 @@ const ForeignMarkets = () => {
         </Grid>
 
         <Grid size={{ xs: 12, sm: 6 }} sx={{ mt: '-2px' }}>
-          <FormGroup>
+          <FormGroup row>
             <FormControlLabel
               control={
                 <Checkbox
                   checked={showProfitableOnly}
-                  onChange={() => setShowProfitableOnly(!showProfitableOnly)}
+                  onChange={() => {
+                    const next = !showProfitableOnly
+                    setShowProfitableOnly(next)
+                    localStorage.setItem('torntools:foreign-markets:show-profitable-only:v1', String(next))
+                  }}
                 />
               }
               label="Show Profitable Items Only"
+              sx={{ mr: 3 }}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={hideOutOfStock}
+                  onChange={() => {
+                    const next = !hideOutOfStock
+                    setHideOutOfStock(next)
+                    localStorage.setItem('torntools:foreign-markets:hide-out-of-stock:v1', String(next))
+                  }}
+                />
+              }
+              label="Hide Out of Stock"
             />
           </FormGroup>
         </Grid>
@@ -291,49 +347,67 @@ const ForeignMarkets = () => {
         </FormGroup>
       </Box>
 
-      {sortedDestinations
-        .filter(
-          (destination) =>
-            selectedCountries.length === 0 || selectedCountries.includes(destination.country || ''),
-        )
-        .map((destination) => (
-          <Fragment key={destination.country}>
-            {filteredItems.filter((i) => i.country === destination.country).length > 0 && (
-              <Box key={destination.country} sx={{ mb: 4 }}>
-                <Divider sx={{ mt: 2, mb: 4 }} />
-                <Typography component={'span'} variant="h5" gutterBottom>
-                  <img
-                    src={`/${destination.country?.toLowerCase().replace(' ', '-')}.svg`}
-                    alt={`Flag of ${destination.country}`}
-                    style={{
-                      maxWidth: '1em',
-                      height: 'auto',
-                      marginRight: 8,
-                      top: 3,
-                      position: 'relative',
-                    }}
-                  />
-                  {destination.country}
-                </Typography>
-                <Typography
-                  component={'span'}
-                  variant="body2"
-                  sx={(theme) => ({ color: theme.palette.text.secondary, ml: 2 })}
-                >
-                  Flight time:{' '}
-                  {destination.flightTimesMinutes.standard
-                    ? `${prettyPrintFlightTime(destination.flightTimesMinutes.standard)} (standard)`
-                    : 'N/A'}
-                </Typography>
+      {showAllCountries ? (
+        (() => {
+          const visibleItems = filteredItems.filter(
+            (i) => selectedCountries.length === 0 || selectedCountries.includes(i.country),
+          )
+          return visibleItems.length > 0 ? (
+            <Box sx={{ mb: 4 }}>
+              <Divider sx={{ mt: 2, mb: 4 }} />
+              <ForeignMarketItemsTable
+                items={visibleItems}
+                saleOutlet={saleOutlet}
+                showCountry
+              />
+            </Box>
+          ) : null
+        })()
+      ) : (
+        sortedDestinations
+          .filter(
+            (destination) =>
+              selectedCountries.length === 0 || selectedCountries.includes(destination.country || ''),
+          )
+          .map((destination) => (
+            <Fragment key={destination.country}>
+              {filteredItems.filter((i) => i.country === destination.country).length > 0 && (
+                <Box key={destination.country} sx={{ mb: 4 }}>
+                  <Divider sx={{ mt: 2, mb: 4 }} />
+                  <Typography component={'span'} variant="h5" gutterBottom>
+                    <img
+                      src={`/${destination.country?.toLowerCase().replace(' ', '-')}.svg`}
+                      alt={`Flag of ${destination.country}`}
+                      style={{
+                        maxWidth: '1em',
+                        height: 'auto',
+                        marginRight: 8,
+                        top: 3,
+                        position: 'relative',
+                      }}
+                    />
+                    {destination.country}
+                  </Typography>
+                  <Typography
+                    component={'span'}
+                    variant="body2"
+                    sx={(theme) => ({ color: theme.palette.text.secondary, ml: 2 })}
+                  >
+                    Flight time:{' '}
+                    {destination.flightTimesMinutes.standard
+                      ? `${prettyPrintFlightTime(destination.flightTimesMinutes.standard)} (standard)`
+                      : 'N/A'}
+                  </Typography>
 
-                <ForeignMarketItemsTable
-                  items={filteredItems.filter((i) => i.country === destination.country)}
-                  saleOutlet={saleOutlet}
-                />
-              </Box>
-            )}
-          </Fragment>
-        ))}
+                  <ForeignMarketItemsTable
+                    items={filteredItems.filter((i) => i.country === destination.country)}
+                    saleOutlet={saleOutlet}
+                  />
+                </Box>
+              )}
+            </Fragment>
+          ))
+      )}
     </Box>
   )
 }

@@ -1,13 +1,6 @@
 export type SortOrder = 'asc' | 'desc';
 
 function compareValues(a: unknown, b: unknown): number {
-  // Handle null/undefined first
-  if (!a && !b) return 0;
-
-  // Push undefined values to the bottom
-  if (!a) return 1;   
-  if (!b) return -1;
-
   // Numbers
   if (typeof a === 'number' && typeof b === 'number') {
     return a - b;
@@ -32,21 +25,20 @@ function compareValues(a: unknown, b: unknown): number {
   return String(a).localeCompare(String(b));
 }
 
-function descendingComparator<T, TKey extends keyof T>(
-  a: T,
-  b: T,
-  orderByKey: TKey,
-): number {
-  return compareValues(a[orderByKey], b[orderByKey]);
-}
-
 export function getComparator<T, TKey extends keyof T>(
   order: SortOrder,
   orderBy: TKey,
 ): (a: T, b: T) => number {
-  return order === 'asc'
-    ? (a, b) => descendingComparator(a, b, orderBy)
-    : (a, b) => -descendingComparator(a, b, orderBy);
+  return (a, b) => {
+    const av = a[orderBy];
+    const bv = b[orderBy];
+    // Always push null/undefined to the bottom regardless of sort direction
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    const cmp = compareValues(av, bv);
+    return order === 'asc' ? cmp : -cmp;
+  };
 }
 
 export function stableSort<T>(

@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import {
   Box,
   Paper,
@@ -9,9 +10,13 @@ import {
   TableRow,
 } from '@mui/material'
 import { useUser } from '../hooks/useUser'
-import { type ForeignStockItem } from '../types/foreignStockItems'
+import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
+import { stableSort, getComparator, type SortOrder } from '../lib/comparisons'
+import { SALE_TAX } from '../lib/profitCalculations'
+import { type ForeignStockItem, type SortableForeignStockItem } from '../types/foreignStockItems'
 import type { SaleOutlet } from '../types/markets'
 import ForeignMarketItemsTableRow from './ForeignMarketItemsTableRow'
+import TableSortCell from './TableSortCell'
 
 const sellColumnLabel: Record<SaleOutlet, string> = {
   city: 'Sell (City)',
@@ -23,10 +28,52 @@ const sellColumnLabel: Record<SaleOutlet, string> = {
 interface ForeignMarketItemsTableProps {
   items: ForeignStockItem[]
   saleOutlet: SaleOutlet
+  showCountry?: boolean
 }
 
-const ForeignMarketItemsTable = ({ items, saleOutlet }: ForeignMarketItemsTableProps) => {
+const ForeignMarketItemsTable = ({ items, saleOutlet, showCountry = false }: ForeignMarketItemsTableProps) => {
   const { dotNetUserDetails } = useUser()
+  const { summaries: bazaarSummaries } = useBazaarSummaries()
+
+  const [orderBy, setOrderBy] = useState<keyof SortableForeignStockItem>('itemName')
+  const [orderDirection, setOrderDirection] = useState<SortOrder>('asc')
+
+  const handleRequestSort = (
+    property: keyof SortableForeignStockItem,
+    defaultOrderDirection: SortOrder,
+  ) => {
+    const isSelected = orderBy === property
+    const isAsc = orderDirection === 'asc'
+    setOrderDirection(isSelected && isAsc ? 'desc' : !isSelected ? defaultOrderDirection : 'asc')
+    setOrderBy(property)
+  }
+
+  const sortableItems = useMemo(
+    () =>
+      items.map((item) => {
+        const sellPrice = (() => {
+          if (saleOutlet === 'bazaar') {
+            const s = bazaarSummaries[item.itemId]
+            return s ? s.minPrice : null
+          }
+          return item.item.valueMarketPrice != null
+            ? Math.floor(item.item.valueMarketPrice * (1 - SALE_TAX[saleOutlet]))
+            : null
+        })()
+        return {
+          ...item,
+          itemType: item.item.type,
+          sellPrice,
+          profit: sellPrice != null ? sellPrice - item.cost : null,
+        } as SortableForeignStockItem
+      }),
+    [items, saleOutlet, bazaarSummaries],
+  )
+
+  const sortedItems = useMemo(
+    () => stableSort(sortableItems, getComparator(orderDirection, orderBy)),
+    [sortableItems, orderDirection, orderBy],
+  )
 
   return (
     <>
@@ -37,19 +84,78 @@ const ForeignMarketItemsTable = ({ items, saleOutlet }: ForeignMarketItemsTableP
               <TableRow>
                 <TableCell align="center">Info</TableCell>
                 {dotNetUserDetails && <TableCell align="center">Fav</TableCell>}
-                <TableCell>Item</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell align="right">Buy Price</TableCell>
-                <TableCell align="right">{sellColumnLabel[saleOutlet]}</TableCell>
-                <TableCell align="right">Profit</TableCell>
-                <TableCell align="right">Available</TableCell>
-                <TableCell align="right">Last Updated</TableCell>
+                <TableSortCell<SortableForeignStockItem>
+                  columnKey="itemName"
+                  label="Item"
+                  orderBy={orderBy}
+                  orderDirection={orderDirection}
+                  handleRequestSort={handleRequestSort}
+                />
+                <TableSortCell<SortableForeignStockItem>
+                  columnKey="itemType"
+                  label="Type"
+                  orderBy={orderBy}
+                  orderDirection={orderDirection}
+                  handleRequestSort={handleRequestSort}
+                />
+                {showCountry && (
+                  <TableSortCell<SortableForeignStockItem>
+                    columnKey="country"
+                    label="Country"
+                    orderBy={orderBy}
+                    orderDirection={orderDirection}
+                    handleRequestSort={handleRequestSort}
+                  />
+                )}
+                <TableSortCell<SortableForeignStockItem>
+                  align="right"
+                  columnKey="cost"
+                  label="Buy Price"
+                  orderBy={orderBy}
+                  orderDirection={orderDirection}
+                  handleRequestSort={handleRequestSort}
+                />
+                <TableSortCell<SortableForeignStockItem>
+                  align="right"
+                  columnKey="sellPrice"
+                  label={sellColumnLabel[saleOutlet]}
+                  orderBy={orderBy}
+                  orderDirection={orderDirection}
+                  handleRequestSort={handleRequestSort}
+                />
+                <TableSortCell<SortableForeignStockItem>
+                  align="right"
+                  columnKey="profit"
+                  defaultOrderDirection="desc"
+                  label="Profit"
+                  orderBy={orderBy}
+                  orderDirection={orderDirection}
+                  handleRequestSort={handleRequestSort}
+                />
+                <TableSortCell<SortableForeignStockItem>
+                  align="right"
+                  columnKey="quantity"
+                  defaultOrderDirection="desc"
+                  label="Available"
+                  orderBy={orderBy}
+                  orderDirection={orderDirection}
+                  handleRequestSort={handleRequestSort}
+                />
+                <TableSortCell<SortableForeignStockItem>
+                  align="right"
+                  columnKey="lastUpdated"
+                  defaultOrderDirection="desc"
+                  label="Last Updated"
+                  orderBy={orderBy}
+                  orderDirection={orderDirection}
+                  handleRequestSort={handleRequestSort}
+                />
                 <TableCell align="center">Torn</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {items.map((item) => (
-                <ForeignMarketItemsTableRow key={item.itemId} item={item} saleOutlet={saleOutlet} />
+              {sortedItems.map((item) => (
+                <ForeignMarketItemsTableRow key={`${item.itemId}-${item.country}`} item={item} showCountry={showCountry} />
               ))}
             </TableBody>
           </Table>

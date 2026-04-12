@@ -1,4 +1,5 @@
 import { fetchMarketplace } from "../lib/weav3rapi";
+import { postWeav3rListings } from "../lib/dotnetapi";
 import type { Weav3rMarketplacePayload } from "../types/weav3r";
 import { useState, useCallback, useEffect } from "react";
 
@@ -33,6 +34,17 @@ const useMarketplaceQuery = (
     try {
       const result = await fetchMarketplace(itemId);
       setData(result);
+
+      if (result?.listings?.length) {
+        postWeav3rListings(
+          itemId,
+          result.listings.map((l) => ({
+            playerId: l.player_id,
+            quantity: l.quantity,
+            price: l.price,
+          })),
+        ).catch(() => { /* silent — don't affect UX if relay fails */ })
+      }
     } catch (e) {
       if (e instanceof Error) {
         setError(e.message);

@@ -139,6 +139,74 @@ public class DatabaseService(
     return _listingRepository.ReplaceListingsAsync(source, itemId, newListings, stoppingToken);
   }
 
+  public Task TouchListingsTimestampAsync(Source source, int itemId, DateTimeOffset timestamp, CancellationToken stoppingToken)
+  {
+    return _listingRepository.TouchListingsTimestampAsync(source, itemId, timestamp, stoppingToken);
+  }
+
+  public async Task ProcessListingsAsync(Source source, int itemId, List<ListingDto> newListings, CancellationToken stoppingToken)
+  {
+    newListings = [.. newListings
+        .Where(nl => nl is not null)
+        .OrderBy(l => l.Price)
+        .Take(QueryConstants.NumberOfListingsToStorePerItem)];
+
+    if (newListings.Count == 0)
+      return;
+
+    var previousListings = (await GetListingsBySourceAndItemIdAsync(source, itemId, stoppingToken))
+        .OrderBy(l => l.Price)
+        .Take(QueryConstants.NumberOfListingsToStorePerItem)
+        .ToList();
+
+    if (previousListings.Count == 0)
+    {
+      await CreateListingsAsync(newListings, stoppingToken);
+      return;
+    }
+
+    var previousMinimumPrice = previousListings.First().Price;
+    var newMinimumPrice = newListings.Min(l => l.Price);
+
+    var hasMarketChanged = previousListings.Count != newListings.Count;
+    var hasMinimumPriceChanged = previousMinimumPrice != newMinimumPrice;
+
+    if (!hasMarketChanged && !hasMinimumPriceChanged)
+    {
+      var i = 0;
+      while (i < previousListings.Count)
+      {
+        if (previousListings[i].Price != newListings[i].Price || previousListings[i].Quantity != newListings[i].Quantity)
+        {
+          hasMarketChanged = true;
+          break;
+        }
+        i++;
+      }
+    }
+
+    if (hasMarketChanged || hasMinimumPriceChanged)
+    {
+      _logger.LogInformation(
+          "Market change detected for item {ItemId} ({Source}): minimum price {PreviousPrice} → {NewPrice}.",
+          itemId, source, previousMinimumPrice, newMinimumPrice);
+
+      await CreateItemChangeLogAsync(new ItemChangeLogDto
+      {
+        ItemId = itemId,
+        Source = source,
+        NewPrice = newMinimumPrice,
+        ChangeTime = DateTime.UtcNow,
+      }, stoppingToken);
+
+      await ReplaceListingsAsync(source, itemId, newListings, stoppingToken);
+    }
+    else
+    {
+      await TouchListingsTimestampAsync(source, itemId, DateTimeOffset.UtcNow, stoppingToken);
+    }
+  }
+
   public Task<IEnumerable<ProfitableListingDto>> GetProfitableListingsAsync(CancellationToken stoppingToken)
   {
     return _itemRepository.GetProfitableItemsAsync(stoppingToken);
@@ -324,8 +392,8 @@ public class DatabaseService(
   {
     var profitableItems = await _itemRepository.GetProfitableItemsAsync(stoppingToken);
     var profitableItemIds = profitableItems
-        .Where(pi => pi.CitySellPrice.HasValue && pi.TornMinPrice.HasValue
-            && pi.CitySellPrice.Value - pi.TornMinPrice.Value >= QueueProcessorConstants.MinProfitToPrioritise)
+        .Where(pi => pi.CitySellPrice.HasValue && pi.TornCityMinPrice.HasValue
+            && pi.CitySellPrice.Value - pi.TornCityMinPrice.Value >= QueueProcessorConstants.MinProfitToPrioritise)
         .Select(pi => pi.ItemId)
         .ToHashSet();
 

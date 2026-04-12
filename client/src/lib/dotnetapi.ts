@@ -20,6 +20,7 @@ const URL_ITEMS = `${API_BASE_URL}/GetItems`;
 const URL_FOREIGN_STOCK_ITEMS = `${API_BASE_URL}/GetForeignStockItems`;
 const URL_PROFITABLE_LISTINGS = `${API_BASE_URL}/GetProfitableListings`;
 const URL_BAZAAR_SUMMARIES = `${API_BASE_URL}/GetBazaarSummaries`;
+const URL_POST_WEAV3R_LISTINGS = `${API_BASE_URL}/PostWeav3rListings`;
 const URL_POST_TOGGLE_USER_FAVOURITE = `${API_BASE_URL}/PostToggleUserFavourite`;
 const URL_GET_THEMES = `${API_BASE_URL}/GetThemes`;
 const URL_POST_THEME = `${API_BASE_URL}/PostTheme`;
@@ -107,6 +108,17 @@ export async function fetchForeignStockItems(): Promise<ForeignStockItem[]> {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
   }
   return data;
+}
+
+export async function postWeav3rListings(
+  itemId: number,
+  listings: Array<{ playerId: number; quantity: number; price: number }>,
+): Promise<void> {
+  await fetch(URL_POST_WEAV3R_LISTINGS, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ itemId, listings }),
+  })
 }
 
 export async function fetchBazaarSummaries(): Promise<BazaarSummary[]> {
