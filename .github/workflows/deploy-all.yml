@@ -127,7 +127,7 @@ jobs:
           echo "📐 Running terraform plan..."
           set +e
           terraform plan -no-color -out=tfplan 2>&1 | tee plan_output.txt
-          exit_code=$?
+          exit_code=${PIPESTATUS[0]}
           set -e
 
           if grep -q "Error acquiring the state lock" plan_output.txt; then
