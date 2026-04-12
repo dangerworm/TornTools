@@ -10,13 +10,22 @@ import {
 } from '@mui/material'
 import { useUser } from '../hooks/useUser'
 import { type ForeignStockItem } from '../types/foreignStockItems'
+import type { SaleOutlet } from '../types/markets'
 import ForeignMarketItemsTableRow from './ForeignMarketItemsTableRow'
+
+const sellColumnLabel: Record<SaleOutlet, string> = {
+  city: 'Sell (City)',
+  bazaar: 'Sell (Bazaar)',
+  market: 'Sell (Mkt 5%)',
+  anonymousMarket: 'Sell (Anon 15%)',
+}
 
 interface ForeignMarketItemsTableProps {
   items: ForeignStockItem[]
+  saleOutlet: SaleOutlet
 }
 
-const ForeignMarketItemsTable = ({ items }: ForeignMarketItemsTableProps) => {
+const ForeignMarketItemsTable = ({ items, saleOutlet }: ForeignMarketItemsTableProps) => {
   const { dotNetUserDetails } = useUser()
 
   return (
@@ -31,7 +40,7 @@ const ForeignMarketItemsTable = ({ items }: ForeignMarketItemsTableProps) => {
                 <TableCell>Item</TableCell>
                 <TableCell>Type</TableCell>
                 <TableCell align="right">Buy Price</TableCell>
-                <TableCell align="right">Market Price</TableCell>
+                <TableCell align="right">{sellColumnLabel[saleOutlet]}</TableCell>
                 <TableCell align="right">Profit</TableCell>
                 <TableCell align="right">Available</TableCell>
                 <TableCell align="right">Last Updated</TableCell>
@@ -40,7 +49,7 @@ const ForeignMarketItemsTable = ({ items }: ForeignMarketItemsTableProps) => {
             </TableHead>
             <TableBody>
               {items.map((item) => (
-                <ForeignMarketItemsTableRow key={item.itemId} item={item} />
+                <ForeignMarketItemsTableRow key={item.itemId} item={item} saleOutlet={saleOutlet} />
               ))}
             </TableBody>
           </Table>

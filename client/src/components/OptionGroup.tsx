@@ -6,6 +6,7 @@ interface OptionGroupProps {
   selectedOption: string | number
   title: string
   titleInline?: boolean
+  disabledValues?: (string | number)[]
   handleOptionChange: (event: React.MouseEvent<HTMLElement>, newValue: string | number) => void
 }
 
@@ -14,6 +15,7 @@ const OptionGroup = ({
   selectedOption,
   title,
   titleInline = false,
+  disabledValues = [],
   handleOptionChange,
 }: OptionGroupProps) => {
   return (
@@ -32,7 +34,7 @@ const OptionGroup = ({
               value={selectedOption}
             >
               {options.map((option) => (
-                <ToggleButton value={option.value} sx={{ px: 1 }}>
+                <ToggleButton value={option.value} disabled={disabledValues.includes(option.value)} sx={{ px: 1, whiteSpace: 'nowrap' }}>
                   {option.label}
                 </ToggleButton>
               ))}
@@ -56,7 +58,7 @@ const OptionGroup = ({
               value={selectedOption}
             >
               {options.map((option) => (
-                <ToggleButton value={option.value} sx={{ px: 1 }}>
+                <ToggleButton value={option.value} disabled={disabledValues.includes(option.value)} sx={{ px: 1, whiteSpace: 'nowrap' }}>
                   {option.label}
                 </ToggleButton>
               ))}

@@ -101,6 +101,37 @@ public class ListingRepository(
     DbContext.ChangeTracker.Clear();
   }
 
+  public async Task<IEnumerable<BazaarSummaryDto>> GetBazaarSummariesAsync(CancellationToken stoppingToken)
+  {
+    const string sql = """
+      WITH weav3r_items AS (
+        SELECT
+          l.item_id,
+          l.price                                    AS weav3r_min_price,
+          l.quantity,
+          l.time_seen                                AS last_updated,
+          MIN(l.price) OVER (PARTITION BY l.item_id) AS min_price
+        FROM public.listings l
+        WHERE l.source = 'Weav3r'
+      )
+      SELECT
+        item_id,
+        weav3r_min_price,
+        SUM(quantity)::int  AS quantity,
+        MAX(last_updated)   AS last_updated
+      FROM weav3r_items
+      WHERE weav3r_min_price = min_price
+      GROUP BY item_id, weav3r_min_price
+      """;
+
+    var rows = await DbContext.BazaarSummaries
+        .FromSqlRaw(sql)
+        .AsNoTracking()
+        .ToListAsync(stoppingToken);
+
+    return rows.Select(r => r.AsDto());
+  }
+
   private static ListingEntity CreateEntityFromDto(ListingDto listingDto)
   {
     return new ListingEntity

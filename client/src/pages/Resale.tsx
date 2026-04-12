@@ -7,9 +7,32 @@ import SteppedSlider from '../components/SteppedSlider'
 import { menuItems } from '../components/Menu'
 import { useResaleScan } from '../hooks/useResaleScan'
 import { useUser } from '../hooks/useUser'
-import type { SaleOutlet, TaxType } from '../types/markets'
+import type { PurchaseOutlet, SaleOutlet } from '../types/markets'
 import OptionGroup from '../components/OptionGroup'
-import { saleOutletOptions, taxTypeOptions } from '../types/common'
+import { purchaseOutletOptions, saleOutletOptions } from '../types/common'
+import { getTotalProfit } from '../lib/profitCalculations'
+import { getSecondsSinceLastUpdate } from '../lib/time'
+
+const VALID_PURCHASE_OUTLETS: PurchaseOutlet[] = ['city', 'bazaar', 'market']
+const VALID_SALE_OUTLETS: SaleOutlet[] = ['city', 'bazaar', 'market', 'anonymousMarket']
+
+const disabledSaleOutlets = (purchase: PurchaseOutlet): SaleOutlet[] =>
+  purchase === 'market' ? ['market', 'anonymousMarket'] : [purchase as SaleOutlet]
+
+const loadOutlets = (): { purchaseOutlet: PurchaseOutlet; saleOutlet: SaleOutlet } => {
+  const storedPurchase = localStorage.getItem('resale:purchaseOutlet:v1') as PurchaseOutlet
+  const purchase = VALID_PURCHASE_OUTLETS.includes(storedPurchase) ? storedPurchase : 'market'
+
+  const storedSale = localStorage.getItem('resale:saleOutlet:v1') as SaleOutlet
+  const disabled = disabledSaleOutlets(purchase)
+  const sale =
+    VALID_SALE_OUTLETS.includes(storedSale) && !disabled.includes(storedSale)
+      ? storedSale
+      : (saleOutletOptions.find((o) => !disabled.includes(o.value as SaleOutlet))
+          ?.value as SaleOutlet) ?? 'city'
+
+  return { purchaseOutlet: purchase, saleOutlet: sale }
+}
 
 const Resale = () => {
   const { rows, error } = useResaleScan({ intervalMs: 5000 })
@@ -32,36 +55,44 @@ const Resale = () => {
     minuteRangeValues[initialMaxTimeSinceLastUpdateIndex],
   )
 
-  const [saleOutlet, setSaleOutlet] = useState<SaleOutlet>('city')
-  const [taxType, setTaxType] = useState<TaxType>(0.05)
+  const [purchaseOutlet, setPurchaseOutlet] = useState<PurchaseOutlet>(
+    () => loadOutlets().purchaseOutlet,
+  )
+  const [saleOutlet, setSaleOutlet] = useState<SaleOutlet>(() => loadOutlets().saleOutlet)
 
-  const handleMinProfitSliderValueChange = (newValue: number) => {
-    setMinProfit(newValue)
-  }
-
-  const handleMaxBuyPriceSliderValueChange = (newValue: number) => {
-    setMaxBuyPrice(newValue)
-  }
-
-  const handleMaxTimeSinceLastUpdateSliderValueChange = (newValue: number) => {
-    setMaxTimeSinceLastUpdate(newValue)
+  const handlePurchaseOutletChange = (
+    _: React.MouseEvent<HTMLElement>,
+    newOutlet: string | number,
+  ) => {
+    const newPurchase = newOutlet as PurchaseOutlet
+    setPurchaseOutlet(newPurchase)
+    localStorage.setItem('resale:purchaseOutlet:v1', newPurchase)
+    const disabled = disabledSaleOutlets(newPurchase)
+    if (disabled.includes(saleOutlet)) {
+      const fallback = saleOutletOptions.find((o) => !disabled.includes(o.value as SaleOutlet))
+      if (fallback) {
+        setSaleOutlet(fallback.value as SaleOutlet)
+        localStorage.setItem('resale:saleOutlet:v1', fallback.value as string)
+      }
+    }
   }
 
   const handleSaleOutletChange = (
     _: React.MouseEvent<HTMLElement>,
-    newSaleOutlet: string | number,
+    newOutlet: string | number,
   ) => {
-    setSaleOutlet(newSaleOutlet as SaleOutlet)
+    setSaleOutlet(newOutlet as SaleOutlet)
+    localStorage.setItem('resale:saleOutlet:v1', newOutlet as string)
   }
 
-  const handleTaxTypeChange = (_: React.MouseEvent<HTMLElement>, newTaxType: string | number) => {
-    setTaxType(newTaxType as TaxType)
-  }
-
-  const sortedRows = useMemo(() => saleOutlet === 'city'
-    ? [...rows].sort((a, b) => b.cityProfit - a.cityProfit)
-    : [...rows].sort((a, b) => b.marketProfit(taxType) - a.marketProfit(taxType)),
-  [rows, saleOutlet, taxType])
+  const sortedRows = useMemo(() =>
+    [...rows].sort((a, b) => {
+      const profitA = getTotalProfit(a, purchaseOutlet, saleOutlet) ?? -Infinity
+      const profitB = getTotalProfit(b, purchaseOutlet, saleOutlet) ?? -Infinity
+      return profitB - profitA
+    }),
+    [rows, purchaseOutlet, saleOutlet],
+  )
 
   if (!rows) return <Loading message="Loading resale opportunities..." />
 
@@ -122,7 +153,7 @@ const Resale = () => {
           suffixUnit=""
           sliderValues={priceRangeValues}
           initialValueIndex={initialMinProfitIndex}
-          onValueChange={handleMinProfitSliderValueChange}
+          onValueChange={setMinProfit}
         />
         <SteppedSlider
           label="Max Buy Price"
@@ -130,7 +161,7 @@ const Resale = () => {
           suffixUnit=""
           sliderValues={priceRangeValues}
           initialValueIndex={initialMaxBuyPriceIndex}
-          onValueChange={handleMaxBuyPriceSliderValueChange}
+          onValueChange={setMaxBuyPrice}
         />
         <SteppedSlider
           label="Max Updated Time"
@@ -138,7 +169,7 @@ const Resale = () => {
           suffixUnit="minute"
           sliderValues={minuteRangeValues}
           initialValueIndex={initialMaxTimeSinceLastUpdateIndex}
-          onValueChange={handleMaxTimeSinceLastUpdateSliderValueChange}
+          onValueChange={setMaxTimeSinceLastUpdate}
         />
       </Grid>
 
@@ -149,25 +180,23 @@ const Resale = () => {
       </Typography>
 
       <Grid container spacing={2} alignItems="center">
-        <Grid size={{ xs: 12, sm: 4, md: 3 }} sx={{ minWidth: '12em' }}>
+        <Grid size={{ xs: 12, sm: 4, md: 3 }} sx={{ minWidth: '14em' }}>
+          <OptionGroup
+            options={purchaseOutletOptions}
+            selectedOption={purchaseOutlet}
+            title="Buy from"
+            handleOptionChange={handlePurchaseOutletChange}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 4, md: 3 }} sx={{ minWidth: '18em' }}>
           <OptionGroup
             options={saleOutletOptions}
             selectedOption={saleOutlet}
-            title={'Sale outlet'}
+            title="Sell via"
+            disabledValues={disabledSaleOutlets(purchaseOutlet)}
             handleOptionChange={handleSaleOutletChange}
           />
         </Grid>
-
-        {saleOutlet === 'market' && (
-          <Grid size={{ xs: 12, sm: 4, md: 3 }} sx={{ minWidth: '16em' }}>
-            <OptionGroup
-              options={taxTypeOptions}
-              selectedOption={taxType}
-              title={'Market tax'}
-              handleOptionChange={handleTaxTypeChange}
-            />
-          </Grid>
-        )}
       </Grid>
 
       <Divider sx={{ my: 2 }} />
@@ -178,8 +207,8 @@ const Resale = () => {
         maxTimeSinceLastUpdate={maxTimeSinceLastUpdate}
         minProfit={minProfit}
         rows={sortedRows}
+        purchaseOutlet={purchaseOutlet}
         saleOutlet={saleOutlet}
-        taxType={saleOutlet !== 'market' ? 0 : taxType}
       />
     </Box>
   )

@@ -7,15 +7,17 @@ import {
   Divider,
   FormControlLabel,
   FormGroup,
+  FormLabel,
   Grid,
+  TextField,
   Typography,
 } from '@mui/material'
 import Loading from '../components/Loading'
 import CityMarketItemsTable from '../components/CityMarketItemsTable'
 import { isItemProfitableOnMarket } from '../types/items'
 import OptionGroup from '../components/OptionGroup'
-import { taxTypeOptions } from '../types/common'
-import type { TaxType } from '../types/markets'
+import { saleOutletOptions } from '../types/common'
+import type { SaleOutlet } from '../types/markets'
 
 const CityMarkets = () => {
   const { items, refresh } = useItems()
@@ -23,7 +25,10 @@ const CityMarkets = () => {
   const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>([])
   const [selectedVendors, setSelectedVendors] = useState<string[]>([])
   const [showProfitableOnly, setShowProfitableOnly] = useState(true)
-  const [taxType, setTaxType] = useState<TaxType>(0.05)
+  const [saleOutlet, setSaleOutlet] = useState<SaleOutlet>('market')
+  const [searchTerm, setSearchTerm] = useState('')
+
+  const marketSaleOutletOptions = saleOutletOptions.filter((o) => o.value !== 'city')
 
   useEffect(() => {
     refresh()
@@ -64,15 +69,15 @@ const CityMarkets = () => {
     if (!items) return []
     return items.filter(
       (i) =>
-        (!showProfitableOnly || isItemProfitableOnMarket(i, taxType)) &&
+        (!showProfitableOnly || isItemProfitableOnMarket(i, saleOutlet)) &&
         (selectedItemTypes.length === 0 || selectedItemTypes.includes(i.type!)) &&
         (selectedVendors.length === 0 ||
           (i.valueVendorName && selectedVendors.includes(i.valueVendorName))),
     )
-  }, [items, showProfitableOnly, selectedItemTypes, selectedVendors, taxType])
+  }, [items, showProfitableOnly, selectedItemTypes, selectedVendors, saleOutlet])
 
-  const handleTaxTypeChange = (_: React.MouseEvent<HTMLElement>, newTaxType: string | number) => {
-    setTaxType(newTaxType as TaxType)
+  const handleSaleOutletChange = (_: React.MouseEvent<HTMLElement>, newOutlet: string | number) => {
+    setSaleOutlet(newOutlet as SaleOutlet)
   }
 
   if (!items) return <Loading message="Loading items..." />
@@ -152,11 +157,11 @@ const CityMarkets = () => {
       <Grid container spacing={2} alignItems="top">
         <Grid size={{ xs: 12, sm: "auto" }} sx={{ minWidth: '22em' }}>
           <OptionGroup
-            options={taxTypeOptions}
-            selectedOption={taxType}
-            title={'Market tax'}
+            options={marketSaleOutletOptions}
+            selectedOption={saleOutlet}
+            title={'Sell via'}
             titleInline={true}
-            handleOptionChange={handleTaxTypeChange}
+            handleOptionChange={handleSaleOutletChange}
           />
         </Grid>
 
@@ -175,6 +180,31 @@ const CityMarkets = () => {
         </Grid>
       </Grid>
 
+      {(saleOutlet === 'market' || saleOutlet === 'anonymousMarket') && (
+        <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
+          Note: sell prices are based on Torn's daily average market price, not the most recent market scan.
+        </Typography>
+      )}
+      {saleOutlet === 'bazaar' && (
+        <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
+          Note: bazaar sell prices show the current cheapest listing from the most recent Weav3r scan. Items with no scan data show no sell price.
+        </Typography>
+      )}
+
+      <Box sx={{ my: 2 }}>
+        <FormGroup>
+          <FormLabel sx={{ mb: 1 }}>Search items:</FormLabel>
+          <TextField
+            label="Search"
+            variant="outlined"
+            size="small"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{ mb: 1, minWidth: 400 }}
+          />
+        </FormGroup>
+      </Box>
+
       {countries.map((country: string | undefined) => (
         <Fragment key={country}>
           <Divider sx={{ mt: 2, mb: 4 }} />
@@ -186,9 +216,10 @@ const CityMarkets = () => {
 
             <CityMarketItemsTable
               items={filteredItems.filter((i) => i.valueVendorCountry === country)}
+              searchTerm={searchTerm}
               showCityPrice={!!country}
               showVendor={!!country}
-              taxType={taxType}
+              saleOutlet={saleOutlet}
             />
           </Box>
         </Fragment>

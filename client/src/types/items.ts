@@ -1,4 +1,6 @@
+import type { SaleOutlet } from "./markets";
 import type { Weav3rMarketplaceListing } from "./weav3r";
+import { SALE_TAX } from "../lib/profitCalculations";
 
 export interface Item {
   id: number;
@@ -33,16 +35,17 @@ export interface Item {
 export type ItemsMap = Record<number, Item>;
 
 export type SortableItem = Item & {
+  sellPrice: number | null
   profit: number
   profitPerCost: number
 }
 
-export const isItemProfitableOnMarket = (item: Item, taxType: number): boolean => {
+export const isItemProfitableOnMarket = (item: Item, saleOutlet: SaleOutlet): boolean => {
   return (
-    item.isTradable &&  
+    item.isTradable &&
     !!item.valueBuyPrice &&
     !!item.valueMarketPrice &&
-    (item.valueMarketPrice * (1 - taxType)) > item.valueBuyPrice
+    (item.valueMarketPrice * (1 - SALE_TAX[saleOutlet])) > item.valueBuyPrice
   );
 }
 

@@ -15,14 +15,26 @@ import {
   OpenInNew,
 } from "@mui/icons-material";
 import { useUser } from "../hooks/useUser";
+import { useBazaarSummaries } from "../hooks/useBazaarSummaries";
 import { getFormattedText } from "../lib/textFormat";
 import { timeAgo } from "../lib/time";
+import { SALE_TAX } from "../lib/profitCalculations";
 import ItemDetails from "../pages/ItemDetails";
-import {
-  isForeignStockItemProfitable,
-  type ForeignStockItem,
-} from "../types/foreignStockItems";
+import { type ForeignStockItem } from "../types/foreignStockItems";
+import type { SaleOutlet } from "../types/markets";
 import ItemCell from "./ItemCell";
+
+const ProfitChip = ({ profit }: { profit: number | null }) => {
+  if (profit === null) return <Chip label="N/A" size="small" sx={{ opacity: 0.3, whiteSpace: 'nowrap' }} />;
+  return (
+    <Chip
+      label={getFormattedText("$", profit, "")}
+      color={profit >= 0 ? "success" : "error"}
+      size="small"
+      sx={{ whiteSpace: 'nowrap' }}
+    />
+  );
+};
 
 const openTornMarketPage = (itemId: number) => {
   window.open(
@@ -33,15 +45,30 @@ const openTornMarketPage = (itemId: number) => {
 
 interface ForeignMarketItemsTableRowProps {
   item: ForeignStockItem;
+  saleOutlet: SaleOutlet;
 }
 
 const ForeignMarketItemsTableRow = ({
   item,
+  saleOutlet,
 }: ForeignMarketItemsTableRowProps) => {
   const navigate = useNavigate();
   const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser();
+  const { summaries: bazaarSummaries } = useBazaarSummaries();
 
   const [open, setOpen] = useState(false);
+
+  const sellPrice = (() => {
+    if (saleOutlet === 'bazaar') {
+      const s = bazaarSummaries[item.itemId]
+      return s ? s.minPrice : null
+    }
+    return item.item.valueMarketPrice != null
+      ? Math.floor(item.item.valueMarketPrice * (1 - SALE_TAX[saleOutlet]))
+      : null
+  })()
+
+  const profit = sellPrice != null ? sellPrice - item.cost : null
 
   return (
     <>
@@ -96,38 +123,15 @@ const ForeignMarketItemsTableRow = ({
           align="right"
           onClick={() => navigate(`/item/${item.itemId}`)}
         >
-          {item.item.valueMarketPrice ? (
-            <span>{getFormattedText("$", item.item.valueMarketPrice, "")}</span>
+          {sellPrice != null ? (
+            <span>{getFormattedText("$", sellPrice, "")}</span>
           ) : (
             <span>&mdash;</span>
           )}
         </TableCell>
 
-        <TableCell
-          align="right"
-          onClick={() => navigate(`/item/${item.itemId}`)}
-        >
-          {isForeignStockItemProfitable(item) ? (
-            <Chip
-              label={getFormattedText(
-                "$",
-                (item.item.valueMarketPrice ?? 0) - (item.cost ?? 0),
-                ""
-              )}
-              color={"success"}
-              size="small"
-            />
-          ) : item.cost && item.item.valueMarketPrice ? (
-            <span>
-              {getFormattedText(
-                "$",
-                item.item.valueMarketPrice - item.cost,
-                ""
-              )}
-            </span>
-          ) : (
-            <span>&mdash;</span>
-          )}
+        <TableCell align="right" onClick={() => navigate(`/item/${item.itemId}`)}>
+          <ProfitChip profit={profit} />
         </TableCell>
 
         <TableCell

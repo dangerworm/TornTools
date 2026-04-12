@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using TornTools.Application.Interfaces;
+using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Models.InputModels;
 
 namespace TornTools.Api.Controllers;
@@ -77,10 +78,7 @@ public class ApiController(
     {
       var listings = await _databaseService.GetProfitableListingsAsync(cancellationToken);
 
-      if (listings == null || !listings.Any())
-        return NotFound("No listings found.");
-
-      return Ok(listings);
+      return Ok(listings ?? Enumerable.Empty<ProfitableListingDto>());
     }
     catch (Exception ex)
     {
@@ -89,6 +87,26 @@ public class ApiController(
       return StatusCode(StatusCodes.Status500InternalServerError, new
       {
         message = string.Format(ErrorMessage, "listings")
+      });
+    }
+  }
+
+  [HttpGet(Name = "GetBazaarSummaries")]
+  [ProducesResponseType(StatusCodes.Status200OK)]
+  [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+  public async Task<IActionResult> GetBazaarSummaries(CancellationToken cancellationToken)
+  {
+    try
+    {
+      var summaries = await _databaseService.GetBazaarSummariesAsync(cancellationToken);
+      return Ok(summaries ?? Enumerable.Empty<BazaarSummaryDto>());
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "An error occurred while retrieving {EntityType}.", "bazaar summaries");
+      return StatusCode(StatusCodes.Status500InternalServerError, new
+      {
+        message = string.Format(ErrorMessage, "bazaar summaries")
       });
     }
   }

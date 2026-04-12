@@ -14,6 +14,7 @@ import {
   Typography,
 } from '@mui/material'
 import ForeignMarketItemsTable from '../components/ForeignMarketItemsTable'
+import OptionGroup from '../components/OptionGroup'
 import { useUser } from '../hooks/useUser'
 import { useForeignMarketsScan } from '../hooks/useForeignMarketsScan'
 import Loading from '../components/Loading'
@@ -23,6 +24,9 @@ import {
   travelDestinationsByCountry,
   type TravelDestination,
 } from '../lib/countries'
+import { saleOutletOptions } from '../types/common'
+import { isForeignStockItemProfitable } from '../types/foreignStockItems'
+import type { SaleOutlet } from '../types/markets'
 
 const itemTypesOfInterest = ['Drug', 'Flower', 'Plushie']
 
@@ -34,8 +38,16 @@ const ForeignMarkets = () => {
 
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
   const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>(itemTypesOfInterest)
+  const [saleOutlet, setSaleOutlet] = useState<SaleOutlet>('market')
+  const [showProfitableOnly, setShowProfitableOnly] = useState(true)
 
   const [searchTerm, setSearchTerm] = useState('')
+
+  const foreignSaleOutletOptions = saleOutletOptions.filter((o) => o.value !== 'city')
+
+  const handleSaleOutletChange = (_: React.MouseEvent<HTMLElement>, newOutlet: string | number) => {
+    setSaleOutlet(newOutlet as SaleOutlet)
+  }
 
   useEffect(() => {
     if (!apiKey) {
@@ -67,12 +79,13 @@ const ForeignMarkets = () => {
     const lowerSearchTerm = searchTerm.toLowerCase()
     return rows.filter(
       (row) =>
+        (!showProfitableOnly || isForeignStockItemProfitable(row, saleOutlet)) &&
         (selectedItemTypes.length === 0 || selectedItemTypes.includes(row.item.type!)) &&
         (row.itemName.toLowerCase().includes(lowerSearchTerm) ||
           row.item.type?.toLowerCase().includes(lowerSearchTerm) ||
           row.item.subType?.toLowerCase().includes(lowerSearchTerm)),
     )
-  }, [rows, searchTerm, selectedItemTypes])
+  }, [rows, searchTerm, selectedItemTypes, showProfitableOnly, saleOutlet])
 
   const sortedDestinations = useMemo(() => {
     if (orderByFlightTime) {
@@ -224,6 +237,46 @@ const ForeignMarkets = () => {
 
       <Divider sx={{ mt: 1, mb: 2 }} />
 
+      <Typography variant="h6" gutterBottom>
+        Options
+      </Typography>
+
+      <Grid container spacing={2} alignItems="center">
+        <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: '22em' }}>
+          <OptionGroup
+            options={foreignSaleOutletOptions}
+            selectedOption={saleOutlet}
+            title={'Sell via'}
+            titleInline={true}
+            handleOptionChange={handleSaleOutletChange}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6 }} sx={{ mt: '-2px' }}>
+          <FormGroup>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={showProfitableOnly}
+                  onChange={() => setShowProfitableOnly(!showProfitableOnly)}
+                />
+              }
+              label="Show Profitable Items Only"
+            />
+          </FormGroup>
+        </Grid>
+      </Grid>
+
+      {saleOutlet === 'bazaar' ? (
+        <Typography variant="body2" sx={{ mt: 1, mb: 2, color: 'text.secondary' }}>
+          Note: bazaar sell prices show the current cheapest listing from the most recent Weav3r scan. Items with no scan data show no sell price.
+        </Typography>
+      ) : (
+        <Typography variant="body2" sx={{ mt: 1, mb: 2, color: 'text.secondary' }}>
+          Note: sell prices are based on Torn's daily average market price, not the most recent market scan.
+        </Typography>
+      )}
+
       <Box sx={{ my: 2 }}>
         <FormGroup>
           <FormLabel sx={{ mb: 1 }}>Search items:</FormLabel>
@@ -275,6 +328,7 @@ const ForeignMarkets = () => {
 
                 <ForeignMarketItemsTable
                   items={filteredItems.filter((i) => i.country === destination.country)}
+                  saleOutlet={saleOutlet}
                 />
               </Box>
             )}

@@ -1,2 +1,2 @@
-export type SaleOutlet = 'city' | 'market' | 'bazaar';
-export type TaxType = 0 | 0.05 | 0.1;
+export type PurchaseOutlet = 'city' | 'bazaar' | 'market';
+export type SaleOutlet = 'city' | 'bazaar' | 'market' | 'anonymousMarket';

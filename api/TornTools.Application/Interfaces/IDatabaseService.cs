@@ -25,6 +25,7 @@ public interface IDatabaseService
   Task ReplaceListingsAsync(Source source, int itemId, IEnumerable<ListingDto> newListings, CancellationToken stoppingToken);
 
   Task<IEnumerable<ProfitableListingDto>> GetProfitableListingsAsync(CancellationToken stoppingToken);
+  Task<IEnumerable<BazaarSummaryDto>> GetBazaarSummariesAsync(CancellationToken stoppingToken);
 
   Task PopulateQueueWithStaleMarketItems(CancellationToken stoppingToken);
   Task PopulateQueueWithMarketAndWeav3rItemsOfInterest(CancellationToken stoppingToken);

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   Box,
-  Grid,
   Paper,
   styled,
   Table,
@@ -12,13 +11,14 @@ import {
   TablePagination,
   tablePaginationClasses as classes,
   TableRow,
-  TextField,
-  useMediaQuery,
 } from '@mui/material'
 
 import { useUser } from '../hooks/useUser'
+import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
 import { stableSort, getComparator, type SortOrder } from '../lib/comparisons'
+import { SALE_TAX } from '../lib/profitCalculations'
 import { type Item, type SortableItem } from '../types/items'
+import type { SaleOutlet } from '../types/markets'
 import CityMarketItemsTableRow from './CityMarketItemsTableRow'
 import TableSortCell from './TableSortCell'
 
@@ -55,25 +55,33 @@ const CustomTablePagination = styled(TablePagination)`
   }
 `
 
+const saleOutletLabel: Record<SaleOutlet, string> = {
+  city: 'City Sell Price',
+  bazaar: 'Bazaar Price',
+  market: 'Market Price (5%)',
+  anonymousMarket: 'Market Price (15%)',
+}
+
 interface CityMarketItemsTableProps {
   items: Item[]
+  searchTerm: string
   showCityPrice?: boolean
   showVendor?: boolean
-  taxType: number
+  saleOutlet: SaleOutlet
 }
 
 const CityMarketItemsTable = ({
   items,
+  searchTerm,
   showCityPrice = true,
   showVendor = true,
-  taxType,
+  saleOutlet,
 }: CityMarketItemsTableProps) => {
-  const isSmallScreen = useMediaQuery((theme: any) => theme.breakpoints.down('md'))
   const { dotNetUserDetails } = useUser()
+  const { summaries: bazaarSummaries } = useBazaarSummaries()
 
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
-  const [searchTerm, setSearchTerm] = useState('')
   const [orderBy, setOrderBy] = useState<keyof SortableItem>('name')
   const [orderDirection, setOrderDirection] = useState<SortOrder>('asc')
 
@@ -98,21 +106,26 @@ const CityMarketItemsTable = ({
           item.valueVendorName?.toLowerCase().includes(lowerSearchTerm),
       )
       .map((item) => {
+        const sellPrice = (() => {
+          if (saleOutlet === 'bazaar') {
+            const s = bazaarSummaries[item.id]
+            return s ? s.minPrice : null
+          }
+          return item.valueMarketPrice
+            ? Math.floor(item.valueMarketPrice * (1 - SALE_TAX[saleOutlet]))
+            : null
+        })()
         const profit =
-          showCityPrice &&
-          item.valueBuyPrice &&
-          item.valueMarketPrice
-            ? (item.valueMarketPrice * (1 - taxType)) - item.valueBuyPrice
+          showCityPrice && item.valueBuyPrice && sellPrice !== null
+            ? sellPrice - item.valueBuyPrice
             : null
         const profitPerCost =
-          showCityPrice &&
-          item.valueBuyPrice &&
-          item.valueMarketPrice
-            ? ((item.valueMarketPrice * (1 - taxType)) - item.valueBuyPrice) / item.valueBuyPrice
+          showCityPrice && item.valueBuyPrice && profit !== null
+            ? profit / item.valueBuyPrice
             : null
-        return { ...item, profit, profitPerCost } as SortableItem
+        return { ...item, sellPrice, profit, profitPerCost } as SortableItem
       })
-  }, [items, searchTerm, taxType, showCityPrice])
+  }, [items, searchTerm, saleOutlet, showCityPrice])
 
   const sortedItems = useMemo(
     () => stableSort(filteredItems, getComparator(orderDirection, orderBy)),
@@ -132,24 +145,6 @@ const CityMarketItemsTable = ({
 
   return (
     <Box>
-      <Grid container spacing={2} sx={{ mb: 1 }}>
-        <Grid size={{ xs: 12, md: 4 }} sx={{ textAlign: 'left' }}>
-          <TextField
-            fullWidth={isSmallScreen ? true : false}
-            label="Search"
-            variant="outlined"
-            size="small"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            sx={{
-              mb: { xs: 0, md: 1 },
-              mt: 1,
-              minWidth: { md: '500px' },
-            }}
-          />
-        </Grid>
-      </Grid>
-
       <TableContainer component={Paper}>
         <Table size="small">
           <TableHead>
@@ -205,8 +200,8 @@ const CityMarketItemsTable = ({
 
               <TableSortCell<SortableItem>
                 align="right"
-                columnKey="valueMarketPrice"
-                label="Market Price"
+                columnKey="sellPrice"
+                label={saleOutletLabel[saleOutlet]}
                 orderBy={orderBy}
                 orderDirection={orderDirection}
                 handleRequestSort={handleRequestSort}

@@ -21,7 +21,7 @@ public class TornMarketListingsApiCallHandler(
 
     if (payload is null)
     {
-      logger.LogError("Failed to deserialize {ItemMarketPayload} from API response.", nameof(ItemMarketPayload));
+      Logger.LogError("Failed to deserialize {ItemMarketPayload} from API response.", nameof(ItemMarketPayload));
       throw new Exception($"Failed to deserialize {nameof(ItemMarketPayload)} from API response.");
     }
 
@@ -29,7 +29,7 @@ public class TornMarketListingsApiCallHandler(
     {
       var errorCode = payload.Error?.Code ?? 0;
       var errorMessage = payload.Error?.ErrorMessage ?? "Unknown error";
-      logger.LogError("API call resulted in error: {ErrorMessage}", errorMessage);
+      Logger.LogError("API call resulted in error: {ErrorMessage}", errorMessage);
 
       // Codes 2 (Incorrect key) and 13 (Owner inactivity) mean this key will never work again.
       if (errorCode is 2 or 13)

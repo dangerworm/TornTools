@@ -13,6 +13,7 @@ public class TornToolsDbContext(
   public DbSet<ItemChangeLogSummaryEntity> ItemChangeLogSummaries { get; set; } = null!;
   public DbSet<ItemEntity> Items { get; set; } = null!;
   public DbSet<ListingEntity> Listings { get; set; } = null!;
+  public DbSet<BazaarSummaryView> BazaarSummaries { get; set; } = null!;
   public DbSet<ProfitableListingView> ProfitableListings { get; set; } = null!;
   public DbSet<QueueItemEntity> QueueItems { get; set; } = null!;
   public DbSet<UserEntity> Users { get; set; } = null!;
@@ -143,6 +144,8 @@ public class TornToolsDbContext(
     });
 
     // View mapping
+
+    modelBuilder.Entity<BazaarSummaryView>().HasNoKey();
 
     modelBuilder.Entity<ProfitableListingView>(e =>
     {

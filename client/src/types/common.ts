@@ -3,12 +3,15 @@ export type LabelValue = {
   value: string | number;
 };
 
-export const saleOutletOptions: LabelValue[] = [
+export const purchaseOutletOptions: LabelValue[] = [
   { label: 'City', value: 'city' },
+  { label: 'Bazaar', value: 'bazaar' },
   { label: 'Market', value: 'market' },
 ]
 
-export const taxTypeOptions: LabelValue[] = [
-  { label: '5% (Market)', value: 0.05 },
-  { label: '10% (Anonymous)', value: 0.1 },
+export const saleOutletOptions: LabelValue[] = [
+  { label: 'City', value: 'city' },
+  { label: 'Bazaar', value: 'bazaar' },
+  { label: 'Market (5%)', value: 'market' },
+  { label: 'Anon (15%)', value: 'anonymousMarket' },
 ]

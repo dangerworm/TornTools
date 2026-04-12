@@ -109,8 +109,8 @@ const CityMarketItemsTableRow = ({
         )}
 
         <TableCell align="right" onClick={() => navigate(`/item/${item.id}`)}>
-          {item.valueMarketPrice ? (
-            <span>{getFormattedText('$', item.valueMarketPrice, '')}</span>
+          {item.sellPrice !== null ? (
+            <span>{getFormattedText('$', item.sellPrice, '')}</span>
           ) : (
             <span>&mdash;</span>
           )}

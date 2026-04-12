@@ -144,6 +144,11 @@ public class DatabaseService(
     return _itemRepository.GetProfitableItemsAsync(stoppingToken);
   }
 
+  public Task<IEnumerable<BazaarSummaryDto>> GetBazaarSummariesAsync(CancellationToken stoppingToken)
+  {
+    return _listingRepository.GetBazaarSummariesAsync(stoppingToken);
+  }
+
   public async Task PopulateQueueWithStaleMarketItems(CancellationToken stoppingToken)
   {
     var staleItemIds = await _itemRepository.GetStaleMarketItemIdsAsync(TimeConstants.StaleListingThresholdHours, stoppingToken);
@@ -163,6 +168,13 @@ public class DatabaseService(
     // Anything appearing in the profitable listings should be prioritized.
     // Anything that has changed recently will also be useful to scan.
     var (profitableItemIds, groupedChanges) = await GetItemChangeData(stoppingToken);
+
+    if (profitableItemIds.Count == 0 && groupedChanges.Count == 0)
+    {
+      _logger.LogInformation("No items to prioritise for queue population.");
+      await PopulateQueueWithStaleMarketItems(stoppingToken);
+      return;
+    }
 
     var profitableMarketQueueItems = profitableItemIds
       .Select(BuildTornMarketQueueItem)
@@ -312,7 +324,8 @@ public class DatabaseService(
   {
     var profitableItems = await _itemRepository.GetProfitableItemsAsync(stoppingToken);
     var profitableItemIds = profitableItems
-        .Where(pi => pi.Profit >= QueueProcessorConstants.MinProfitToPrioritise)
+        .Where(pi => pi.CitySellPrice.HasValue && pi.TornMinPrice.HasValue
+            && pi.CitySellPrice.Value - pi.TornMinPrice.Value >= QueueProcessorConstants.MinProfitToPrioritise)
         .Select(pi => pi.ItemId)
         .ToHashSet();
 

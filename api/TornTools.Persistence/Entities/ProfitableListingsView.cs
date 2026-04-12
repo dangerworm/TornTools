@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 using TornTools.Core.DataTransferObjects;
 
 namespace TornTools.Persistence.Entities;
@@ -11,41 +11,49 @@ public class ProfitableListingView
   [Column("name")]
   public string Name { get; set; } = null!;
 
-  [Column("min_price")]
-  public long MinPrice { get; set; }
+  [Column("is_found_in_city")]
+  public bool IsFoundInCity { get; set; }
 
-  [Column("max_price")]
-  public long MaxPrice { get; set; }
+  [Column("city_buy_price")]
+  public long? CityBuyPrice { get; set; }
 
-  [Column("quantity")]
-  public int Quantity { get; set; }
-
-  [Column("total_cost")]
-  public long TotalCost { get; set; }
-
-  [Column("city_price")]
-  public long? CityPrice { get; set; }
+  [Column("city_sell_price")]
+  public long? CitySellPrice { get; set; }
 
   [Column("market_price")]
-  public long MarketPrice { get; set; }
+  public long? MarketPrice { get; set; }
 
-  [Column("last_updated")]
-  public DateTimeOffset LastUpdated { get; set; }
+  [Column("torn_min_price")]
+  public long? TornMinPrice { get; set; }
 
-  public ProfitableListingDto AsDto()
+  [Column("torn_quantity")]
+  public int? TornQuantity { get; set; }
+
+  [Column("torn_last_updated")]
+  public DateTimeOffset? TornLastUpdated { get; set; }
+
+  [Column("weav3r_min_price")]
+  public long? Weav3rMinPrice { get; set; }
+
+  [Column("weav3r_quantity")]
+  public int? Weav3rQuantity { get; set; }
+
+  [Column("weav3r_last_updated")]
+  public DateTimeOffset? Weav3rLastUpdated { get; set; }
+
+  public ProfitableListingDto AsDto() => new()
   {
-    return new ProfitableListingDto
-    {
-      ItemId = ItemId,
-      Name = Name,
-      MinPrice = MinPrice,
-      MaxPrice = MaxPrice,
-      Quantity = Quantity,
-      TotalCost = TotalCost,
-      CityPrice = CityPrice,
-      MarketPrice = MarketPrice,
-      LastUpdated = LastUpdated
-    };
-  }
+    ItemId = ItemId,
+    Name = Name,
+    IsFoundInCity = IsFoundInCity,
+    CityBuyPrice = CityBuyPrice,
+    CitySellPrice = CitySellPrice,
+    MarketPrice = MarketPrice,
+    TornMinPrice = TornMinPrice,
+    TornQuantity = TornQuantity,
+    TornLastUpdated = TornLastUpdated,
+    Weav3rMinPrice = Weav3rMinPrice,
+    Weav3rQuantity = Weav3rQuantity,
+    Weav3rLastUpdated = Weav3rLastUpdated,
+  };
 }
-

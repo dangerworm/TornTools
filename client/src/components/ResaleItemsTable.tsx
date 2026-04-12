@@ -15,8 +15,9 @@ import {
 } from '@mui/material'
 import { useUser } from '../hooks/useUser'
 import { getSecondsSinceLastUpdate } from '../lib/time'
+import { getBuyPrice, getLastUpdated, getTotalProfit } from '../lib/profitCalculations'
 import type { ProfitableListing } from '../types/profitableListings'
-import type { SaleOutlet, TaxType } from '../types/markets'
+import type { PurchaseOutlet, SaleOutlet } from '../types/markets'
 import ResaleItemsTableRow from './ResaleItemsTableRow'
 
 interface ResaleItemsTableProps {
@@ -25,9 +26,21 @@ interface ResaleItemsTableProps {
   maxBuyPrice?: number
   maxTimeSinceLastUpdate?: number
   error: string | null
-  sellPriceColumnNameOverride?: string
+  purchaseOutlet: PurchaseOutlet
   saleOutlet: SaleOutlet
-  taxType: TaxType
+}
+
+const purchaseOutletLabel: Record<PurchaseOutlet, string> = {
+  city: 'Buy (City)',
+  bazaar: 'Buy (Bazaar)',
+  market: 'Buy (Market)',
+}
+
+const saleOutletLabel: Record<SaleOutlet, string> = {
+  city: 'Sell (City)',
+  bazaar: 'Sell (Bazaar)',
+  market: 'Sell (Mkt 5%)',
+  anonymousMarket: 'Sell (Anon 15%)',
 }
 
 const ResaleItemsTable = ({
@@ -36,22 +49,26 @@ const ResaleItemsTable = ({
   maxTimeSinceLastUpdate = 5,
   minProfit = 500,
   rows,
-  sellPriceColumnNameOverride = 'Sell',
+  purchaseOutlet,
   saleOutlet,
-  taxType,
 }: ResaleItemsTableProps) => {
   const { dotNetUserDetails } = useUser()
-
   const seenIdsRef = useRef<Set<number | string>>(new Set())
 
-  const filteredRows = useMemo(() => rows.filter(
-    (r) =>
-      (saleOutlet === 'city' 
-        ? minProfit === 0 || r.cityProfit >= minProfit 
-        : minProfit === 0 || r.marketProfit(taxType) >= minProfit) &&
-      r.maxPrice <= maxBuyPrice &&
-      getSecondsSinceLastUpdate(r.lastUpdated) <= maxTimeSinceLastUpdate * 60,
-  ), [rows, minProfit, maxBuyPrice, maxTimeSinceLastUpdate, saleOutlet, taxType]);
+  const filteredRows = useMemo(() => rows.filter((r) => {
+    const totalProfit = getTotalProfit(r, purchaseOutlet, saleOutlet)
+    if (totalProfit === null) return false
+
+    const buyPrice = getBuyPrice(r, purchaseOutlet)
+    if (buyPrice === null || buyPrice > maxBuyPrice) return false
+
+    if (minProfit > 0 && totalProfit < minProfit) return false
+
+    const lastUpdated = getLastUpdated(r, purchaseOutlet)
+    if (lastUpdated !== null && getSecondsSinceLastUpdate(lastUpdated) > maxTimeSinceLastUpdate * 60) return false
+
+    return true
+  }), [rows, minProfit, maxBuyPrice, maxTimeSinceLastUpdate, purchaseOutlet, saleOutlet])
 
   if (error) {
     return (
@@ -72,9 +89,9 @@ const ResaleItemsTable = ({
             <TableRow>
               {dotNetUserDetails && <TableCell>Fav</TableCell>}
               <TableCell>Item</TableCell>
-              <TableCell align="right">Buy</TableCell>
-              <TableCell align="right">{sellPriceColumnNameOverride}</TableCell>
+              <TableCell align="right">{purchaseOutletLabel[purchaseOutlet]}</TableCell>
               <TableCell align="right">Qty</TableCell>
+              <TableCell align="right">{saleOutletLabel[saleOutlet]}</TableCell>
               <TableCell align="right">Profit</TableCell>
               <TableCell align="right">Updated</TableCell>
               <TableCell align="right">Item</TableCell>
@@ -82,23 +99,20 @@ const ResaleItemsTable = ({
           </TableHead>
           <TableBody>
             <AnimatePresence initial={false}>
-              {filteredRows
-                .map((r) => {
-                  const seenIds = seenIdsRef.current
-                  const isNew = !seenIds.has(r.itemId)
-                  if (isNew) {
-                    seenIds.add(r.itemId)
-                  }
-                  return (
-                    <ResaleItemsTableRow
-                      key={r.itemId}
-                      isNew={isNew}
-                      row={r}
-                      saleOutlet={saleOutlet}
-                      taxType={taxType}
-                    />
-                  )
-                })}
+              {filteredRows.map((r) => {
+                const seenIds = seenIdsRef.current
+                const isNew = !seenIds.has(r.itemId)
+                if (isNew) seenIds.add(r.itemId)
+                return (
+                  <ResaleItemsTableRow
+                    key={r.itemId}
+                    isNew={isNew}
+                    row={r}
+                    purchaseOutlet={purchaseOutlet}
+                    saleOutlet={saleOutlet}
+                  />
+                )
+              })}
             </AnimatePresence>
           </TableBody>
         </Table>

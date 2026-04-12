@@ -1,28 +1,14 @@
-
-export interface ProfitableListingResponse {
-  itemId: number;
-  name: string;
-  minPrice: number;
-  maxPrice: number;
-  quantity: number;
-  totalCost: number;
-  cityPrice: number;
-  marketPrice: number;
-  lastUpdated: Date;
-}
-
 export interface ProfitableListing {
   itemId: number;
   name: string;
-  minPrice: number;
-  maxPrice: number;
-  quantity: number;
-  totalCost: number;
-  cityPrice: number;
-  marketPrice: number;
-  cityProfit: number;
-  marketProfit: (tax: number) => number;
-  lastUpdated: Date;
+  isFoundInCity: boolean;
+  cityBuyPrice: number | null;
+  citySellPrice: number | null;
+  marketPrice: number | null;
+  tornMinPrice: number | null;
+  tornQuantity: number | null;
+  tornLastUpdated: Date | null;
+  weav3rMinPrice: number | null;
+  weav3rQuantity: number | null;
+  weav3rLastUpdated: Date | null;
 }
-
-export type ProfitableListingsMap = Record<number, ProfitableListing>;

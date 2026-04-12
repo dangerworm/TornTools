@@ -65,7 +65,7 @@ public abstract class ListingApiCallHandler<TCallHandler>(
       {
         var previousListing = previousListings[i];
         var newListing = newListings[i];
-        if (previousListing.Price != newListing.Price)
+        if (previousListing.Price != newListing.Price || previousListing.Quantity != newListing.Quantity)
         {
           hasMarketChanged = true;
           break;
