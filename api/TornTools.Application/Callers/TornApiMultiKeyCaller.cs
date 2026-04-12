@@ -15,7 +15,7 @@ public class TornApiMultiKeyCaller(
   public override IEnumerable<ApiCallType> CallTypes =>
   [
       ApiCallType.TornItems,
-        ApiCallType.TornMarketListings
+      ApiCallType.TornMarketListings
   ];
 
   protected override string ClientName => TornApiConstants.ClientName;

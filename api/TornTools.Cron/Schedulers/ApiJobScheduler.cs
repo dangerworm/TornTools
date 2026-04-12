@@ -39,14 +39,6 @@ public class ApiJobScheduler(
     );
 
     RecurringJob.AddOrUpdate(
-        nameof(CheckForExpiredKeys),
-        () => CheckForExpiredKeys(),
-        "0/30 * * * *"  // At minute 0 past every 30th minute from 0 through 59. This is
-                        // intentionally offset from the other jobs to reduce chance of
-                        // overlapping API calls.
-    );
-
-    RecurringJob.AddOrUpdate(
         nameof(CheckUntouchedMarketItems),
         () => CheckUntouchedMarketItems(),
         "0 */1 * * *" // At minute 0 past every 1 hour.
@@ -57,42 +49,6 @@ public class ApiJobScheduler(
         () => UpdateForeignStock(),
         "0/10 * * * *" // At every 10th minute from 0 through 59.
     );
-  }
-
-  [DisplayName("Remove expired keys")]
-  public async Task CheckForExpiredKeys()
-  {
-    _logger.LogInformation("Running Hangfire job {JobName}", nameof(CheckForExpiredKeys));
-
-    var caller = _callerResolver.GetCaller(ApiCallType.TornKeyInfo);
-    var callHandler = _callHandlerResolver.GetHandler(ApiCallType.TornKeyInfo);
-
-    var users = await _databaseService.GetUsersAsync(CancellationToken.None);
-    foreach (var user in users)
-    {
-      if (user.Id is null)
-      {
-        _logger.LogWarning("User {Username} has no ID. Skipping API key check.", user.Name);
-        continue;
-      }
-
-      if (string.IsNullOrEmpty(user.ApiKey))
-      {
-        _logger.LogWarning("User {Username} has no API key. Marking as unavailable.", user.Name);
-        await _databaseService.MarkKeyUnavailableAsync(user.Id.Value, CancellationToken.None);
-        continue;
-      }
-
-      var item = new QueueItemDto
-      {
-        CallType = ApiCallType.TornKeyInfo,
-        EndpointUrl = TornApiConstants.KeyInfo,
-        HeadersJson = new Dictionary<string, string> { ["Authorization"] = $"ApiKey {user.ApiKey}" },
-        PayloadJson = new Dictionary<string, string> { ["UserId"] = user.Id.Value.ToString() }
-      };
-
-      await caller.CallAsync(item, callHandler, CancellationToken.None);
-    }
   }
 
   [DisplayName("Items update")]
