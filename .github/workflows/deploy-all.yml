@@ -247,19 +247,16 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
       - name: Build self-contained Weav3r fetcher
         run: |
-          pip install curl_cffi pyinstaller
-          pyinstaller --onefile \
-            --distpath /tmp/weav3r-dist \
-            --workpath /tmp/pyinstaller-build \
-            --specpath /tmp/pyinstaller-spec \
-            api/TornTools.Api/Weav3rPython/bazaar_fetch.py
+          mkdir -p /tmp/weav3r-dist
+          docker run --rm \
+            -v "${{ github.workspace }}/api/TornTools.Api/Weav3rPython:/src" \
+            -v /tmp/weav3r-dist:/dist \
+            python:3.12-slim-bullseye \
+            bash -c "pip install --quiet curl_cffi pyinstaller && \
+                     pyinstaller --onefile --distpath /dist \
+                       --workpath /tmp/build --specpath /tmp/spec /src/bazaar_fetch.py"
 
       - name: Publish API
         run: dotnet publish api/TornTools.Api -c Release -o api/TornTools.Api/publish
