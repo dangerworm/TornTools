@@ -33,13 +33,11 @@ public static class ServiceCollectionExtensions
         });
 
     services.AddScoped<IApiCaller, TornApiMultiKeyCaller>();
-    services.AddScoped<IApiCaller, TornApiSingleKeyCaller>();
     services.AddScoped<IApiCaller, Weav3rApiCaller>();
     services.AddScoped<IApiCaller, YataApiCaller>();
     services.AddScoped<IApiCallerResolver, ApiCallerResolver>();
 
     services.AddScoped<IApiCallHandler, TornItemsApiCallHandler>();
-    services.AddScoped<IApiCallHandler, TornKeyApiCallHandler>();
     services.AddScoped<IApiCallHandler, TornMarketListingsApiCallHandler>();
     services.AddScoped<IApiCallHandler, Weav3rBazaarListingsApiCallHandler>();
     services.AddScoped<IApiCallHandler, YataStocksApiCallHandler>();

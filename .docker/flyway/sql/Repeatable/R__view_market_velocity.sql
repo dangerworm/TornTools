@@ -15,8 +15,6 @@ WITH
     GROUP BY
       i.id,
       i.name
-      ORDER BY
-      	COUNT(icl.id) DESC
   )
 SELECT
   cc.item_id,
