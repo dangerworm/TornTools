@@ -1,0 +1,11 @@
+{
+  "line-length": {
+    "line_length": 100
+  },
+  "no_duplicate_heading": {
+    "siblings_only": false
+  },
+  "ol-prefix": {
+    "style": "one_or_ordered"
+  }
+}

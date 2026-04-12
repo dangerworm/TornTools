@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(rtk dotnet:*)"
+      "Bash(rtk dotnet:*)",
+      "Bash(node backlog/sync-trello.mjs)",
+      "Bash(grep -E \"^/d/git/dangerworm/TornTools/[^/]+\\(/[^/]+\\)?$\")"
     ]
   }
 }
