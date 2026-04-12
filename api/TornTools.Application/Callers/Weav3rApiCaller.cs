@@ -35,13 +35,23 @@ public class Weav3rApiCaller(
     var headers = requestMessage.Headers
       .ToDictionary(h => h.Key, h => h.Value.First());
 
+    var location = Assembly.GetExecutingAssembly().Location ?? string.Empty;
+    var baseDir = Path.GetDirectoryName(location) ?? string.Empty;
+    var compiledFetcher = Path.Combine(baseDir, "Weav3rPython", "bazaar_fetch");
+    var scriptPath = Path.Combine(baseDir, "Weav3rPython", "bazaar_fetch.py");
+    var url = requestMessage.RequestUri.ToString();
+
+    // In production the deploy workflow compiles bazaar_fetch.py into a self-contained
+    // binary (no Python required on the host). Fall back to python3 + script for local dev.
+    bool useCompiled = File.Exists(compiledFetcher);
+
     var psi = new ProcessStartInfo
     {
-      FileName = "python",
+      FileName = useCompiled ? compiledFetcher : "python3",
       EnvironmentVariables =
       {
         ["FETCH_HEADERS"] = JsonSerializer.Serialize(headers),
-        ["PYTHONUNBUFFERED"] = "1", // Ensure real-time output
+        ["PYTHONUNBUFFERED"] = "1",
       },
       RedirectStandardOutput = true,
       RedirectStandardError = true,
@@ -49,14 +59,8 @@ public class Weav3rApiCaller(
       CreateNoWindow = true
     };
 
-    var location = Assembly.GetExecutingAssembly().Location ?? string.Empty;
-    var pythonScript = Path.Combine(
-          Path.GetDirectoryName(location) ?? string.Empty,
-          "Weav3rPython",
-          "bazaar_fetch.py");
-    var url = requestMessage.RequestUri.ToString();
-
-    psi.ArgumentList.Add(pythonScript);
+    if (!useCompiled)
+      psi.ArgumentList.Add(scriptPath);
     psi.ArgumentList.Add(url);
 
     using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));

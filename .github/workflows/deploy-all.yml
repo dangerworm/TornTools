@@ -247,14 +247,28 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
-      - name: Publish API
-        run: |
-          cd api/TornTools.Api
-          dotnet publish -c Release -o publish
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-      - name: Install Python dependencies into publish output
+      - name: Build self-contained Weav3r fetcher
         run: |
-          pip install curl_cffi --target api/TornTools.Api/publish/Weav3rPython/libs
+          pip install curl_cffi pyinstaller
+          pyinstaller --onefile \
+            --distpath /tmp/weav3r-dist \
+            --workpath /tmp/pyinstaller-build \
+            --specpath /tmp/pyinstaller-spec \
+            api/TornTools.Api/Weav3rPython/bazaar_fetch.py
+
+      - name: Publish API
+        run: dotnet publish api/TornTools.Api -c Release -o api/TornTools.Api/publish
+
+      - name: Add Weav3r fetcher to publish output
+        run: |
+          mkdir -p api/TornTools.Api/publish/Weav3rPython
+          cp /tmp/weav3r-dist/bazaar_fetch api/TornTools.Api/publish/Weav3rPython/bazaar_fetch
+          chmod +x api/TornTools.Api/publish/Weav3rPython/bazaar_fetch
 
       - name: Log in to Azure
         uses: azure/login@v2

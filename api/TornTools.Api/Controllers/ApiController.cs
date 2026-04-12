@@ -71,11 +71,11 @@ public class ApiController(
   [HttpGet(Name = "GetProfitableListings")]
   [ProducesResponseType(StatusCodes.Status200OK)]
   [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-  public async Task<IActionResult> GetProfitableListings()
+  public async Task<IActionResult> GetProfitableListings(CancellationToken cancellationToken)
   {
     try
     {
-      var listings = await _databaseService.GetProfitableListingsAsync(CancellationToken.None);
+      var listings = await _databaseService.GetProfitableListingsAsync(cancellationToken);
 
       if (listings == null || !listings.Any())
         return NotFound("No listings found.");
