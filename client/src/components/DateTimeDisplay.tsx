@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Grid, Typography } from "@mui/material";
 import AnalogueClock from "./AnalogueClock";
 
@@ -18,6 +18,7 @@ const getOrdinalSuffix = (day: number): string => {
 
 interface DateTimeDisplayProps {
   asTornTime: boolean;
+  children?: ReactNode;
   date?: Date;
   label: string;
   showDate?: boolean;
@@ -26,6 +27,7 @@ interface DateTimeDisplayProps {
 
 const DateTimeDisplay = ({
   asTornTime,
+  children,
   date,
   label,
   showDate = true,
@@ -101,6 +103,11 @@ const DateTimeDisplay = ({
             {getFormattedTime(now, asTornTime)}
           </Typography>
         </Grid>
+        {children && (
+          <Grid sx={{ ml: "auto" }}>
+            {children}
+          </Grid>
+        )}
       </Grid>
     </>
   );

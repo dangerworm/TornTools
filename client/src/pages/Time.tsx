@@ -1,3 +1,4 @@
+import dayjs from 'dayjs'
 import { Card, CardContent, Grid, Typography } from '@mui/material'
 import { TimePicker } from '@mui/x-date-pickers/TimePicker'
 import type { PickerValue } from '@mui/x-date-pickers/internals'
@@ -5,7 +6,37 @@ import DateTimeDisplay from '../components/DateTimeDisplay'
 import { useState } from 'react'
 
 const Time = () => {
-  const [tctTime, setTctTime] = useState<PickerValue | null>(null)
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+
+  const localPickerValue: PickerValue = selectedDate ? dayjs(selectedDate) : null
+
+  const tctPickerValue: PickerValue = selectedDate
+    ? (() => {
+        const d = new Date()
+        d.setHours(selectedDate.getUTCHours(), selectedDate.getUTCMinutes(), 0, 0)
+        return dayjs(d)
+      })()
+    : null
+
+  const handleLocalChange = (value: PickerValue | null) => {
+    if (!value) {
+      setSelectedDate(null)
+      return
+    }
+    const d = new Date()
+    d.setHours(value.hour(), value.minute(), 0, 0)
+    setSelectedDate(d)
+  }
+
+  const handleTctChange = (value: PickerValue | null) => {
+    if (!value) {
+      setSelectedDate(null)
+      return
+    }
+    const d = new Date()
+    d.setUTCHours(value.hour(), value.minute(), 0, 0)
+    setSelectedDate(d)
+  }
 
   return (
     <>
@@ -23,7 +54,7 @@ const Time = () => {
           <Card variant="outlined" sx={{ height: '100%' }}>
             <CardContent>
               <Typography variant="h5" gutterBottom>
-                Local Time to TCT
+                Current Time
               </Typography>
               <Typography variant="body1" sx={{ mb: 2 }}>
                 The current time in both your local timezone and Torn City.
@@ -37,38 +68,38 @@ const Time = () => {
           <Card variant="outlined" sx={{ height: '100%' }}>
             <CardContent>
               <Typography variant="h5" gutterBottom>
-                TCT to Local Time
+                Time Converter
               </Typography>
-              <Grid container spacing={2} alignItems="center">
-                <Grid size={{ xs: 12 }}>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    Enter the Torn City time (TCT) you want to convert to your local time.
-                  </Typography>
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <DateTimeDisplay
-                    asTornTime={false}
-                    date={tctTime?.toDate() ?? new Date()}
-                    label="Local"
-                    showDate={false}
-                    size={70}
-                  />
-                  <DateTimeDisplay
-                    asTornTime={true}
-                    date={tctTime?.toDate() ?? new Date()}
-                    label="Torn City"
-                    showDate={false}
-                    size={70}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, lg: 6 }}>
-                  <TimePicker
-                    label="Torn City Time"
-                    value={tctTime}
-                    onChange={(newValue) => setTctTime(newValue)}
-                  />
-                </Grid>
-              </Grid>
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                Pick a time in either field to convert between local and Torn City Time.
+                Clear both pickers to return to the live view.
+              </Typography>
+              <DateTimeDisplay
+                asTornTime={false}
+                date={selectedDate ?? undefined}
+                label="Local"
+                showDate={false}
+                size={70}
+              >
+                <TimePicker
+                  label="Local Time"
+                  value={localPickerValue}
+                  onChange={handleLocalChange}
+                />
+              </DateTimeDisplay>
+              <DateTimeDisplay
+                asTornTime={true}
+                date={selectedDate ?? undefined}
+                label="Torn City"
+                showDate={false}
+                size={70}
+              >
+                <TimePicker
+                  label="Torn City Time"
+                  value={tctPickerValue}
+                  onChange={handleTctChange}
+                />
+              </DateTimeDisplay>
             </CardContent>
           </Card>
         </Grid>
