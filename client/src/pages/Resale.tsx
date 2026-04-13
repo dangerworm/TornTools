@@ -20,15 +20,19 @@ const disabledSaleOutlets = (purchase: PurchaseOutlet): SaleOutlet[] =>
 
 const loadOutlets = (): { purchaseOutlet: PurchaseOutlet; saleOutlet: SaleOutlet } => {
   const storedPurchase = localStorage.getItem('resale:purchaseOutlet:v1') as PurchaseOutlet
-  const purchase = VALID_PURCHASE_OUTLETS.includes(storedPurchase) ? storedPurchase : 'market'
+  const purchase: PurchaseOutlet = VALID_PURCHASE_OUTLETS.includes(storedPurchase)
+    ? storedPurchase
+    : 'market'
 
   const storedSale = localStorage.getItem('resale:saleOutlet:v1') as SaleOutlet
   const disabled = disabledSaleOutlets(purchase)
-  const sale =
+  const sale: SaleOutlet =
     VALID_SALE_OUTLETS.includes(storedSale) && !disabled.includes(storedSale)
       ? storedSale
-      : (saleOutletOptions.find((o) => !disabled.includes(o.value as SaleOutlet))
-          ?.value as SaleOutlet) ?? 'city'
+      : !disabled.includes('city')
+        ? 'city'
+        : (saleOutletOptions.find((o) => !disabled.includes(o.value as SaleOutlet))
+            ?.value as SaleOutlet) ?? 'city'
 
   return { purchaseOutlet: purchase, saleOutlet: sale }
 }
@@ -85,11 +89,13 @@ const Resale = () => {
   }
 
   const sortedRows = useMemo(() =>
-    [...rows].sort((a, b) => {
-      const profitA = getTotalProfit(a, purchaseOutlet, saleOutlet) ?? -Infinity
-      const profitB = getTotalProfit(b, purchaseOutlet, saleOutlet) ?? -Infinity
-      return profitB - profitA
-    }),
+    rows
+      ? [...rows].sort((a, b) => {
+          const profitA = getTotalProfit(a, purchaseOutlet, saleOutlet) ?? -Infinity
+          const profitB = getTotalProfit(b, purchaseOutlet, saleOutlet) ?? -Infinity
+          return profitB - profitA
+        })
+      : [],
     [rows, purchaseOutlet, saleOutlet],
   )
 
