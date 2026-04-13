@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging;
 using TornTools.Application.Interfaces;
-using TornTools.Core.DataTransferObjects;
 
 namespace TornTools.Application.Handlers;
 

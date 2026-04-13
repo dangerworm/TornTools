@@ -1,4 +1,4 @@
-# TornTools — Codebase Overview
+# TornTools - Codebase Overview
 
 TornTools is a full-stack market analysis tool for the browser game **Torn City**. It aggregates
 pricing data from three external sources (Torn API, Weav3r bazaar, Yata foreign stock) and presents
@@ -35,9 +35,9 @@ TornTools/
 
 | Project                 | Purpose                                                               |
 | ----------------------- | --------------------------------------------------------------------- |
-| `TornTools.Api`         | ASP.NET Core app — controllers, JWT auth, Hangfire dashboard, startup |
-| `TornTools.Application` | Business logic — service layer, API callers, call handlers, resolvers |
-| `TornTools.Core`        | Shared — DTOs, enums, constants, external API models, input models    |
+| `TornTools.Api`         | ASP.NET Core app - controllers, JWT auth, Hangfire dashboard, startup |
+| `TornTools.Application` | Business logic - service layer, API callers, call handlers, resolvers |
+| `TornTools.Core`        | Shared - DTOs, enums, constants, external API models, input models    |
 | `TornTools.Persistence` | EF Core DbContext, entities, repositories                             |
 | `TornTools.Cron`        | Background job processor (`QueueProcessor`), Hangfire job scheduler   |
 
@@ -88,5 +88,5 @@ Torn profile cached in localStorage (24h TTL)
 
 ## Environments
 
-`dev` / `staging` / `prod` — selectable at deploy time via `TerraformEnvironmentName` enum.
+`dev` / `staging` / `prod` - selectable at deploy time via `TerraformEnvironmentName` enum.
 `EnvironmentConfiguration.RunQueueProcessor` and `PopulateQueue` flags gate background job startup.

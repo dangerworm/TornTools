@@ -9,7 +9,7 @@ interface ResaleScanOptions {
 export function useResaleScan(opts?: ResaleScanOptions) {
   const { intervalMs = 5000 } = opts || {};
 
-  const [rows, setRows] = useState<ProfitableListing[]>([]);
+  const [rows, setRows] = useState<ProfitableListing[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const timerRef = useRef<number | null>(null);

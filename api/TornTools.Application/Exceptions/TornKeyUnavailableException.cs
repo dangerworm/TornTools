@@ -8,5 +8,5 @@ namespace TornTools.Application.Exceptions;
 public class TornKeyUnavailableException(int errorCode, string errorMessage)
     : Exception($"Torn API key is unavailable (code {errorCode}): {errorMessage}")
 {
-    public int ErrorCode { get; } = errorCode;
+  public int ErrorCode { get; } = errorCode;
 }

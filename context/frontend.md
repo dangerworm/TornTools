@@ -16,7 +16,7 @@
 | `/time`            | `Time`             | In-game clock / time utilities    |
 
 All routes share `<Layout>` (nav drawer + footer). The `*` catch-all renders a bare
-`<h1>Not Found</h1>` — no styled 404 page.
+`<h1>Not Found</h1>` - no styled 404 page.
 
 ---
 
@@ -30,19 +30,19 @@ File: `contexts/UserContext.tsx`, `hooks/useUser.ts`
 
 State:
 
-- `apiKey` — Torn API key (restored from localStorage on mount)
-- `tornUserProfile` — fetched directly from Torn API (name, level, gender, id)
-- `dotNetUserDetails` — fetched from backend on login or `getMe()` (includes `favouriteItems[]`,
+- `apiKey` - Torn API key (restored from localStorage on mount)
+- `tornUserProfile` - fetched directly from Torn API (name, level, gender, id)
+- `dotNetUserDetails` - fetched from backend on login or `getMe()` (includes `favouriteItems[]`,
   `preferredThemeId`)
 
 Loading/error pairs for both async paths.
 
 Key methods:
 
-- `setApiKey(key)` — saves to localStorage, triggers `fetchTornProfileAsync`
-- `confirmApiKeyAsync()` — POSTs to `/auth/login`, sets `dotNetUserDetails`
-- `toggleFavouriteItemAsync(itemId)` — optimistically resolves from local set, then calls backend
-- `logoutAsync()` — calls `/auth/logout`, clears all state + localStorage
+- `setApiKey(key)` - saves to localStorage, triggers `fetchTornProfileAsync`
+- `confirmApiKeyAsync()` - POSTs to `/auth/login`, sets `dotNetUserDetails`
+- `toggleFavouriteItemAsync(itemId)` - optimistically resolves from local set, then calls backend
+- `logoutAsync()` - calls `/auth/logout`, clears all state + localStorage
 
 Cache: localStorage, 24h TTL (`torntools:user:*:v1` keys). On mount: `getMe()` always fires to
 restore JWT session; localStorage restores `apiKey` + `tornProfile` only if within TTL.
@@ -69,7 +69,7 @@ ID). MUI theme created dynamically via `createTheme` from the active `ThemeDefin
 ### `dotnetapi.ts`
 
 All backend calls. Uses `credentials: "include"` for cookie auth. Error pattern:
-`try { data = await res.json() } catch { if (!res.ok) throw }` — silently returns empty on non-JSON
+`try { data = await res.json() } catch { if (!res.ok) throw }` - silently returns empty on non-JSON
 success responses.
 
 Key functions: `login`, `getMe`, `logout`, `fetchItems`, `fetchForeignStockItems`,
@@ -86,16 +86,16 @@ Direct Torn API calls (used in SignIn flow and ForeignMarkets): `fetchTornKeyInf
 
 ### `weav3rapi.ts`
 
-Weav3r API calls from the frontend (if any — distinct from backend Weav3r caller).
+Weav3r API calls from the frontend (if any - distinct from backend Weav3r caller).
 
 ### Utilities
 
-- `cache.ts` — localStorage cache helpers (get/set with TTL)
-- `countries.ts` — country code ↔ name map
-- `comparisons.ts` — item sort/comparison helpers
-- `textFormat.ts` — price formatting, display helpers
-- `time.ts` — in-game time calculations
-- `error.ts` — error normalisation
+- `cache.ts` - localStorage cache helpers (get/set with TTL)
+- `countries.ts` - country code ↔ name map
+- `comparisons.ts` - item sort/comparison helpers
+- `textFormat.ts` - price formatting, display helpers
+- `time.ts` - in-game time calculations
+- `error.ts` - error normalisation
 
 ---
 
@@ -137,7 +137,7 @@ Recharts wrapper for price/velocity history. The Y-axis hiding bug (backlog card
 
 ### AutoBuyScriptDialog (`components/AutoBuyScriptDialog.tsx`)
 
-Generates a script for bulk purchasing — useful for power users.
+Generates a script for bulk purchasing - useful for power users.
 
 ### ResaleItemsTable / CityMarketItemsTable / ForeignMarketItemsTable
 
@@ -163,6 +163,6 @@ rendering.
 ## Build & Dev
 
 - Vite 7 dev server proxies `/api` and `/auth` to backend
-- `tsconfig.json` — strict mode on
+- `tsconfig.json` - strict mode on
 - ESLint 9 + Prettier 3
 - No test suite currently

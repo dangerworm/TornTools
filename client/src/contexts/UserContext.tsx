@@ -198,9 +198,13 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
 
   useEffect(() => {
     // Always check if the JWT cookie is still valid
-    getMe().then(userData => {
-      if (userData) setDotNetUserDetails(userData)
-    }).catch(() => { /* not logged in */ })
+    getMe()
+      .then((userData) => {
+        if (userData) setDotNetUserDetails(userData)
+      })
+      .catch(() => {
+        /* not logged in */
+      })
 
     // Restore apiKey and tornProfile from localStorage (used for ForeignMarkets etc.)
     const tsRaw = localStorage.getItem(LOCAL_STORAGE_KEY_USER_CACHE_TS)
@@ -224,7 +228,7 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
       try {
         setTornUserProfile(JSON.parse(cachedTornProfile))
       } catch {
-        // Cached value is unparseable — leave tornUserProfile as null
+        // Cached value is unparseable - leave tornUserProfile as null
       }
     }
   }, [ttlMs])

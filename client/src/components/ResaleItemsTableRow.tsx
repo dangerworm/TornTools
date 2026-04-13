@@ -6,7 +6,13 @@ import { useThemeSettings } from '../hooks/useThemeSettings'
 import { useUser } from '../hooks/useUser'
 import { getFormattedText } from '../lib/textFormat'
 import { getSecondsSinceLastUpdate, timeAgo } from '../lib/time'
-import { getBuyPriceRange, getLastUpdated, getQuantity, getTotalProfit, getSellRevenue } from '../lib/profitCalculations'
+import {
+  getBuyPriceRange,
+  getLastUpdated,
+  getQuantity,
+  getTotalProfit,
+  getSellRevenue,
+} from '../lib/profitCalculations'
 import type { ProfitableListing } from '../types/profitableListings'
 import type { PurchaseOutlet, SaleOutlet } from '../types/markets'
 import ItemCell from './ItemCell'
@@ -21,7 +27,8 @@ interface ResaleItemsTableRowProps {
 }
 
 const ProfitChip = ({ profit }: { profit: number | null }) => {
-  if (profit === null) return <Chip label="N/A" size="small" sx={{ opacity: 0.3, whiteSpace: 'nowrap' }} />
+  if (profit === null)
+    return <Chip label="N/A" size="small" sx={{ opacity: 0.3, whiteSpace: 'nowrap' }} />
   return (
     <Chip
       label={getFormattedText('$', profit, '')}
@@ -32,7 +39,12 @@ const ProfitChip = ({ profit }: { profit: number | null }) => {
   )
 }
 
-const ResaleItemsTableRow = ({ isNew, row, purchaseOutlet, saleOutlet }: ResaleItemsTableRowProps) => {
+const ResaleItemsTableRow = ({
+  isNew,
+  row,
+  purchaseOutlet,
+  saleOutlet,
+}: ResaleItemsTableRowProps) => {
   const navigate = useNavigate()
   const { availableThemes, selectedThemeId } = useThemeSettings()
   const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser()
@@ -87,20 +99,32 @@ const ResaleItemsTableRow = ({ isNew, row, purchaseOutlet, saleOutlet }: ResaleI
         <ItemCell itemId={row.itemId} itemName={row.name} rowColour={color} />
       </TableCell>
 
-      <TableCell align="right" onClick={() => openTornMarketPage(row.itemId)} style={{ color: rgbToHex(color) }}>
+      <TableCell
+        align="right"
+        onClick={() => openTornMarketPage(row.itemId)}
+        style={{ color: rgbToHex(color) }}
+      >
         {buyPriceRange !== null
           ? buyPriceRange.min === buyPriceRange.max
             ? getFormattedText('$', buyPriceRange.min, '')
             : `${getFormattedText('$', buyPriceRange.min, '')}–${getFormattedText('$', buyPriceRange.max, '')}`
-          : '—'}
+          : '-'}
       </TableCell>
 
-      <TableCell align="right" onClick={() => openTornMarketPage(row.itemId)} style={{ color: rgbToHex(color) }}>
-        {quantity !== null ? getFormattedText('', quantity, '') : '—'}
+      <TableCell
+        align="right"
+        onClick={() => openTornMarketPage(row.itemId)}
+        style={{ color: rgbToHex(color) }}
+      >
+        {quantity !== null ? getFormattedText('', quantity, '') : '-'}
       </TableCell>
 
-      <TableCell align="right" onClick={() => openTornMarketPage(row.itemId)} style={{ color: rgbToHex(color) }}>
-        {sellRevenue !== null ? getFormattedText('$', sellRevenue, '') : '—'}
+      <TableCell
+        align="right"
+        onClick={() => openTornMarketPage(row.itemId)}
+        style={{ color: rgbToHex(color) }}
+      >
+        {sellRevenue !== null ? getFormattedText('$', sellRevenue, '') : '-'}
       </TableCell>
 
       <TableCell align="right" onClick={() => openTornMarketPage(row.itemId)}>
@@ -108,7 +132,7 @@ const ResaleItemsTableRow = ({ isNew, row, purchaseOutlet, saleOutlet }: ResaleI
       </TableCell>
 
       <TableCell align="right" style={{ color: rgbToHex(color) }}>
-        {lastUpdated !== null ? timeAgo(lastUpdated) : '—'}
+        {lastUpdated !== null ? timeAgo(lastUpdated) : '-'}
       </TableCell>
 
       <TableCell align="right" onClick={() => navigate(`/item/${row.itemId}`)}>

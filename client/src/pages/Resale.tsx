@@ -1,16 +1,16 @@
+import { Alert, AlertTitle, Box, Divider, Grid, Typography } from '@mui/material'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
-import { Alert, AlertTitle, Box, Divider, Grid, Typography } from '@mui/material'
 import Loading from '../components/Loading'
+import { menuItems } from '../components/Menu'
+import OptionGroup from '../components/OptionGroup'
 import ResaleItemsTable from '../components/ResaleItemsTable'
 import SteppedSlider from '../components/SteppedSlider'
-import { menuItems } from '../components/Menu'
 import { useResaleScan } from '../hooks/useResaleScan'
 import { useUser } from '../hooks/useUser'
-import type { PurchaseOutlet, SaleOutlet } from '../types/markets'
-import OptionGroup from '../components/OptionGroup'
-import { purchaseOutletOptions, saleOutletOptions } from '../types/common'
 import { getTotalProfit } from '../lib/profitCalculations'
+import { purchaseOutletOptions, saleOutletOptions } from '../types/common'
+import type { PurchaseOutlet, SaleOutlet } from '../types/markets'
 
 const VALID_PURCHASE_OUTLETS: PurchaseOutlet[] = ['city', 'bazaar', 'market']
 const VALID_SALE_OUTLETS: SaleOutlet[] = ['city', 'bazaar', 'market', 'anonymousMarket']
@@ -20,15 +20,19 @@ const disabledSaleOutlets = (purchase: PurchaseOutlet): SaleOutlet[] =>
 
 const loadOutlets = (): { purchaseOutlet: PurchaseOutlet; saleOutlet: SaleOutlet } => {
   const storedPurchase = localStorage.getItem('resale:purchaseOutlet:v1') as PurchaseOutlet
-  const purchase = VALID_PURCHASE_OUTLETS.includes(storedPurchase) ? storedPurchase : 'market'
+  const purchase: PurchaseOutlet = VALID_PURCHASE_OUTLETS.includes(storedPurchase)
+    ? storedPurchase
+    : 'market'
 
   const storedSale = localStorage.getItem('resale:saleOutlet:v1') as SaleOutlet
   const disabled = disabledSaleOutlets(purchase)
-  const sale =
+  const sale: SaleOutlet =
     VALID_SALE_OUTLETS.includes(storedSale) && !disabled.includes(storedSale)
       ? storedSale
-      : (saleOutletOptions.find((o) => !disabled.includes(o.value as SaleOutlet))
-          ?.value as SaleOutlet) ?? 'city'
+      : !disabled.includes('city')
+        ? 'city'
+        : ((saleOutletOptions.find((o) => !disabled.includes(o.value as SaleOutlet))
+            ?.value as SaleOutlet) ?? 'city')
 
   return { purchaseOutlet: purchase, saleOutlet: sale }
 }
@@ -37,7 +41,7 @@ const Resale = () => {
   const { rows, error } = useResaleScan({ intervalMs: 5000 })
   const { dotNetUserDetails } = useUser()
 
-  const minuteRangeValues = [1, 2, 3, 5, 10, 30, 60, 120]
+  const minuteRangeValues = [1, 2, 5, 10, 30, 60, 120, 300]
 
   const priceRangeValues = [
     0, 1, 10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000,
@@ -76,20 +80,20 @@ const Resale = () => {
     }
   }
 
-  const handleSaleOutletChange = (
-    _: React.MouseEvent<HTMLElement>,
-    newOutlet: string | number,
-  ) => {
+  const handleSaleOutletChange = (_: React.MouseEvent<HTMLElement>, newOutlet: string | number) => {
     setSaleOutlet(newOutlet as SaleOutlet)
     localStorage.setItem('resale:saleOutlet:v1', newOutlet as string)
   }
 
-  const sortedRows = useMemo(() =>
-    [...rows].sort((a, b) => {
-      const profitA = getTotalProfit(a, purchaseOutlet, saleOutlet) ?? -Infinity
-      const profitB = getTotalProfit(b, purchaseOutlet, saleOutlet) ?? -Infinity
-      return profitB - profitA
-    }),
+  const sortedRows = useMemo(
+    () =>
+      rows
+        ? [...rows].sort((a, b) => {
+            const profitA = getTotalProfit(a, purchaseOutlet, saleOutlet) ?? -Infinity
+            const profitB = getTotalProfit(b, purchaseOutlet, saleOutlet) ?? -Infinity
+            return profitB - profitA
+          })
+        : [],
     [rows, purchaseOutlet, saleOutlet],
   )
 
