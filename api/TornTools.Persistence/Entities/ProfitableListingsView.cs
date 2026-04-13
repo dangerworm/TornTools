@@ -30,10 +30,10 @@ public class ProfitableListingView
   public long? TornCityMaxPrice { get; set; }
 
   [Column("torn_city_quantity")]
-  public int? TornCityQuantity { get; set; }
+  public long? TornCityQuantity { get; set; }
 
   [Column("torn_city_total_profit")]
-  public long? TornCityTotalProfit { get; set; }
+  public decimal? TornCityTotalProfit { get; set; }
 
   [Column("torn_bazaar_min_price")]
   public long? TornBazaarMinPrice { get; set; }
@@ -42,10 +42,10 @@ public class ProfitableListingView
   public long? TornBazaarMaxPrice { get; set; }
 
   [Column("torn_bazaar_quantity")]
-  public int? TornBazaarQuantity { get; set; }
+  public long? TornBazaarQuantity { get; set; }
 
   [Column("torn_bazaar_total_profit")]
-  public long? TornBazaarTotalProfit { get; set; }
+  public decimal? TornBazaarTotalProfit { get; set; }
 
   [Column("torn_last_updated")]
   public DateTimeOffset? TornLastUpdated { get; set; }
@@ -60,10 +60,10 @@ public class ProfitableListingView
   public long? Weav3rCityMaxPrice { get; set; }
 
   [Column("weav3r_city_quantity")]
-  public int? Weav3rCityQuantity { get; set; }
+  public long? Weav3rCityQuantity { get; set; }
 
   [Column("weav3r_city_total_profit")]
-  public long? Weav3rCityTotalProfit { get; set; }
+  public decimal? Weav3rCityTotalProfit { get; set; }
 
   [Column("weav3r_market_min_price")]
   public long? Weav3rMarketMinPrice { get; set; }
@@ -72,10 +72,10 @@ public class ProfitableListingView
   public long? Weav3rMarketMaxPrice { get; set; }
 
   [Column("weav3r_market_quantity")]
-  public int? Weav3rMarketQuantity { get; set; }
+  public long? Weav3rMarketQuantity { get; set; }
 
   [Column("weav3r_market_total_profit")]
-  public long? Weav3rMarketTotalProfit { get; set; }
+  public decimal? Weav3rMarketTotalProfit { get; set; }
 
   [Column("weav3r_anon_min_price")]
   public long? Weav3rAnonMinPrice { get; set; }
@@ -84,10 +84,10 @@ public class ProfitableListingView
   public long? Weav3rAnonMaxPrice { get; set; }
 
   [Column("weav3r_anon_quantity")]
-  public int? Weav3rAnonQuantity { get; set; }
+  public long? Weav3rAnonQuantity { get; set; }
 
   [Column("weav3r_anon_total_profit")]
-  public long? Weav3rAnonTotalProfit { get; set; }
+  public decimal? Weav3rAnonTotalProfit { get; set; }
 
   [Column("weav3r_last_updated")]
   public DateTimeOffset? Weav3rLastUpdated { get; set; }

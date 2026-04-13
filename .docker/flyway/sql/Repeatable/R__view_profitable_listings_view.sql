@@ -22,8 +22,8 @@ WITH
       l.item_id,
       MIN(l.price)                                              AS min_price,
       MAX(l.price)                                              AS max_price,
-      SUM(l.quantity)::int                                      AS quantity,
-      SUM((i.value_sell_price - l.price) * l.quantity)::bigint  AS total_profit
+      SUM(l.quantity)                                           AS quantity,
+      SUM((i.value_sell_price - l.price)::numeric * l.quantity) AS total_profit
     FROM public.listings l
     JOIN public.items i ON i.id = l.item_id
     WHERE l.source = 'Torn'
@@ -39,8 +39,8 @@ WITH
       l.item_id,
       MIN(l.price)                                              AS min_price,
       MAX(l.price)                                              AS max_price,
-      SUM(l.quantity)::int                                      AS quantity,
-      SUM((wb.min_price - l.price) * l.quantity)::bigint        AS total_profit
+      SUM(l.quantity)                                           AS quantity,
+      SUM((wb.min_price - l.price)::numeric * l.quantity)       AS total_profit
     FROM public.listings l
     JOIN weav3r_base wb ON wb.item_id = l.item_id
     WHERE l.source = 'Torn'
@@ -55,8 +55,8 @@ WITH
       l.item_id,
       MIN(l.price)                                              AS min_price,
       MAX(l.price)                                              AS max_price,
-      SUM(l.quantity)::int                                      AS quantity,
-      SUM((i.value_sell_price - l.price) * l.quantity)::bigint  AS total_profit
+      SUM(l.quantity)                                           AS quantity,
+      SUM((i.value_sell_price - l.price)::numeric * l.quantity) AS total_profit
     FROM public.listings l
     JOIN public.items i ON i.id = l.item_id
     WHERE l.source = 'Weav3r'
@@ -72,8 +72,8 @@ WITH
       l.item_id,
       MIN(l.price)                                                               AS min_price,
       MAX(l.price)                                                               AS max_price,
-      SUM(l.quantity)::int                                                       AS quantity,
-      SUM((FLOOR(i.value_market_price * 0.95)::bigint - l.price) * l.quantity)::bigint AS total_profit
+      SUM(l.quantity)                                                            AS quantity,
+      SUM((FLOOR(i.value_market_price * 0.95) - l.price)::numeric * l.quantity) AS total_profit
     FROM public.listings l
     JOIN public.items i ON i.id = l.item_id
     WHERE l.source = 'Weav3r'
@@ -89,8 +89,8 @@ WITH
       l.item_id,
       MIN(l.price)                                                               AS min_price,
       MAX(l.price)                                                               AS max_price,
-      SUM(l.quantity)::int                                                       AS quantity,
-      SUM((FLOOR(i.value_market_price * 0.85)::bigint - l.price) * l.quantity)::bigint AS total_profit
+      SUM(l.quantity)                                                            AS quantity,
+      SUM((FLOOR(i.value_market_price * 0.85) - l.price)::numeric * l.quantity) AS total_profit
     FROM public.listings l
     JOIN public.items i ON i.id = l.item_id
     WHERE l.source = 'Weav3r'
