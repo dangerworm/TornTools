@@ -69,7 +69,7 @@ const ResaleItemsTable = ({
         const lastUpdated = getLastUpdated(r, purchaseOutlet)
         if (
           lastUpdated !== null &&
-          getSecondsSinceLastUpdate(lastUpdated) > maxTimeSinceLastUpdate * 60 * 60
+          getSecondsSinceLastUpdate(lastUpdated) > maxTimeSinceLastUpdate * 60
         )
           return false
 
