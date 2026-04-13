@@ -48,9 +48,9 @@ const Resale = () => {
     50000000, 100000000, 500000000, 1000000000, 50000000000, 100000000000,
   ]
 
-  const initialMinProfitIndex = 3 // 100
+  const initialMinProfitIndex = 3 // 50
   const initialMaxBuyPriceIndex = 17 // 1,000,000,000
-  const initialMaxTimeSinceLastUpdateIndex = 4 // 10 minutes
+  const initialMaxTimeSinceLastUpdateIndex = 5 // 60 minutes
 
   const [minProfit, setMinProfit] = useState(priceRangeValues[initialMinProfitIndex])
   const [maxBuyPrice, setMaxBuyPrice] = useState(priceRangeValues[initialMaxBuyPriceIndex])
