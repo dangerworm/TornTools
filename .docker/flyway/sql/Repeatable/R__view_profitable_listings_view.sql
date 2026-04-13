@@ -16,8 +16,8 @@ WITH
       AND quantity > 0
     GROUP BY item_id
   ),
-  -- Torn listings profitable vs city sell (price < value_sell_price)
-  torn_vs_city AS (
+  -- Market listings profitable vs city sell (price < value_sell_price)
+  market_vs_city AS (
     SELECT
       l.item_id,
       MIN(l.price)                                              AS min_price,
@@ -33,8 +33,8 @@ WITH
       AND l.price < i.value_sell_price
     GROUP BY l.item_id
   ),
-  -- Torn listings profitable vs bazaar sell (price < Weav3r global min price)
-  torn_vs_bazaar AS (
+  -- Market listings profitable vs bazaar sell (price < Weav3r global min price)
+  market_vs_bazaar AS (
     SELECT
       l.item_id,
       MIN(l.price)                                              AS min_price,
@@ -110,48 +110,48 @@ SELECT
   i.value_sell_price                AS city_sell_price,
   i.value_market_price              AS market_price,
 
-  tc.min_price                      AS torn_city_min_price,
-  tc.max_price                      AS torn_city_max_price,
-  tc.quantity                       AS torn_city_quantity,
-  tc.total_profit                   AS torn_city_total_profit,
+  mvc.min_price                      AS torn_city_min_price,
+  mvc.max_price                      AS torn_city_max_price,
+  mvc.quantity                       AS torn_city_quantity,
+  mvc.total_profit                   AS torn_city_total_profit,
 
-  tb.min_price                      AS torn_bazaar_min_price,
-  tb.max_price                      AS torn_bazaar_max_price,
-  tb.quantity                       AS torn_bazaar_quantity,
-  tb.total_profit                   AS torn_bazaar_total_profit,
+  mvb.min_price                      AS torn_bazaar_min_price,
+  mvb.max_price                      AS torn_bazaar_max_price,
+  mvb.quantity                       AS torn_bazaar_quantity,
+  mvb.total_profit                   AS torn_bazaar_total_profit,
 
   tt.last_updated                   AS torn_last_updated,
 
   wb.min_price                      AS weav3r_global_min_price,
 
-  wc.min_price                      AS weav3r_city_min_price,
-  wc.max_price                      AS weav3r_city_max_price,
-  wc.quantity                       AS weav3r_city_quantity,
-  wc.total_profit                   AS weav3r_city_total_profit,
+  wvc.min_price                      AS weav3r_city_min_price,
+  wvc.max_price                      AS weav3r_city_max_price,
+  wvc.quantity                       AS weav3r_city_quantity,
+  wvc.total_profit                   AS weav3r_city_total_profit,
 
-  wm.min_price                      AS weav3r_market_min_price,
-  wm.max_price                      AS weav3r_market_max_price,
-  wm.quantity                       AS weav3r_market_quantity,
-  wm.total_profit                   AS weav3r_market_total_profit,
+  wvm.min_price                      AS weav3r_market_min_price,
+  wvm.max_price                      AS weav3r_market_max_price,
+  wvm.quantity                       AS weav3r_market_quantity,
+  wvm.total_profit                   AS weav3r_market_total_profit,
 
-  wa.min_price                      AS weav3r_anon_min_price,
-  wa.max_price                      AS weav3r_anon_max_price,
-  wa.quantity                       AS weav3r_anon_quantity,
-  wa.total_profit                   AS weav3r_anon_total_profit,
+  wva.min_price                      AS weav3r_anon_min_price,
+  wva.max_price                      AS weav3r_anon_max_price,
+  wva.quantity                       AS weav3r_anon_quantity,
+  wva.total_profit                   AS weav3r_anon_total_profit,
 
   wb.last_updated                   AS weav3r_last_updated
 
 FROM public.items i
 LEFT JOIN torn_timestamps     tt    ON tt.item_id = i.id
 LEFT JOIN weav3r_base         wb    ON wb.item_id = i.id
-LEFT JOIN torn_vs_city        tc    ON tc.item_id = i.id
-LEFT JOIN torn_vs_bazaar      tb    ON tb.item_id = i.id
-LEFT JOIN weav3r_vs_city      wc    ON wc.item_id = i.id
-LEFT JOIN weav3r_vs_market    wm    ON wm.item_id = i.id
-LEFT JOIN weav3r_vs_anon      wa    ON wa.item_id = i.id
+LEFT JOIN market_vs_city      mvc   ON mvc.item_id = i.id
+LEFT JOIN market_vs_bazaar    mvb   ON mvb.item_id = i.id
+LEFT JOIN weav3r_vs_city      wvc    ON wvc.item_id = i.id
+LEFT JOIN weav3r_vs_market    wvm    ON wvm.item_id = i.id
+LEFT JOIN weav3r_vs_anon      wva    ON wva.item_id = i.id
 WHERE
-  tc.item_id IS NOT NULL
-  OR tb.item_id IS NOT NULL
-  OR wc.item_id IS NOT NULL
-  OR wm.item_id IS NOT NULL
-  OR wa.item_id IS NOT NULL;
+  mvc.item_id IS NOT NULL
+  OR mvb.item_id IS NOT NULL
+  OR wvc.item_id IS NOT NULL
+  OR wvm.item_id IS NOT NULL
+  OR wva.item_id IS NOT NULL;

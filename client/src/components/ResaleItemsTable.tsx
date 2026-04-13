@@ -1,5 +1,3 @@
-import { useMemo, useRef } from 'react'
-import { AnimatePresence } from 'framer-motion'
 import {
   Alert,
   AlertTitle,
@@ -13,11 +11,13 @@ import {
   TableRow,
   Typography,
 } from '@mui/material'
+import { AnimatePresence } from 'framer-motion'
+import { useMemo, useRef } from 'react'
 import { useUser } from '../hooks/useUser'
-import { getSecondsSinceLastUpdate } from '../lib/time'
 import { getBuyPriceRange, getLastUpdated, getTotalProfit } from '../lib/profitCalculations'
-import type { ProfitableListing } from '../types/profitableListings'
+import { getSecondsSinceLastUpdate } from '../lib/time'
 import type { PurchaseOutlet, SaleOutlet } from '../types/markets'
+import type { ProfitableListing } from '../types/profitableListings'
 import ResaleItemsTableRow from './ResaleItemsTableRow'
 
 interface ResaleItemsTableProps {
@@ -55,20 +55,28 @@ const ResaleItemsTable = ({
   const { dotNetUserDetails } = useUser()
   const seenIdsRef = useRef<Set<number | string>>(new Set())
 
-  const filteredRows = useMemo(() => rows.filter((r) => {
-    const totalProfit = getTotalProfit(r, purchaseOutlet, saleOutlet)
-    if (totalProfit === null) return false
+  const filteredRows = useMemo(
+    () =>
+      rows.filter((r) => {
+        const totalProfit = getTotalProfit(r, purchaseOutlet, saleOutlet)
+        if (totalProfit === null) return false
 
-    const buyPriceRange = getBuyPriceRange(r, purchaseOutlet, saleOutlet)
-    if (buyPriceRange === null || buyPriceRange.min > maxBuyPrice) return false
+        const buyPriceRange = getBuyPriceRange(r, purchaseOutlet, saleOutlet)
+        if (buyPriceRange === null || buyPriceRange.min > maxBuyPrice) return false
 
-    if (minProfit > 0 && totalProfit < minProfit) return false
+        if (minProfit > 0 && totalProfit < minProfit) return false
 
-    const lastUpdated = getLastUpdated(r, purchaseOutlet)
-    if (lastUpdated !== null && getSecondsSinceLastUpdate(lastUpdated) > maxTimeSinceLastUpdate * 60) return false
+        const lastUpdated = getLastUpdated(r, purchaseOutlet)
+        if (
+          lastUpdated !== null &&
+          getSecondsSinceLastUpdate(lastUpdated) > maxTimeSinceLastUpdate * 60 * 60
+        )
+          return false
 
-    return true
-  }), [rows, minProfit, maxBuyPrice, maxTimeSinceLastUpdate, purchaseOutlet, saleOutlet])
+        return true
+      }),
+    [rows, minProfit, maxBuyPrice, maxTimeSinceLastUpdate, purchaseOutlet, saleOutlet],
+  )
 
   if (error) {
     return (
