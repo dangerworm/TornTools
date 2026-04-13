@@ -8,11 +8,11 @@ Master catalogue populated from Torn API (`/torn/items`). ~35 columns.
 
 Key columns:
 
-- `id` int PK — Torn item ID
+- `id` int PK - Torn item ID
 - `name`, `type`, `sub_type`, `image`, `description`, `effect`, `requirement`
-- `value_buy_price`, `value_sell_price`, `value_market_price` — city buy/sell + item market price
-- `value_vendor_country`, `value_vendor_name` — which NPC sells it and where
-- `damage_base_stat`, `accuracy_base_stat`, `armor_base_stat` — weapon/armor stats
+- `value_buy_price`, `value_sell_price`, `value_market_price` - city buy/sell + item market price
+- `value_vendor_country`, `value_vendor_name` - which NPC sells it and where
+- `damage_base_stat`, `accuracy_base_stat`, `armor_base_stat` - weapon/armor stats
 - `ammo_id`, `ammo_name`, `magazine_rounds`, `rate_of_fire`
 - `is_masked`, `is_tradable`, `is_found_in_city`, `circulation`
 - `last_updated`
@@ -24,18 +24,18 @@ Individual market listings scraped from Torn item market and Weav3r bazaar.
 Key columns:
 
 - `id` UUID PK
-- `correlation_id` UUID — groups listings from the same scan batch
+- `correlation_id` UUID - groups listings from the same scan batch
 - `item_id` FK → items
-- `listing_position` — position in the market list
-- `time_seen` — when scanned
+- `listing_position` - position in the market list
+- `time_seen` - when scanned
 - `price`, `quantity`
-- `source` — enum: Torn | Weav3r
+- `source` - enum: Torn | Weav3r
 
 Max listings stored per item: `QueryConstants.NumberOfListingsToStorePerItem = 50`
 
 ### `item_change_logs`
 
-Price change history — appended whenever a new price is observed.
+Price change history - appended whenever a new price is observed.
 
 Columns: `id`, `item_id` FK, `source`, `change_time`, `new_price`
 
@@ -49,12 +49,12 @@ Composite PK: `(item_id, country)` Columns: `item_name`, `quantity`, `cost`, `la
 
 Authenticated TornTools users.
 
-Columns: `id` (long — Torn user ID), `api_key`, `name`, `level`, `gender`, `key_available`,
+Columns: `id` (long - Torn user ID), `api_key`, `name`, `level`, `gender`, `key_available`,
 `api_key_last_used`, `preferred_theme_id` FK → themes (nullable)
 
 ### `user_favourites`
 
-Composite PK: `(user_id, item_id)` — simple many-to-many join table.
+Composite PK: `(user_id, item_id)` - simple many-to-many join table.
 
 ### `themes`
 
@@ -82,14 +82,14 @@ Joins `items` + `listings`, filters where `price < value_sell_price OR price < v
 Aggregates per item: `min_price`, `max_price`, `sum(quantity)`, `sum(price × quantity)` as
 `total_cost`, `max(time_seen)` as `last_updated`.
 
-**Hard-coded exclusion:** `item_id <> 335` — item 335 is excluded without explanation in the SQL.
+**Hard-coded exclusion:** `item_id <> 335` - item 335 is excluded without explanation in the SQL.
 
 ### `market_velocity`
 
 Located: `.docker/flyway/sql/Repeatable/R__view_market_velocity.sql`
 
 CTE counts `item_change_logs` per item, then joins back to get individual change rows. **Issue:**
-`ORDER BY` inside the CTE (`change_counts`) is non-standard and has no effect in PostgreSQL — it's
+`ORDER BY` inside the CTE (`change_counts`) is non-standard and has no effect in PostgreSQL - it's
 silently ignored.
 
 ---
@@ -123,11 +123,11 @@ silently ignored.
 
 ```txt
 IGNORE
-TornItems         — fetches full item catalogue
-TornKeyInfo       — validates a user API key
-TornMarketListings — fetches market listings for one item
-Weav3rBazaarListings — fetches bazaar listings for one item
-YataForeignStock  — fetches foreign country stock
+TornItems         - fetches full item catalogue
+TornKeyInfo       - validates a user API key
+TornMarketListings - fetches market listings for one item
+Weav3rBazaarListings - fetches bazaar listings for one item
+YataForeignStock  - fetches foreign country stock
 ```
 
 ## HistoryWindow Enum

@@ -46,7 +46,7 @@ jobs:
                 GITHUB_ENV_NAME="Dev"
                 ;;
               *)
-                echo "⚠️ Unknown branch — defaulting to 'Dev'"
+                echo "⚠️ Unknown branch - defaulting to 'Dev'"
                 GITHUB_ENV_NAME="Dev"
                 ;;
             esac
@@ -159,7 +159,7 @@ jobs:
             echo "✅ No changes detected in infrastructure."
           else
             echo "has_changes=true" >> $GITHUB_OUTPUT
-            echo "🚧 Changes detected — proceeding with apply."
+            echo "🚧 Changes detected - proceeding with apply."
           fi
         working-directory: infra
 

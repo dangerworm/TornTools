@@ -16,7 +16,7 @@ Route: `[controller]/[action]` → `/api/*`
 | POST   | `/api/PostTheme`               | JWT  | Upsert custom theme                   |
 | POST   | `/api/PostUserThemeSelection`  | JWT  | Set preferred theme                   |
 
-Note: `GetProfitableListings` passes `CancellationToken.None` instead of the request token — a minor
+Note: `GetProfitableListings` passes `CancellationToken.None` instead of the request token - a minor
 bug.
 
 ### AuthController
@@ -96,19 +96,19 @@ Single service interface. Key method groups:
 | `ItemEntity`                   | `items`               | `id` (int)                    |
 | `ListingEntity`                | `listings`            | `id` (UUID)                   |
 | `ItemChangeLogEntity`          | `item_change_logs`    | `id`                          |
-| `ItemMarketHistoryPointEntity` | (view)                | no PK — query-only            |
+| `ItemMarketHistoryPointEntity` | (view)                | no PK - query-only            |
 | `ForeignStockItemEntity`       | `foreign_stock_items` | `(itemId, country)` composite |
-| `UserEntity`                   | `users`               | `id` (long) — Torn user ID    |
+| `UserEntity`                   | `users`               | `id` (long) - Torn user ID    |
 | `UserFavouriteItemEntity`      | `user_favourites`     | `(userId, itemId)` composite  |
 | `ThemeEntity`                  | `themes`              | `id`                          |
 | `QueueItemEntity`              | `queue_items`         | `id`                          |
 
 ### DB Views
 
-- `profitable_listings` — joins `items` + `listings` where
+- `profitable_listings` - joins `items` + `listings` where
   `price < sell_price OR price < market_price`, groups by item. Hard-coded exclusion:
   `item_id <> 335`.
-- `market_velocity` — joins `item_change_logs` + `items`, orders by change frequency.
+- `market_velocity` - joins `item_change_logs` + `items`, orders by change frequency.
 
 ### Repositories
 
@@ -146,7 +146,7 @@ Registers recurring Hangfire jobs (queue population on a schedule).
 - JWT signing via `JwtService` (`api/TornTools.Api/Authentication/JwtService.cs`)
 - Claims: `NameIdentifier` = Torn user ID (long), `Name` = username
 - Config: `appsettings.json` → JWT issuer/audience both "TornTools", expiry in `JwtConfiguration`
-- CORS configured in `ServiceCollectionExtensions.cs` — credentials allowed, origin from config
+- CORS configured in `ServiceCollectionExtensions.cs` - credentials allowed, origin from config
 - Hangfire dashboard exposed at `/hangfire` with no access control in dev
 
 ---
@@ -173,6 +173,6 @@ Versioned (`Versioned/V1.x__`):
 
 Repeatable (`Repeatable/R__`):
 
-- `R__func_updated_markets.sql` — stored procedure
-- `R__view_market_velocity.sql` — velocity view
-- `R__view_profitable_listings_view.sql` — profitable listings view
+- `R__func_updated_markets.sql` - stored procedure
+- `R__view_market_velocity.sql` - velocity view
+- `R__view_profitable_listings_view.sql` - profitable listings view
