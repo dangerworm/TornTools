@@ -12,6 +12,8 @@ WITH
     SELECT item_id, MIN(price) AS min_price, MAX(time_seen) AS last_updated
     FROM public.listings
     WHERE source = 'Weav3r'
+      AND price > 0
+      AND quantity > 0
     GROUP BY item_id
   ),
   -- Torn listings profitable vs city sell (price < value_sell_price)
@@ -25,6 +27,8 @@ WITH
     FROM public.listings l
     JOIN public.items i ON i.id = l.item_id
     WHERE l.source = 'Torn'
+      AND l.price > 0
+      AND l.quantity > 0
       AND i.value_sell_price IS NOT NULL
       AND l.price < i.value_sell_price
     GROUP BY l.item_id
@@ -40,6 +44,8 @@ WITH
     FROM public.listings l
     JOIN weav3r_base wb ON wb.item_id = l.item_id
     WHERE l.source = 'Torn'
+      AND l.price > 0
+      AND l.quantity > 0
       AND l.price < wb.min_price
     GROUP BY l.item_id
   ),
@@ -54,6 +60,8 @@ WITH
     FROM public.listings l
     JOIN public.items i ON i.id = l.item_id
     WHERE l.source = 'Weav3r'
+      AND l.price > 0
+      AND l.quantity > 0
       AND i.value_sell_price IS NOT NULL
       AND l.price < i.value_sell_price
     GROUP BY l.item_id
@@ -69,6 +77,8 @@ WITH
     FROM public.listings l
     JOIN public.items i ON i.id = l.item_id
     WHERE l.source = 'Weav3r'
+      AND l.price > 0
+      AND l.quantity > 0
       AND i.value_market_price IS NOT NULL
       AND l.price < FLOOR(i.value_market_price * 0.95)
     GROUP BY l.item_id
@@ -84,6 +94,8 @@ WITH
     FROM public.listings l
     JOIN public.items i ON i.id = l.item_id
     WHERE l.source = 'Weav3r'
+      AND l.price > 0
+      AND l.quantity > 0
       AND i.value_market_price IS NOT NULL
       AND l.price < FLOOR(i.value_market_price * 0.85)
     GROUP BY l.item_id
