@@ -120,10 +120,14 @@ public class ApiController(
     if (payload.Listings.Count == 0)
       return Ok();
 
+    var validListings = payload.Listings.Where(l => l.Price > 0 && l.Quantity > 0).ToList();
+    if (validListings.Count == 0)
+      return Ok();
+
     try
     {
       var correlationId = Guid.NewGuid();
-      var listings = payload.Listings
+      var listings = validListings
           .Select((l, i) => new ListingDto
           {
             CorrelationId = correlationId,
