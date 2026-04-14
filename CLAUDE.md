@@ -2,7 +2,7 @@
 
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **TornTools** (1707 symbols, 4920 relationships, 113
+This project is indexed by GitNexus as **TornTools** (1723 symbols, 4940 relationships, 112
 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
