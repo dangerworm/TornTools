@@ -4,6 +4,17 @@
 
 ## Feature Backlog
 
+### Urgent issues
+
+At any given point the queue has a mix of TornMarketListings (TML) and Weav3rBazaarListings (WBL)
+calls. Right now those appear to be running in a sequence whereby we get a glut of TML calls,
+followed by a glut of WBL calls. This means that the resale page sometimes has 'last updated' times
+of over 30 minutes ago, and the same goes for Weav3r data. We need a way to 'flip-flop' between TML
+and WBL calls so that the server does a Torn markets all, then a Weav3r call, then a Torn markets
+call, and so on. We should also ensure that the number of TML and WBL calls is equal (or very close)
+so that we don't end up with twice as many of one than the other and cause the data for the other to
+become stale.
+
 ### Core Product Improvements
 
 - **Add page for users' items** - sortable table of inventory; show profit on bazaar/market; link to
@@ -18,15 +29,26 @@
   ([Trello](https://trello.com/c/02MvgY6i))
 - **Improve Markets page UI** - clearer than YATA competitors
   ([Trello](https://trello.com/c/VkQsEZOC))
-- **Persist slider values between page loads** - min profit, price range, etc. Outlet and checkbox
-  toggles are done for Resale, City Markets, and Foreign Markets; sliders still pending.
+- **Persist slider values between page loads** - done for Resale (min profit, max buy price, max
+  updated time now saved to localStorage as values, restored via index lookup on load). Outlet and
+  checkbox toggles were already done. City Markets and Foreign Markets have no sliders.
   ([Trello](https://trello.com/c/96CIJE0B))
 - **Remove deleted keys** - if the API returns an error saying the key no longer exists
   ([Trello](https://trello.com/c/QGYI5sPx))
-- **Add armour** - add armour as a tracked item type ([Trello](https://trello.com/c/PRmX5Ped))
+- **Add armour** - done; `ItemDetailsArmourStats` component exists, `DetailsBaseStatsArmor` is in
+  `ItemEntity` and `ItemDto`, `GetMarketItemsAsync` has no type filter so armour is scanned and
+  appears in profitable listings. ([Trello](https://trello.com/c/PRmX5Ped))
 
 ### Resale Page
 
+- **Live "last updated" counter** - done; `useResaleScan` now exposes `lastFetched` (set on each
+  successful fetch); `Resale.tsx` runs a 1s interval effect to display "Last updated Xs ago" below
+  the page description. (Nov 29 email, Peter Sheppard)
+- **Profit per click efficiency metric** - derive a "profit per click" score: baseline 3 clicks per
+  listing (+2 per additional line, +2 per unit for non-stacking items). Show as a sortable column
+  with a user-configurable minimum profit/click threshold (like the min profit slider). Lets users
+  deprioritise high-click-cost deals even when total profit looks attractive.
+  (Jan 25 email, Peter Sheppard)
 - **Bazaar sell chip** - "Sell at bazaar" profit is not shown because the user sets their own price;
   implement as a calculator modal (see UI/UX: Bazaar sell calculator modal).
 - **Price alerts** - alert when an item drops below a given price, even before a profit exists
@@ -48,7 +70,7 @@
 - **"Item is heating up" volatility trend indicator** ([Trello](https://trello.com/c/mtc0N6ab))
 - **Global high-volatility items list** - cross-item comparison
   ([Trello](https://trello.com/c/qELgIPtT))
-- **Include armour data across the stack** - DB, API, and frontend
+- **Include armour data across the stack** - done; see "Add armour" in Core Product Improvements.
   ([Trello](https://trello.com/c/ZV5xipM0))
 
 ### Item Quality
@@ -80,8 +102,8 @@
 - **Single ungrouped table option** - done; "Show all countries in one table" checkbox added
   (persisted), renders flat table with Country column (flag + name, sortable).
   ([Trello](https://trello.com/c/IX5d3Suy))
-- **Column sorting** - done for per-country sub-tables. Will need revisiting when the single
-  ungrouped table option is added (Country column sort key not yet present).
+- **Column sorting** - done; `ForeignMarketItemsTable` has full `TableSortCell` headers including
+  a Country column (rendered when `showCountry` is true, covering the ungrouped view).
 - **Don't show out of stock** - done; "Hide Out of Stock" checkbox added (default on), persisted.
   ([Trello](https://trello.com/c/jEhH3v6x))
 - **Add stock refill times** ([Trello](https://trello.com/c/6RIEi31r))
@@ -102,11 +124,11 @@
 
 ### UI / UX Enhancements
 
-- **Column sorting on all tables** - `CityMarketItemsTable` is fully sortable;
-  `ForeignMarketItemsTable`, `ResaleItemsTable`, `FavouriteMarketsTable`, and `Weav3rListingTable`
-  have no sortable headers. `ResaleItemsTable` is the trickiest since sort currently lives in
-  `Resale.tsx`; the others are straightforward - define a sort key type, add state + `stableSort`,
-  swap plain `TableCell` headers for `TableSortCell`.
+- **Column sorting on all tables** - `CityMarketItemsTable` and `ForeignMarketItemsTable` are fully
+  sortable; `ResaleItemsTable`, `FavouriteMarketsTable`, and `Weav3rListingTable` have no sortable
+  headers. `ResaleItemsTable` is the trickiest since sort currently lives in `Resale.tsx`; the
+  others are straightforward - define a sort key type, add state + `stableSort`, swap plain
+  `TableCell` headers for `TableSortCell`.
 - **Bazaar sell calculator modal** - on any item row, open a small modal where the user enters their
   intended bazaar price and sees: estimated profit, how it compares to the current cheapest bazaar
   listing, and a likelihood-of-sale indicator based on historical velocity. Deferred from Resale /
@@ -275,3 +297,6 @@ demand.
 - `SameSite=None` on the auth cookie requires `Secure=true` (which is set), but means the cookie
   won't work over plain HTTP - no local dev without HTTPS or a proxy.
 - `torn-war-checker.html` in the repo root appears to be an unrelated standalone utility.
+- **Volatility chart Y-axis units** - done; the "Changes Over Time" bar chart in `ItemDetails.tsx`
+  passes `yAxisLabel="Number of changes"` to the `Chart` component, which renders an angled label on
+  the Y-axis. (Nov 29 email, Peter Sheppard)
