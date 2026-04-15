@@ -23,7 +23,7 @@ const PRICE_RANGE_VALUES = [
 
 const DEFAULT_MIN_PROFIT_INDEX = 3 // $50
 const DEFAULT_MAX_BUY_PRICE_INDEX = 17 // $1,000,000,000
-const DEFAULT_MAX_TIME_INDEX = 2 // 5 minutes
+const DEFAULT_MAX_TIME_INDEX = 4 // 30 minutes
 
 const loadSliderIndex = (key: string, defaultIndex: number, values: number[]): number => {
   const stored = localStorage.getItem(key)
@@ -58,9 +58,11 @@ const Resale = () => {
   const { rows, error, lastFetched } = useResaleScan({ intervalMs: 5000 })
   const { dotNetUserDetails } = useUser()
 
-  const initialMinProfitIndex = loadSliderIndex('resale:minProfit:v1', DEFAULT_MIN_PROFIT_INDEX, PRICE_RANGE_VALUES)
-  const initialMaxBuyPriceIndex = loadSliderIndex('resale:maxBuyPrice:v1', DEFAULT_MAX_BUY_PRICE_INDEX, PRICE_RANGE_VALUES)
-  const initialMaxTimeSinceLastUpdateIndex = loadSliderIndex('resale:maxTimeMinutes:v1', DEFAULT_MAX_TIME_INDEX, MINUTE_RANGE_VALUES)
+  // useMemo with [] ensures localStorage is read once on mount, not on every render.
+  // The indices are also passed as initialValueIndex props to SteppedSlider (mount-only).
+  const initialMinProfitIndex = useMemo(() => loadSliderIndex('resale:minProfit:v1', DEFAULT_MIN_PROFIT_INDEX, PRICE_RANGE_VALUES), [])
+  const initialMaxBuyPriceIndex = useMemo(() => loadSliderIndex('resale:maxBuyPrice:v1', DEFAULT_MAX_BUY_PRICE_INDEX, PRICE_RANGE_VALUES), [])
+  const initialMaxTimeSinceLastUpdateIndex = useMemo(() => loadSliderIndex('resale:maxTimeMinutes:v1', DEFAULT_MAX_TIME_INDEX, MINUTE_RANGE_VALUES), [])
 
   const [minProfit, setMinProfit] = useState(PRICE_RANGE_VALUES[initialMinProfitIndex])
   const [maxBuyPrice, setMaxBuyPrice] = useState(PRICE_RANGE_VALUES[initialMaxBuyPriceIndex])

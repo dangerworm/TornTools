@@ -235,27 +235,40 @@ public class DatabaseService(
     }
   }
 
-  public async Task PopulateQueueWithMarketAndWeav3rItemsOfInterest(CancellationToken stoppingToken)
+  public async Task PopulateQueueWithTornMarketItems(CancellationToken stoppingToken)
   {
-    // Items that barely changed in the last 7 days are left to the stale-listing job.
-    // The threshold formula ensures the stale job will cover them before they get too old.
     var minChanges = 2 * 7 * 24 / TimeConstants.StaleListingThresholdHours;
     var itemIds = (await _itemRepository.GetActiveMarketItemsForQueueAsync(minChanges, stoppingToken)).ToList();
 
     if (itemIds.Count == 0)
     {
-      _logger.LogInformation("No active market items found; falling back to stale scan.");
+      _logger.LogInformation("No active market items found for TML; falling back to stale scan.");
       await PopulateQueueWithStaleMarketItems(stoppingToken);
       return;
     }
 
-    // TML and WBL items for the same ID are interleaved by QueueIndex in CreateQueueItemsAsync.
-    // Within each call type, profitable items come first (sorted by GetActiveMarketItemsForQueueAsync).
-    var queueItems = new List<QueueItemDto>(itemIds.Count * 2);
-    queueItems.AddRange(BuildTornMarketQueueItems(itemIds));
-    queueItems.AddRange(BuildWeav3rQueueItems(itemIds));
+    await _queueItemRepository.CreateQueueItemsAsync(BuildTornMarketQueueItems(itemIds), stoppingToken);
+  }
 
-    await _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken);
+  public async Task PopulateQueueWithWeav3rItems(CancellationToken stoppingToken)
+  {
+    var minChanges = 2 * 7 * 24 / TimeConstants.StaleListingThresholdHours;
+    var itemIds = (await _itemRepository.GetActiveMarketItemsForQueueAsync(minChanges, stoppingToken)).ToList();
+
+    if (itemIds.Count == 0)
+    {
+      _logger.LogInformation("No active market items found for WBL; falling back to stale scan.");
+      var staleItems = await _itemRepository.GetStaleMarketItemIdsAsync(TimeConstants.StaleListingThresholdHours, stoppingToken);
+      var wblItems = staleItems
+          .Where(item => item.Source == Source.Weav3r.ToString())
+          .Select(item => BuildWeav3rQueueItem(item.ItemId))
+          .ToList();
+      if (wblItems.Count > 0)
+        await _queueItemRepository.CreateQueueItemsAsync(wblItems, stoppingToken);
+      return;
+    }
+
+    await _queueItemRepository.CreateQueueItemsAsync(BuildWeav3rQueueItems(itemIds), stoppingToken);
   }
 
   public Task<QueueItemDto> CreateQueueItem(ApiCallType callType, string endpointUrl, CancellationToken stoppingToken)
@@ -263,9 +276,14 @@ public class DatabaseService(
     return _queueItemRepository.CreateQueueItemAsync(callType, endpointUrl, stoppingToken);
   }
 
-  public Task<QueueItemDto?> GetNextQueueItem(CancellationToken stoppingToken)
+  public Task<QueueItemDto?> GetNextQueueItem(ApiCallType callType, CancellationToken stoppingToken)
   {
-    return _queueItemRepository.GetNextQueueItemAsync(stoppingToken);
+    return _queueItemRepository.GetNextQueueItemAsync(callType, stoppingToken);
+  }
+
+  public Task<bool> HasInProgressItems(ApiCallType callType, CancellationToken stoppingToken)
+  {
+    return _queueItemRepository.HasInProgressItemsAsync(callType, stoppingToken);
   }
 
   public Task<QueueItemDto> IncrementQueueItemAttempts(Guid id, CancellationToken stoppingToken)
@@ -281,6 +299,16 @@ public class DatabaseService(
   public Task RemoveQueueItemsAsync(CancellationToken stoppingToken)
   {
     return _queueItemRepository.RemoveQueueItemsAsync(stoppingToken);
+  }
+
+  public Task RemoveQueueItemsAsync(ApiCallType callType, CancellationToken stoppingToken)
+  {
+    return _queueItemRepository.RemoveQueueItemsAsync(callType, stoppingToken);
+  }
+
+  public Task RemoveInProgressItemsAsync(CancellationToken stoppingToken)
+  {
+    return _queueItemRepository.RemoveInProgressItemsAsync(stoppingToken);
   }
 
   public Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken)

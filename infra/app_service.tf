@@ -34,8 +34,10 @@ resource "azurerm_linux_web_app" "backend_api" {
     "EnvironmentConfiguration__EnvironmentName"   = "${var.environment}"
     "EnvironmentConfiguration__PopulateQueue"     = "true"
     "EnvironmentConfiguration__RunQueueProcessor" = "true"
-    "CorsAllowedOrigins"                          = var.custom_domains_enabled ? "https://${var.frontend_hostname}" : trimsuffix(azurerm_storage_account.frontend_sa.primary_web_endpoint, "/")
-    "JwtConfiguration__Secret"                    = var.jwt_secret
+    "CorsAllowedOrigins"                              = var.custom_domains_enabled ? "https://${var.frontend_hostname}" : trimsuffix(azurerm_storage_account.frontend_sa.primary_web_endpoint, "/")
+    "JwtConfiguration__Secret"                        = var.jwt_secret
+    "TornMarketsProcessorConfiguration__WorkerCount"  = "1"
+    "Weav3rBazaarsProcessorConfiguration__WorkerCount" = "1"
   }
 
   depends_on = [azurerm_service_plan.backend_plan]

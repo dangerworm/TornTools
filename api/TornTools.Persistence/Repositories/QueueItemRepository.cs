@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Npgsql;
+using System.Text.Json;
 using TornTools.Core.Constants;
 using TornTools.Core.DataTransferObjects;
 using TornTools.Core.Enums;
@@ -34,9 +36,10 @@ public class QueueItemRepository(
   {
     var items = itemDtos.ToList();
 
-    // Assign interleaved QueueIndex: withinGroupIndex * typeCount + (int)callType.
-    // This ensures TML and WBL (and any future call types) alternate in the dequeue
-    // order without any change to this method when new ApiCallType values are added.
+    // Assign QueueIndex so items within each call type are ordered by position in the
+    // input list (profitable-first, then most-stale-first). The formula produces an
+    // ascending sequence for every call type; cross-type ordering is irrelevant because
+    // each processor filters by its own call_type before ordering by queue_index.
     var typeCount = Enum.GetValues<ApiCallType>().Length;
     var groupCounters = new Dictionary<ApiCallType, int>();
     foreach (var item in items)
@@ -60,46 +63,74 @@ public class QueueItemRepository(
     }
   }
 
-  public async Task<QueueItemDto?> GetNextQueueItemAsync(CancellationToken stoppingToken)
+  // Atomically claims the next eligible queue item of a given call type using
+  // SELECT FOR UPDATE SKIP LOCKED. Each processor type only claims its own rows,
+  // so TornMarketsProcessor and Weav3rBazaarsProcessor never contend with each other.
+  private const string ClaimNextItemSql = """
+    UPDATE public.queue_items
+    SET item_status = 'InProgress'
+    WHERE id = (
+        SELECT id
+        FROM public.queue_items
+        WHERE item_status = 'Pending'
+          AND call_type = @callType
+          AND (next_attempt_at IS NULL OR next_attempt_at <= NOW())
+        ORDER BY queue_index
+        FOR UPDATE SKIP LOCKED
+        LIMIT 1
+    )
+    RETURNING
+        id, call_type, endpoint_url, http_method, headers_json::text, payload_json::text,
+        item_status, attempts, created_at, last_attempt_at, next_attempt_at,
+        processed_at, queue_index;
+    """;
+
+  public async Task<QueueItemDto?> GetNextQueueItemAsync(ApiCallType callType, CancellationToken stoppingToken)
   {
-    var now = DateTime.UtcNow;
-
-    // Find a candidate (oldest pending whose NextAttemptAt is due or null)
-    var queueItem = await DbContext.QueueItems
-        .Where(q => q.ItemStatus == nameof(QueueStatus.Pending) &&
-                   (q.NextAttemptAt == null || q.NextAttemptAt <= now))
-        .OrderBy(q => q.QueueIndex)
-        .FirstOrDefaultAsync(stoppingToken);
-
-    if (queueItem is null)
-    {
-      return null;
-    }
-
-    // Attempt to "claim" the item by moving it to InProgress with a concurrency check
-    queueItem.ItemStatus = nameof(QueueStatus.InProgress);
-
+    await DbContext.Database.OpenConnectionAsync(stoppingToken);
     try
     {
-      await DbContext.SaveChangesAsync(stoppingToken); // if someone else grabbed it, this will fail later via concurrency
-    }
-    catch (DbUpdateConcurrencyException)
-    {
-      // Another worker took it.
-      // Detach the stale entity and return null so the processor retries next tick.
-      Logger.LogDebug("Concurrency claim failed for {QueueItem} {Id}. Retrying.", nameof(QueueItemDto), queueItem.Id);
-      DbContext.Entry(queueItem).State = EntityState.Detached;
+      var connection = (NpgsqlConnection)DbContext.Database.GetDbConnection();
+      await using var cmd = new NpgsqlCommand(ClaimNextItemSql, connection);
+      cmd.Parameters.AddWithValue("callType", callType.ToString());
+      await using var reader = await cmd.ExecuteReaderAsync(stoppingToken);
+
+      if (!await reader.ReadAsync(stoppingToken))
+        return null;
+
+      var headersJson = reader.IsDBNull(4) ? null : reader.GetString(4);
+      var payloadJson = reader.IsDBNull(5) ? null : reader.GetString(5);
+
       return new QueueItemDto
       {
-        Id = null,
-        CallType = ApiCallType.Ignore,
-        EndpointUrl = string.Empty,
-        HttpMethod = null,
-        ItemStatus = nameof(QueueStatus.Failed),
+        Id = reader.GetGuid(0),
+        CallType = Enum.Parse<ApiCallType>(reader.GetString(1)),
+        EndpointUrl = reader.GetString(2),
+        HttpMethod = reader.GetString(3),
+        HeadersJson = headersJson is null ? null
+            : JsonSerializer.Deserialize<Dictionary<string, string>>(headersJson),
+        PayloadJson = payloadJson is null ? null
+            : JsonSerializer.Deserialize<Dictionary<string, string>>(payloadJson),
+        ItemStatus = reader.GetString(6),
+        Attempts = reader.GetInt32(7),
+        CreatedAt = reader.GetFieldValue<DateTimeOffset>(8),
+        LastAttemptAt = reader.IsDBNull(9) ? null : reader.GetFieldValue<DateTimeOffset>(9),
+        NextAttemptAt = reader.IsDBNull(10) ? null : reader.GetFieldValue<DateTimeOffset>(10),
+        ProcessedAt = reader.IsDBNull(11) ? null : reader.GetFieldValue<DateTimeOffset>(11),
+        QueueIndex = reader.GetInt64(12),
       };
     }
+    finally
+    {
+      await DbContext.Database.CloseConnectionAsync();
+    }
+  }
 
-    return queueItem.AsDto();
+  public Task<bool> HasInProgressItemsAsync(ApiCallType callType, CancellationToken stoppingToken)
+  {
+    return DbContext.QueueItems
+        .AnyAsync(q => q.ItemStatus == nameof(QueueStatus.InProgress)
+                    && q.CallType == callType.ToString(), stoppingToken);
   }
 
   public async Task<QueueItemDto> IncrementQueueItemAttemptsAsync(Guid id, CancellationToken stoppingToken)
@@ -143,15 +174,47 @@ public class QueueItemRepository(
     while (true)
     {
       var items = await DbContext.QueueItems
-          .Where(q => q.ItemStatus != nameof(QueueStatus.Failed))
+          .Where(q => q.ItemStatus == nameof(QueueStatus.Pending))
           .OrderBy(q => q.QueueIndex)
           .Take(DatabaseConstants.BulkUpdateSize)
           .ToListAsync(stoppingToken);
 
-      if (items.Count == 0)
-      {
-        break;
-      }
+      if (items.Count == 0) break;
+
+      DbContext.QueueItems.RemoveRange(items);
+      await DbContext.SaveChangesAsync(stoppingToken);
+    }
+  }
+
+  public async Task RemoveQueueItemsAsync(ApiCallType callType, CancellationToken stoppingToken)
+  {
+    var callTypeStr = callType.ToString();
+    while (true)
+    {
+      var items = await DbContext.QueueItems
+          .Where(q => q.ItemStatus == nameof(QueueStatus.Pending)
+                   && q.CallType == callTypeStr)
+          .OrderBy(q => q.QueueIndex)
+          .Take(DatabaseConstants.BulkUpdateSize)
+          .ToListAsync(stoppingToken);
+
+      if (items.Count == 0) break;
+
+      DbContext.QueueItems.RemoveRange(items);
+      await DbContext.SaveChangesAsync(stoppingToken);
+    }
+  }
+
+  public async Task RemoveInProgressItemsAsync(CancellationToken stoppingToken)
+  {
+    while (true)
+    {
+      var items = await DbContext.QueueItems
+          .Where(q => q.ItemStatus == nameof(QueueStatus.InProgress))
+          .Take(DatabaseConstants.BulkUpdateSize)
+          .ToListAsync(stoppingToken);
+
+      if (items.Count == 0) break;
 
       DbContext.QueueItems.RemoveRange(items);
       await DbContext.SaveChangesAsync(stoppingToken);
