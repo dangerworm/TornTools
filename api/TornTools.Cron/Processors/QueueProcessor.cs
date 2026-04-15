@@ -55,14 +55,18 @@ public class QueueProcessor(
 
           if (queueItem?.Id is null)
           {
-            // Queue is empty (or all items are InProgress/Failed) — repopulate.
-            // Only one worker does this at a time; others wait briefly and retry.
+            // GetNextQueueItem returns null when there are no Pending items — either because
+            // other workers still hold InProgress rows, or the queue is genuinely exhausted.
+            // Only repopulate once all in-flight work has landed; otherwise just wait.
             if (await _repopulateLock.WaitAsync(0, stoppingToken))
             {
               try
               {
-                await databaseService.RemoveQueueItemsAsync(stoppingToken);
-                await databaseService.PopulateQueueWithMarketAndWeav3rItemsOfInterest(stoppingToken);
+                if (!await databaseService.HasInProgressItems(stoppingToken))
+                {
+                  await databaseService.RemoveQueueItemsAsync(stoppingToken);
+                  await databaseService.PopulateQueueWithMarketAndWeav3rItemsOfInterest(stoppingToken);
+                }
               }
               finally
               {
@@ -149,18 +153,20 @@ public class QueueProcessor(
       if (queueItem?.CallType == ApiCallType.TornMarketListings)
       {
         var apiKeyCount = await databaseService.GetApiKeyCountAsync(stoppingToken);
-        delayMilliseconds = CalculateDelayBetweenCallsMilliseconds(tornApiCallerOptions.MaxCallsPerMinute, apiKeyCount);
+        delayMilliseconds = CalculateDelayBetweenCallsMilliseconds(tornApiCallerOptions.MaxCallsPerMinute, apiKeyCount, _workerCount);
       }
       else if (queueItem?.CallType == ApiCallType.Weav3rBazaarListings)
       {
-        delayMilliseconds = CalculateDelayBetweenCallsMilliseconds(weav3rApiCallerOptions.MaxCallsPerMinute);
+        delayMilliseconds = CalculateDelayBetweenCallsMilliseconds(weav3rApiCallerOptions.MaxCallsPerMinute, workerCount: _workerCount);
       }
 
       await Task.Delay(TimeSpan.FromMilliseconds(delayMilliseconds), stoppingToken);
     }
   }
 
-  private static int CalculateDelayBetweenCallsMilliseconds(int maxCallsPerMinute, int apiKeyCount = 1)
+  // Each worker sleeps for (aggregate target interval × workerCount) so the combined
+  // throughput of all workers stays within the configured rate limit.
+  private static int CalculateDelayBetweenCallsMilliseconds(int maxCallsPerMinute, int apiKeyCount = 1, int workerCount = 1)
   {
     if (apiKeyCount < 1)
     {
@@ -169,7 +175,7 @@ public class QueueProcessor(
 
     var maxCallsPerMinuteReduced = (int)Math.Floor(maxCallsPerMinute * 0.8);
     var callsPerMinute = maxCallsPerMinuteReduced * apiKeyCount;
-    var delayInMilliseconds = 60000.0 / callsPerMinute;
+    var delayInMilliseconds = 60000.0 * workerCount / callsPerMinute;
     return (int)Math.Ceiling(delayInMilliseconds);
   }
 }

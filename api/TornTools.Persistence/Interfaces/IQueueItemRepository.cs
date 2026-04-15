@@ -9,6 +9,7 @@ public interface IQueueItemRepository
   Task<QueueItemDto> CreateQueueItemAsync(ApiCallType callType, string endpointUrl, CancellationToken stoppingToken);
   Task CreateQueueItemsAsync(IEnumerable<QueueItemDto> itemDtos, CancellationToken stoppingToken);
   Task<QueueItemDto?> GetNextQueueItemAsync(CancellationToken stoppingToken);
+  Task<bool> HasInProgressItemsAsync(CancellationToken stoppingToken);
   Task<QueueItemDto> IncrementQueueItemAttemptsAsync(Guid id, CancellationToken stoppingToken);
   Task<QueueItemDto> SetQueueItemCompletedAsync(Guid id, CancellationToken stoppingToken);
   Task RemoveQueueItemsAsync(CancellationToken stoppingToken);

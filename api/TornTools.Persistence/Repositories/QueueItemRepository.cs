@@ -123,6 +123,12 @@ public class QueueItemRepository(
     }
   }
 
+  public Task<bool> HasInProgressItemsAsync(CancellationToken stoppingToken)
+  {
+    return DbContext.QueueItems
+        .AnyAsync(q => q.ItemStatus == nameof(QueueStatus.InProgress), stoppingToken);
+  }
+
   public async Task<QueueItemDto> IncrementQueueItemAttemptsAsync(Guid id, CancellationToken stoppingToken)
   {
     var queueItem = await GetQueueItemByIdAsync(id, stoppingToken);
@@ -164,7 +170,7 @@ public class QueueItemRepository(
     while (true)
     {
       var items = await DbContext.QueueItems
-          .Where(q => q.ItemStatus != nameof(QueueStatus.Failed))
+          .Where(q => q.ItemStatus == nameof(QueueStatus.Pending))
           .OrderBy(q => q.QueueIndex)
           .Take(DatabaseConstants.BulkUpdateSize)
           .ToListAsync(stoppingToken);

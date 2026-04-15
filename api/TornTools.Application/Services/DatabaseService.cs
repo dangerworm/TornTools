@@ -268,6 +268,11 @@ public class DatabaseService(
     return _queueItemRepository.GetNextQueueItemAsync(stoppingToken);
   }
 
+  public Task<bool> HasInProgressItems(CancellationToken stoppingToken)
+  {
+    return _queueItemRepository.HasInProgressItemsAsync(stoppingToken);
+  }
+
   public Task<QueueItemDto> IncrementQueueItemAttempts(Guid id, CancellationToken stoppingToken)
   {
     return _queueItemRepository.IncrementQueueItemAttemptsAsync(id, stoppingToken);

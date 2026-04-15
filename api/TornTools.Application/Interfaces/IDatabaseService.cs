@@ -33,6 +33,7 @@ public interface IDatabaseService
   Task PopulateQueueWithMarketAndWeav3rItemsOfInterest(CancellationToken stoppingToken);
   Task<QueueItemDto> CreateQueueItem(ApiCallType callType, string endpointUrl, CancellationToken stoppingToken);
   Task<QueueItemDto?> GetNextQueueItem(CancellationToken stoppingToken);
+  Task<bool> HasInProgressItems(CancellationToken stoppingToken);
   Task<QueueItemDto> IncrementQueueItemAttempts(Guid id, CancellationToken stoppingToken);
   Task<QueueItemDto> SetQueueItemCompleted(Guid id, CancellationToken stoppingToken);
   Task RemoveQueueItemsAsync(CancellationToken stoppingToken);
