@@ -75,6 +75,12 @@ public abstract class QueueProcessorBase(
                   await databaseService.RemoveQueueItemsAsync(CallType, stoppingToken);
                   await RepopulateAsync(databaseService, stoppingToken);
                 }
+                else
+                {
+                  // Another worker is actively processing claimed items for this call type.
+                  // Back off briefly so idle workers don't hot-loop on dequeue/check queries.
+                  await Task.Delay(500, stoppingToken);
+                }
               }
               finally
               {
