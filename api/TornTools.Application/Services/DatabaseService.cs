@@ -189,9 +189,14 @@ public class DatabaseService(
 
     if (hasMarketChanged || hasMinimumPriceChanged)
     {
-      _logger.LogInformation(
-          "Market change detected for item {ItemId} ({Source}): minimum price {PreviousPrice} → {NewPrice}.",
-          itemId, source, previousMinimumPrice, newMinimumPrice);
+      if (hasMinimumPriceChanged)
+        _logger.LogInformation(
+            "Market change detected for item {ItemId} ({Source}): minimum price {PreviousPrice} → {NewPrice}.",
+            itemId, source, previousMinimumPrice, newMinimumPrice);
+      else
+        _logger.LogInformation(
+            "Market change detected for item {ItemId} ({Source}): listing composition changed (minimum price {Price}).",
+            itemId, source, newMinimumPrice);
 
       await CreateItemChangeLogAsync(new ItemChangeLogDto
       {
