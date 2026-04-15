@@ -45,6 +45,8 @@ public static class ServiceCollectionExtensions
 
     services.AddScoped<IDatabaseService, DatabaseService>();
 
+    services.AddSingleton<Weav3rPythonServer>();
+
     return services;
   }
 }

@@ -13,7 +13,8 @@ public static class ServiceCollectionExtensions
         .AddLocalConfiguration(configuration)
         .AddJwtConfiguration(configuration)
         .AddTornApiCallerConfiguration(configuration)
-        .AddWeav3rApiCallerConfiguration(configuration);
+        .AddWeav3rApiCallerConfiguration(configuration)
+        .AddQueueProcessorConfiguration(configuration);
   }
 
   private static IServiceCollection AddLocalConfiguration(this IServiceCollection services, IConfiguration configuration)
@@ -58,6 +59,18 @@ public static class ServiceCollectionExtensions
 
     services.AddSingleton(sp =>
         sp.GetRequiredService<IOptions<Weav3rApiCallerConfiguration>>().Value
+    );
+
+    return services;
+  }
+
+  private static IServiceCollection AddQueueProcessorConfiguration(this IServiceCollection services, IConfiguration configuration)
+  {
+    services.Configure<QueueProcessorConfiguration>(
+        configuration.GetSection(nameof(QueueProcessorConfiguration)));
+
+    services.AddSingleton(sp =>
+        sp.GetRequiredService<IOptions<QueueProcessorConfiguration>>().Value
     );
 
     return services;

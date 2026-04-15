@@ -238,7 +238,7 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
-      - name: Build self-contained Weav3r fetcher
+      - name: Build self-contained Weav3r server
         run: |
           mkdir -p /tmp/weav3r-dist
           docker run --rm \
@@ -248,16 +248,16 @@ jobs:
             bash -c "apt-get update -qq && apt-get install -y --no-install-recommends binutils && \
                      pip install --quiet --root-user-action=ignore curl_cffi pyinstaller && \
                      pyinstaller --onefile --distpath /dist \
-                       --workpath /tmp/build --specpath /tmp/spec /src/bazaar_fetch.py"
+                       --workpath /tmp/build --specpath /tmp/spec /src/bazaar_server.py"
 
       - name: Publish API
         run: dotnet publish api/TornTools.Api -c Release -o api/TornTools.Api/publish
 
-      - name: Add Weav3r fetcher to publish output
+      - name: Add Weav3r server to publish output
         run: |
           mkdir -p api/TornTools.Api/publish/Weav3rPython
-          cp /tmp/weav3r-dist/bazaar_fetch api/TornTools.Api/publish/Weav3rPython/bazaar_fetch
-          chmod +x api/TornTools.Api/publish/Weav3rPython/bazaar_fetch
+          cp /tmp/weav3r-dist/bazaar_server api/TornTools.Api/publish/Weav3rPython/bazaar_server
+          chmod +x api/TornTools.Api/publish/Weav3rPython/bazaar_server
 
       - name: Log in to Azure
         uses: azure/login@v2
