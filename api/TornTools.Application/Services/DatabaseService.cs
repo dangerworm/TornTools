@@ -235,6 +235,20 @@ public class DatabaseService(
     }
   }
 
+  private async Task PopulateQueueWithStaleTornMarketItems(CancellationToken stoppingToken)
+  {
+    var staleItems = await _itemRepository.GetStaleMarketItemIdsAsync(TimeConstants.StaleListingThresholdHours, stoppingToken);
+    var tmlItems = staleItems
+        .Where(item => item.Source == Source.Torn.ToString())
+        .Select(item => BuildTornMarketQueueItem(item.ItemId))
+        .ToList();
+
+    if (tmlItems.Count > 0)
+    {
+      await _queueItemRepository.CreateQueueItemsAsync(tmlItems, stoppingToken);
+    }
+  }
+
   public async Task PopulateQueueWithTornMarketItems(CancellationToken stoppingToken)
   {
     var minChanges = 2 * 7 * 24 / TimeConstants.StaleListingThresholdHours;
@@ -243,7 +257,7 @@ public class DatabaseService(
     if (itemIds.Count == 0)
     {
       _logger.LogInformation("No active market items found for TML; falling back to stale scan.");
-      await PopulateQueueWithStaleMarketItems(stoppingToken);
+      await PopulateQueueWithStaleTornMarketItems(stoppingToken);
       return;
     }
 
