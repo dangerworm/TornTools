@@ -60,13 +60,8 @@ export async function logout(): Promise<void> {
 
 export async function fetchItems(): Promise<Item[]> {
   const res = await fetch(URL_ITEMS, { headers: { accept: "application/json" } });
-  let data: Item[] = [];
-  try {
-    data = await res.json();
-  } catch {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  }
-  return data;
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
 export async function fetchItemPriceHistory(
@@ -75,13 +70,8 @@ export async function fetchItemPriceHistory(
 ): Promise<HistoryResult[]> {
   const url = `${URL_ITEM_HISTORY_BASE}/${itemId}/history/price?window=${encodeURIComponent(window)}`;
   const res = await fetch(url, { headers: { accept: "application/json" } });
-  let data: HistoryResult[] = [];
-  try {
-    data = await res.json();
-  } catch {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  }
-  return data;
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
 export async function fetchItemVelocityHistory(
@@ -90,24 +80,14 @@ export async function fetchItemVelocityHistory(
 ): Promise<HistoryResult[]> {
   const url = `${URL_ITEM_HISTORY_BASE}/${itemId}/history/velocity?window=${encodeURIComponent(window)}`;
   const res = await fetch(url, { headers: { accept: "application/json" } });
-  let data: HistoryResult[] = [];
-  try {
-    data = await res.json();
-  } catch {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  }
-  return data;
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
 export async function fetchForeignStockItems(): Promise<ForeignStockItem[]> {
   const res = await fetch(URL_FOREIGN_STOCK_ITEMS, { headers: { accept: "application/json" } });
-  let data: ForeignStockItem[] = [];
-  try {
-    data = await res.json();
-  } catch {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  }
-  return data;
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
 export async function postWeav3rListings(
@@ -123,24 +103,14 @@ export async function postWeav3rListings(
 
 export async function fetchBazaarSummaries(): Promise<BazaarSummary[]> {
   const res = await fetch(URL_BAZAAR_SUMMARIES, { headers: { accept: "application/json" } });
-  let data: BazaarSummary[] = [];
-  try {
-    data = await res.json();
-  } catch {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  }
-  return data;
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
 export async function fetchProfitableListings(): Promise<ProfitableListing[]> {
   const res = await fetch(URL_PROFITABLE_LISTINGS, { headers: { accept: "application/json" } });
-  let data: ProfitableListing[] = [];
-  try {
-    data = await res.json();
-  } catch {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  }
-  return data;
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
 export async function postAddUserFavourite(
@@ -168,13 +138,8 @@ async function postToggleUserFavourite(
     body: JSON.stringify({ userId, itemId, add }),
     credentials: "include",
   });
-  let data: DotNetUserDetails | null = null;
-  try {
-    data = await res.json();
-  } catch {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  }
-  return data;
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
 export async function fetchThemes(
@@ -184,13 +149,8 @@ export async function fetchThemes(
     ? `${URL_GET_THEMES}?userId=${encodeURIComponent(userId)}`
     : URL_GET_THEMES;
   const res = await fetch(url, { headers: { accept: "application/json" } });
-  let data: ThemeDefinition[] = [];
-  try {
-    data = await res.json();
-  } catch {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  }
-  return data;
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
 export async function postThemeDefinition(
@@ -202,13 +162,8 @@ export async function postThemeDefinition(
     body: JSON.stringify(themeInput),
     credentials: "include",
   });
-  let data: ThemeDefinition | null = null;
-  try {
-    data = await res.json();
-  } catch {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  }
-  return data;
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
 export async function postUserThemeSelection(
@@ -221,11 +176,6 @@ export async function postUserThemeSelection(
     body: JSON.stringify({ userId, themeId }),
     credentials: "include",
   });
-  let data: DotNetUserDetails | null = null;
-  try {
-    data = await res.json();
-  } catch {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  }
-  return data;
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }

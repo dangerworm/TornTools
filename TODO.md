@@ -4,17 +4,6 @@
 
 ## Feature Backlog
 
-### Urgent issues
-
-At any given point the queue has a mix of TornMarketListings (TML) and Weav3rBazaarListings (WBL)
-calls. Right now those appear to be running in a sequence whereby we get a glut of TML calls,
-followed by a glut of WBL calls. This means that the resale page sometimes has 'last updated' times
-of over 30 minutes ago, and the same goes for Weav3r data. We need a way to 'flip-flop' between TML
-and WBL calls so that the server does a Torn markets all, then a Weav3r call, then a Torn markets
-call, and so on. We should also ensure that the number of TML and WBL calls is equal (or very close)
-so that we don't end up with twice as many of one than the other and cause the data for the other to
-become stale.
-
 ### Core Product Improvements
 
 - **Add page for users' items** - sortable table of inventory; show profit on bazaar/market; link to
@@ -182,30 +171,6 @@ JS on the page. A server-side proxy for key validation would prevent exposure.
 
 ## Code Quality
 
-### `LoginInputModel` is missing validation attributes
-
-**File:** `api/TornTools.Core/Models/InputModels/`
-
-Input models have no `[Required]`, `[StringLength]`, or other data annotation validators. A null
-`ApiKey` would reach the Torn API call and produce a confusing downstream error rather than a
-clean 400.
-
-### Catch blocks swallow errors silently in the frontend API layer
-
-**File:** `client/src/lib/dotnetapi.ts` (multiple functions)
-
-```ts
-try {
-  data = await res.json();
-} catch {
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-}
-```
-
-If the response is HTTP 200 but the body is not valid JSON (e.g. empty body, HTML error page), the
-catch runs, `!res.ok` is false, and the function silently returns an empty default. Wrong
-content-type responses are invisible.
-
 ### Route `[controller]/[action]` on `ApiController`
 
 **File:** `api/TornTools.Api/Controllers/ApiController.cs:9`
@@ -240,14 +205,6 @@ summaries - a God Object. Natural seams for splitting:
 Start with `IQueueService` - it has the most real logic and the private builder helpers belong there
 naturally. The rest can follow in one pass. All controllers and `ApiJobScheduler` will need
 re-injection.
-
-### `QueueProcessor` is single-threaded
-
-**File:** `api/TornTools.Cron/`
-
-The queue is processed serially. Horizontal scaling (multiple App Service instances) would cause
-duplicate processing - there's no distributed lock or claim-based ownership. Worth noting before
-scaling.
 
 ### `profitable_listings` is a plain view, not a materialised view
 
