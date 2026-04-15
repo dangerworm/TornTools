@@ -13,6 +13,9 @@ public class Weav3rBazaarsProcessor(
     Weav3rApiCallerConfiguration weav3rApiCallerConfig
 ) : QueueProcessorBase(scopeFactory, logger)
 {
+  // Weav3rPythonServer uses a SemaphoreSlim(1,1) to serialise calls to the Python process,
+  // so multiple workers do not increase Weav3r throughput — they just queue behind the lock.
+  // Keep WorkerCount = 1 unless the Python server is replaced with a concurrent alternative.
   private readonly int _workerCount = Math.Max(1, processorConfig.WorkerCount);
   private readonly Weav3rApiCallerConfiguration _weav3rApiCallerConfig = weav3rApiCallerConfig;
 

@@ -36,9 +36,10 @@ public class QueueItemRepository(
   {
     var items = itemDtos.ToList();
 
-    // Assign interleaved QueueIndex: withinGroupIndex * typeCount + (int)callType.
-    // This ensures TML and WBL (and any future call types) alternate in the dequeue
-    // order without any change to this method when new ApiCallType values are added.
+    // Assign QueueIndex so items within each call type are ordered by position in the
+    // input list (profitable-first, then most-stale-first). The formula produces an
+    // ascending sequence for every call type; cross-type ordering is irrelevant because
+    // each processor filters by its own call_type before ordering by queue_index.
     var typeCount = Enum.GetValues<ApiCallType>().Length;
     var groupCounters = new Dictionary<ApiCallType, int>();
     foreach (var item in items)
@@ -194,6 +195,22 @@ public class QueueItemRepository(
           .Where(q => q.ItemStatus == nameof(QueueStatus.Pending)
                    && q.CallType == callTypeStr)
           .OrderBy(q => q.QueueIndex)
+          .Take(DatabaseConstants.BulkUpdateSize)
+          .ToListAsync(stoppingToken);
+
+      if (items.Count == 0) break;
+
+      DbContext.QueueItems.RemoveRange(items);
+      await DbContext.SaveChangesAsync(stoppingToken);
+    }
+  }
+
+  public async Task RemoveInProgressItemsAsync(CancellationToken stoppingToken)
+  {
+    while (true)
+    {
+      var items = await DbContext.QueueItems
+          .Where(q => q.ItemStatus == nameof(QueueStatus.InProgress))
           .Take(DatabaseConstants.BulkUpdateSize)
           .ToListAsync(stoppingToken);
 

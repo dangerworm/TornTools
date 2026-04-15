@@ -14,5 +14,6 @@ public interface IQueueItemRepository
   Task<QueueItemDto> SetQueueItemCompletedAsync(Guid id, CancellationToken stoppingToken);
   Task RemoveQueueItemsAsync(CancellationToken stoppingToken);
   Task RemoveQueueItemsAsync(ApiCallType callType, CancellationToken stoppingToken);
+  Task RemoveInProgressItemsAsync(CancellationToken stoppingToken);
   Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken);
 }

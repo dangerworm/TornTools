@@ -156,6 +156,7 @@ public abstract class QueueProcessorBase(
         await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
       }
 
+      // databaseService is still in scope here — 'using var scope' ends at the bottom of the while block.
       var delayMilliseconds = 100;
       try { delayMilliseconds = await GetDelayMillisecondsAsync(databaseService, stoppingToken); }
       catch { /* keep default */ }

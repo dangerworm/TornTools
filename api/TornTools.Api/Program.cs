@@ -69,6 +69,9 @@ if (environmentConfiguration.PopulateQueue)
 
   var databaseService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
 
+  // Clear any InProgress rows left over from a previous crash, then clear Pending rows.
+  // Both sets are stale at startup; a fresh population follows below.
+  await databaseService.RemoveInProgressItemsAsync(CancellationToken.None);
   await databaseService.RemoveQueueItemsAsync(CancellationToken.None);
 
   var numberOfItems = await databaseService.GetNumberOfItemsAsync(CancellationToken.None);

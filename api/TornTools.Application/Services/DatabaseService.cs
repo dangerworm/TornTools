@@ -257,7 +257,14 @@ public class DatabaseService(
 
     if (itemIds.Count == 0)
     {
-      _logger.LogInformation("No active market items found for WBL; skipping Weav3r population.");
+      _logger.LogInformation("No active market items found for WBL; falling back to stale scan.");
+      var staleItems = await _itemRepository.GetStaleMarketItemIdsAsync(TimeConstants.StaleListingThresholdHours, stoppingToken);
+      var wblItems = staleItems
+          .Where(item => item.Source == Source.Weav3r.ToString())
+          .Select(item => BuildWeav3rQueueItem(item.ItemId))
+          .ToList();
+      if (wblItems.Count > 0)
+        await _queueItemRepository.CreateQueueItemsAsync(wblItems, stoppingToken);
       return;
     }
 
@@ -297,6 +304,11 @@ public class DatabaseService(
   public Task RemoveQueueItemsAsync(ApiCallType callType, CancellationToken stoppingToken)
   {
     return _queueItemRepository.RemoveQueueItemsAsync(callType, stoppingToken);
+  }
+
+  public Task RemoveInProgressItemsAsync(CancellationToken stoppingToken)
+  {
+    return _queueItemRepository.RemoveInProgressItemsAsync(stoppingToken);
   }
 
   public Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken)
