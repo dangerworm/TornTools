@@ -14,7 +14,8 @@ public static class ServiceCollectionExtensions
         .AddJwtConfiguration(configuration)
         .AddTornApiCallerConfiguration(configuration)
         .AddWeav3rApiCallerConfiguration(configuration)
-        .AddQueueProcessorConfiguration(configuration);
+        .AddTornMarketsProcessorConfiguration(configuration)
+        .AddWeav3rBazaarsProcessorConfiguration(configuration);
   }
 
   private static IServiceCollection AddLocalConfiguration(this IServiceCollection services, IConfiguration configuration)
@@ -64,13 +65,25 @@ public static class ServiceCollectionExtensions
     return services;
   }
 
-  private static IServiceCollection AddQueueProcessorConfiguration(this IServiceCollection services, IConfiguration configuration)
+  private static IServiceCollection AddTornMarketsProcessorConfiguration(this IServiceCollection services, IConfiguration configuration)
   {
-    services.Configure<QueueProcessorConfiguration>(
-        configuration.GetSection(nameof(QueueProcessorConfiguration)));
+    services.Configure<TornMarketsProcessorConfiguration>(
+        configuration.GetSection(nameof(TornMarketsProcessorConfiguration)));
 
     services.AddSingleton(sp =>
-        sp.GetRequiredService<IOptions<QueueProcessorConfiguration>>().Value
+        sp.GetRequiredService<IOptions<TornMarketsProcessorConfiguration>>().Value
+    );
+
+    return services;
+  }
+
+  private static IServiceCollection AddWeav3rBazaarsProcessorConfiguration(this IServiceCollection services, IConfiguration configuration)
+  {
+    services.Configure<Weav3rBazaarsProcessorConfiguration>(
+        configuration.GetSection(nameof(Weav3rBazaarsProcessorConfiguration)));
+
+    services.AddSingleton(sp =>
+        sp.GetRequiredService<IOptions<Weav3rBazaarsProcessorConfiguration>>().Value
     );
 
     return services;

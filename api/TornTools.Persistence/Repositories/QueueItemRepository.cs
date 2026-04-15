@@ -62,9 +62,9 @@ public class QueueItemRepository(
     }
   }
 
-  // Atomically claims the next eligible queue item using SELECT FOR UPDATE SKIP LOCKED.
-  // This is safe for concurrent workers: each worker locks and updates a different row,
-  // and SKIP LOCKED means workers never block each other waiting for the same row.
+  // Atomically claims the next eligible queue item of a given call type using
+  // SELECT FOR UPDATE SKIP LOCKED. Each processor type only claims its own rows,
+  // so TornMarketsProcessor and Weav3rBazaarsProcessor never contend with each other.
   private const string ClaimNextItemSql = """
     UPDATE public.queue_items
     SET item_status = 'InProgress'
@@ -72,6 +72,7 @@ public class QueueItemRepository(
         SELECT id
         FROM public.queue_items
         WHERE item_status = 'Pending'
+          AND call_type = @callType
           AND (next_attempt_at IS NULL OR next_attempt_at <= NOW())
         ORDER BY queue_index
         FOR UPDATE SKIP LOCKED
@@ -83,13 +84,14 @@ public class QueueItemRepository(
         processed_at, queue_index;
     """;
 
-  public async Task<QueueItemDto?> GetNextQueueItemAsync(CancellationToken stoppingToken)
+  public async Task<QueueItemDto?> GetNextQueueItemAsync(ApiCallType callType, CancellationToken stoppingToken)
   {
     await DbContext.Database.OpenConnectionAsync(stoppingToken);
     try
     {
       var connection = (NpgsqlConnection)DbContext.Database.GetDbConnection();
       await using var cmd = new NpgsqlCommand(ClaimNextItemSql, connection);
+      cmd.Parameters.AddWithValue("callType", callType.ToString());
       await using var reader = await cmd.ExecuteReaderAsync(stoppingToken);
 
       if (!await reader.ReadAsync(stoppingToken))
@@ -123,10 +125,11 @@ public class QueueItemRepository(
     }
   }
 
-  public Task<bool> HasInProgressItemsAsync(CancellationToken stoppingToken)
+  public Task<bool> HasInProgressItemsAsync(ApiCallType callType, CancellationToken stoppingToken)
   {
     return DbContext.QueueItems
-        .AnyAsync(q => q.ItemStatus == nameof(QueueStatus.InProgress), stoppingToken);
+        .AnyAsync(q => q.ItemStatus == nameof(QueueStatus.InProgress)
+                    && q.CallType == callType.ToString(), stoppingToken);
   }
 
   public async Task<QueueItemDto> IncrementQueueItemAttemptsAsync(Guid id, CancellationToken stoppingToken)
@@ -175,10 +178,26 @@ public class QueueItemRepository(
           .Take(DatabaseConstants.BulkUpdateSize)
           .ToListAsync(stoppingToken);
 
-      if (items.Count == 0)
-      {
-        break;
-      }
+      if (items.Count == 0) break;
+
+      DbContext.QueueItems.RemoveRange(items);
+      await DbContext.SaveChangesAsync(stoppingToken);
+    }
+  }
+
+  public async Task RemoveQueueItemsAsync(ApiCallType callType, CancellationToken stoppingToken)
+  {
+    var callTypeStr = callType.ToString();
+    while (true)
+    {
+      var items = await DbContext.QueueItems
+          .Where(q => q.ItemStatus == nameof(QueueStatus.Pending)
+                   && q.CallType == callTypeStr)
+          .OrderBy(q => q.QueueIndex)
+          .Take(DatabaseConstants.BulkUpdateSize)
+          .ToListAsync(stoppingToken);
+
+      if (items.Count == 0) break;
 
       DbContext.QueueItems.RemoveRange(items);
       await DbContext.SaveChangesAsync(stoppingToken);

@@ -30,13 +30,15 @@ public interface IDatabaseService
   Task<IEnumerable<BazaarSummaryDto>> GetBazaarSummariesAsync(CancellationToken stoppingToken);
 
   Task PopulateQueueWithStaleMarketItems(CancellationToken stoppingToken);
-  Task PopulateQueueWithMarketAndWeav3rItemsOfInterest(CancellationToken stoppingToken);
+  Task PopulateQueueWithTornMarketItems(CancellationToken stoppingToken);
+  Task PopulateQueueWithWeav3rItems(CancellationToken stoppingToken);
   Task<QueueItemDto> CreateQueueItem(ApiCallType callType, string endpointUrl, CancellationToken stoppingToken);
-  Task<QueueItemDto?> GetNextQueueItem(CancellationToken stoppingToken);
-  Task<bool> HasInProgressItems(CancellationToken stoppingToken);
+  Task<QueueItemDto?> GetNextQueueItem(ApiCallType callType, CancellationToken stoppingToken);
+  Task<bool> HasInProgressItems(ApiCallType callType, CancellationToken stoppingToken);
   Task<QueueItemDto> IncrementQueueItemAttempts(Guid id, CancellationToken stoppingToken);
   Task<QueueItemDto> SetQueueItemCompleted(Guid id, CancellationToken stoppingToken);
   Task RemoveQueueItemsAsync(CancellationToken stoppingToken);
+  Task RemoveQueueItemsAsync(ApiCallType callType, CancellationToken stoppingToken);
   Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken);
 
   Task<int> GetApiKeyCountAsync(CancellationToken stoppingToken);
