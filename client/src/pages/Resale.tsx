@@ -23,7 +23,7 @@ const PRICE_RANGE_VALUES = [
 
 const DEFAULT_MIN_PROFIT_INDEX = 3 // $50
 const DEFAULT_MAX_BUY_PRICE_INDEX = 17 // $1,000,000,000
-const DEFAULT_MAX_TIME_INDEX = 5 // 60 minutes
+const DEFAULT_MAX_TIME_INDEX = 2 // 5 minutes
 
 const loadSliderIndex = (key: string, defaultIndex: number, values: number[]): number => {
   const stored = localStorage.getItem(key)

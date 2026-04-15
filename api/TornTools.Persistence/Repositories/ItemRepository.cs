@@ -121,6 +121,56 @@ public class ItemRepository(
     return items.Select(item => item.AsDto());
   }
 
+  public async Task<IEnumerable<int>> GetActiveMarketItemsForQueueAsync(int minChangesIn7Days, CancellationToken stoppingToken)
+  {
+    var sevenDaysAgo = DateTimeOffset.UtcNow.AddDays(-7);
+
+    // Items with at least minChangesIn7Days change events across all sources in the last 7 days.
+    // Items that barely change are left to the stale-listing job instead.
+    var activeItemIds = await DbContext.ItemChangeLogSummaries
+        .AsNoTracking()
+        .Where(s => s.BucketStart >= sevenDaysAgo)
+        .GroupBy(s => s.ItemId)
+        .Where(g => g.Sum(s => s.ChangeCount) >= minChangesIn7Days)
+        .Select(g => g.Key)
+        .ToListAsync(stoppingToken);
+
+    if (activeItemIds.Count == 0)
+      return [];
+
+    var activeSet = activeItemIds.ToHashSet();
+
+    // Profitable item IDs — those appearing in the profitable_listings view recently
+    var sixHoursAgo = DateTimeOffset.UtcNow.AddHours(-6);
+    var profitableSet = (await DbContext.ProfitableListings
+        .AsNoTracking()
+        .Where(pl => pl.TornLastUpdated > sixHoursAgo || pl.Weav3rLastUpdated > sixHoursAgo)
+        .Select(pl => pl.ItemId)
+        .ToListAsync(stoppingToken))
+        .ToHashSet();
+
+    // Most-stale items should be scanned first (NULLS = never seen → highest priority)
+    var lastSeenByItem = await DbContext.Listings
+        .AsNoTracking()
+        .Where(l => activeSet.Contains(l.ItemId))
+        .GroupBy(l => l.ItemId)
+        .Select(g => new { ItemId = g.Key, LastSeen = g.Max(l => l.TimeSeen) })
+        .ToDictionaryAsync(x => x.ItemId, x => x.LastSeen, stoppingToken);
+
+    var marketItemIds = await DbContext.Items
+        .AsNoTracking()
+        .Where(i => i.ValueMarketPrice != null)
+        .Select(i => i.Id)
+        .ToListAsync(stoppingToken);
+
+    // Profitable items first, then by staleness ascending
+    return marketItemIds
+        .Where(id => activeSet.Contains(id))
+        .OrderByDescending(id => profitableSet.Contains(id))
+        .ThenBy(id => lastSeenByItem.TryGetValue(id, out var t) ? t : DateTimeOffset.MinValue)
+        .ToList();
+  }
+
   public async Task<IEnumerable<(int ItemId, string Source)>> GetStaleMarketItemIdsAsync(int thresholdHours, CancellationToken stoppingToken)
   {
     var threshold = DateTimeOffset.UtcNow.AddHours(-thresholdHours);
