@@ -34,20 +34,25 @@ public class QueueItemRepository(
   {
     var items = itemDtos.ToList();
 
+    // Assign interleaved QueueIndex: withinGroupIndex * typeCount + (int)callType.
+    // This ensures TML and WBL (and any future call types) alternate in the dequeue
+    // order without any change to this method when new ApiCallType values are added.
+    var typeCount = Enum.GetValues<ApiCallType>().Length;
+    var groupCounters = new Dictionary<ApiCallType, int>();
+    foreach (var item in items)
+    {
+      if (!groupCounters.TryGetValue(item.CallType, out var groupIndex)) groupIndex = 0;
+      item.QueueIndex = (long)groupIndex * typeCount + (int)item.CallType;
+      groupCounters[item.CallType] = groupIndex + 1;
+    }
+
     for (int i = 0; i < items.Count; i += DatabaseConstants.BulkUpdateSize)
     {
-      var batch = items
-          .OrderBy(i => i.CreatedAt)
-          .Skip(i)
-          .Take(DatabaseConstants.BulkUpdateSize)
-          .ToList();
-
-      var keys = batch.Select(b => b.Id).ToList();
+      var batch = items.Skip(i).Take(DatabaseConstants.BulkUpdateSize).ToList();
 
       foreach (var itemDto in batch)
       {
-        var newEntity = CreateEntityFromDto(itemDto);
-        DbContext.QueueItems.Add(newEntity);
+        DbContext.QueueItems.Add(CreateEntityFromDto(itemDto));
       }
 
       await DbContext.SaveChangesAsync(stoppingToken);
@@ -180,6 +185,7 @@ public class QueueItemRepository(
       HttpMethod = itemDto.HttpMethod ?? "GET",
       ItemStatus = nameof(QueueStatus.Pending),
       CreatedAt = DateTime.UtcNow,
+      QueueIndex = itemDto.QueueIndex,
       NextAttemptAt = itemDto.NextAttemptAt?.ToUniversalTime()
     };
   }

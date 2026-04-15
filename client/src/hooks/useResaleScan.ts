@@ -11,6 +11,7 @@ export function useResaleScan(opts?: ResaleScanOptions) {
 
   const [rows, setRows] = useState<ProfitableListing[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lastFetched, setLastFetched] = useState<Date | null>(null);
 
   const timerRef = useRef<number | null>(null);
 
@@ -21,6 +22,7 @@ export function useResaleScan(opts?: ResaleScanOptions) {
       fetchProfitableListings()
         .then((data: ProfitableListing[]) => {
           setRows(Array.isArray(data) ? data : []);
+          setLastFetched(new Date());
         })
         .catch(err => {
           setError(err.message);
@@ -39,5 +41,5 @@ export function useResaleScan(opts?: ResaleScanOptions) {
     };
   }, [intervalMs]);
 
-  return { rows, error };
+  return { rows, error, lastFetched };
 }

@@ -54,7 +54,7 @@ public class QueueItemEntity
   public DateTimeOffset? ProcessedAt { get; set; }
 
   [Column("queue_index")]
-  [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+  [DatabaseGenerated(DatabaseGeneratedOption.None)]
   public long QueueIndex { get; set; }
 
   public QueueItemDto AsDto()

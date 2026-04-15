@@ -1,8 +1,8 @@
 <!-- gitnexus:start -->
 
-# GitNexus - Code Intelligence
+# GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **TornTools** (1762 symbols, 4986 relationships, 113
+This project is indexed by GitNexus as **TornTools** (1723 symbols, 4940 relationships, 112
 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
@@ -18,23 +18,23 @@ execution flows). Use the GitNexus MCP tools to understand code, assess impact, 
   edits.
 - When exploring unfamiliar code, use `gitnexus_query({query: "concept"})` to find execution flows
   instead of grepping. It returns process-grouped results ranked by relevance.
-- When you need full context on a specific symbol - callers, callees, which execution flows it
-  participates in - use `gitnexus_context({name: "symbolName"})`.
+- When you need full context on a specific symbol — callers, callees, which execution flows it
+  participates in — use `gitnexus_context({name: "symbolName"})`.
 
 ## When Debugging
 
-1. `gitnexus_query({query: "<error or symptom>"})` - find execution flows related to the issue
-2. `gitnexus_context({name: "<suspect function>"})` - see all callers, callees, and process
+1. `gitnexus_query({query: "<error or symptom>"})` — find execution flows related to the issue
+2. `gitnexus_context({name: "<suspect function>"})` — see all callers, callees, and process
    participation
-3. `READ gitnexus://repo/TornTools/process/{processName}` - trace the full execution flow step by
+3. `READ gitnexus://repo/TornTools/process/{processName}` — trace the full execution flow step by
    step
-4. For regressions: `gitnexus_detect_changes({scope: "compare", base_ref: "main"})` - see what your
+4. For regressions: `gitnexus_detect_changes({scope: "compare", base_ref: "main"})` — see what your
    branch changed
 
 ## When Refactoring
 
 - **Renaming**: MUST use `gitnexus_rename({symbol_name: "old", new_name: "new", dry_run: true})`
-  first. Review the preview - graph edits are safe, text_search edits need manual review. Then run
+  first. Review the preview — graph edits are safe, text_search edits need manual review. Then run
   with `dry_run: false`.
 - **Extracting/Splitting**: MUST run `gitnexus_context({name: "target"})` to see all
   incoming/outgoing refs, then `gitnexus_impact({target: "target", direction: "upstream"})` to find
@@ -46,7 +46,7 @@ execution flows). Use the GitNexus MCP tools to understand code, assess impact, 
 
 - NEVER edit a function, class, or method without first running `gitnexus_impact` on it.
 - NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
-- NEVER rename symbols with find-and-replace - use `gitnexus_rename` which understands the call
+- NEVER rename symbols with find-and-replace — use `gitnexus_rename` which understands the call
   graph.
 - NEVER commit changes without running `gitnexus_detect_changes()` to check affected scope.
 
@@ -65,9 +65,9 @@ execution flows). Use the GitNexus MCP tools to understand code, assess impact, 
 
 | Depth | Meaning                               | Action                |
 | ----- | ------------------------------------- | --------------------- |
-| d=1   | WILL BREAK - direct callers/importers | MUST update these     |
-| d=2   | LIKELY AFFECTED - indirect deps       | Should test           |
-| d=3   | MAY NEED TESTING - transitive         | Test if critical path |
+| d=1   | WILL BREAK — direct callers/importers | MUST update these     |
+| d=2   | LIKELY AFFECTED — indirect deps       | Should test           |
+| d=3   | MAY NEED TESTING — transitive         | Test if critical path |
 
 ## Resources
 
@@ -101,7 +101,7 @@ If the index previously included embeddings, preserve them by adding `--embeddin
 npx gitnexus analyze --embeddings
 ```
 
-To check whether embeddings exist, inspect `.gitnexus/meta.json` - the `stats.embeddings` field
+To check whether embeddings exist, inspect `.gitnexus/meta.json` — the `stats.embeddings` field
 shows the count (0 means no embeddings). **Running analyze without `--embeddings` will delete any
 previously generated embeddings.**
 

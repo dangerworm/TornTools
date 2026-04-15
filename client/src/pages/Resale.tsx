@@ -1,5 +1,5 @@
 import { Alert, AlertTitle, Box, Divider, Grid, Typography } from '@mui/material'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import Loading from '../components/Loading'
 import { menuItems } from '../components/Menu'
@@ -14,6 +14,23 @@ import type { PurchaseOutlet, SaleOutlet } from '../types/markets'
 
 const VALID_PURCHASE_OUTLETS: PurchaseOutlet[] = ['city', 'bazaar', 'market']
 const VALID_SALE_OUTLETS: SaleOutlet[] = ['city', 'bazaar', 'market', 'anonymousMarket']
+
+const MINUTE_RANGE_VALUES = [1, 2, 5, 10, 30, 60, 120, 300]
+const PRICE_RANGE_VALUES = [
+  0, 1, 10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000,
+  50000000, 100000000, 500000000, 1000000000, 50000000000, 100000000000,
+]
+
+const DEFAULT_MIN_PROFIT_INDEX = 3 // $50
+const DEFAULT_MAX_BUY_PRICE_INDEX = 17 // $1,000,000,000
+const DEFAULT_MAX_TIME_INDEX = 2 // 5 minutes
+
+const loadSliderIndex = (key: string, defaultIndex: number, values: number[]): number => {
+  const stored = localStorage.getItem(key)
+  if (stored === null) return defaultIndex
+  const idx = values.indexOf(Number(stored))
+  return idx === -1 ? defaultIndex : idx
+}
 
 const disabledSaleOutlets = (purchase: PurchaseOutlet): SaleOutlet[] =>
   purchase === 'market' ? ['market', 'anonymousMarket'] : [purchase as SaleOutlet]
@@ -38,25 +55,28 @@ const loadOutlets = (): { purchaseOutlet: PurchaseOutlet; saleOutlet: SaleOutlet
 }
 
 const Resale = () => {
-  const { rows, error } = useResaleScan({ intervalMs: 5000 })
+  const { rows, error, lastFetched } = useResaleScan({ intervalMs: 5000 })
   const { dotNetUserDetails } = useUser()
 
-  const minuteRangeValues = [1, 2, 5, 10, 30, 60, 120, 300]
+  const initialMinProfitIndex = loadSliderIndex('resale:minProfit:v1', DEFAULT_MIN_PROFIT_INDEX, PRICE_RANGE_VALUES)
+  const initialMaxBuyPriceIndex = loadSliderIndex('resale:maxBuyPrice:v1', DEFAULT_MAX_BUY_PRICE_INDEX, PRICE_RANGE_VALUES)
+  const initialMaxTimeSinceLastUpdateIndex = loadSliderIndex('resale:maxTimeMinutes:v1', DEFAULT_MAX_TIME_INDEX, MINUTE_RANGE_VALUES)
 
-  const priceRangeValues = [
-    0, 1, 10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000,
-    50000000, 100000000, 500000000, 1000000000, 50000000000, 100000000000,
-  ]
-
-  const initialMinProfitIndex = 3 // 50
-  const initialMaxBuyPriceIndex = 17 // 1,000,000,000
-  const initialMaxTimeSinceLastUpdateIndex = 5 // 60 minutes
-
-  const [minProfit, setMinProfit] = useState(priceRangeValues[initialMinProfitIndex])
-  const [maxBuyPrice, setMaxBuyPrice] = useState(priceRangeValues[initialMaxBuyPriceIndex])
+  const [minProfit, setMinProfit] = useState(PRICE_RANGE_VALUES[initialMinProfitIndex])
+  const [maxBuyPrice, setMaxBuyPrice] = useState(PRICE_RANGE_VALUES[initialMaxBuyPriceIndex])
   const [maxTimeSinceLastUpdate, setMaxTimeSinceLastUpdate] = useState(
-    minuteRangeValues[initialMaxTimeSinceLastUpdateIndex],
+    MINUTE_RANGE_VALUES[initialMaxTimeSinceLastUpdateIndex],
   )
+
+  const [secondsSinceUpdate, setSecondsSinceUpdate] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!lastFetched) return
+    const update = () => setSecondsSinceUpdate(Math.floor((Date.now() - lastFetched.getTime()) / 1000))
+    update()
+    const id = window.setInterval(update, 1000)
+    return () => window.clearInterval(id)
+  }, [lastFetched])
 
   const [purchaseOutlet, setPurchaseOutlet] = useState<PurchaseOutlet>(
     () => loadOutlets().purchaseOutlet,
@@ -145,6 +165,12 @@ const Resale = () => {
         below the sell price in the city, allowing you to buy low and sell high.
       </Typography>
 
+      {secondsSinceUpdate !== null && (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Last updated {secondsSinceUpdate}s ago
+        </Typography>
+      )}
+
       <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
         Filters
       </Typography>
@@ -154,25 +180,25 @@ const Resale = () => {
           label="Minimum Profit"
           prefixUnit="$"
           suffixUnit=""
-          sliderValues={priceRangeValues}
+          sliderValues={PRICE_RANGE_VALUES}
           initialValueIndex={initialMinProfitIndex}
-          onValueChange={setMinProfit}
+          onValueChange={(v) => { setMinProfit(v); localStorage.setItem('resale:minProfit:v1', String(v)) }}
         />
         <SteppedSlider
           label="Max Buy Price"
           prefixUnit="$"
           suffixUnit=""
-          sliderValues={priceRangeValues}
+          sliderValues={PRICE_RANGE_VALUES}
           initialValueIndex={initialMaxBuyPriceIndex}
-          onValueChange={setMaxBuyPrice}
+          onValueChange={(v) => { setMaxBuyPrice(v); localStorage.setItem('resale:maxBuyPrice:v1', String(v)) }}
         />
         <SteppedSlider
           label="Max Updated Time"
           prefixUnit=""
           suffixUnit="minute"
-          sliderValues={minuteRangeValues}
+          sliderValues={MINUTE_RANGE_VALUES}
           initialValueIndex={initialMaxTimeSinceLastUpdateIndex}
-          onValueChange={setMaxTimeSinceLastUpdate}
+          onValueChange={(v) => { setMaxTimeSinceLastUpdate(v); localStorage.setItem('resale:maxTimeMinutes:v1', String(v)) }}
         />
       </Grid>
 

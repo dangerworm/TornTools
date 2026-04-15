@@ -237,53 +237,23 @@ public class DatabaseService(
 
   public async Task PopulateQueueWithMarketAndWeav3rItemsOfInterest(CancellationToken stoppingToken)
   {
-    // Anything appearing in the profitable listings should be prioritized.
-    // Anything that has changed recently will also be useful to scan.
-    var (profitableItemIds, groupedChanges) = await GetItemChangeData(stoppingToken);
+    // Items that barely changed in the last 7 days are left to the stale-listing job.
+    // The threshold formula ensures the stale job will cover them before they get too old.
+    var minChanges = 2 * 7 * 24 / TimeConstants.StaleListingThresholdHours;
+    var itemIds = (await _itemRepository.GetActiveMarketItemsForQueueAsync(minChanges, stoppingToken)).ToList();
 
-    if (profitableItemIds.Count == 0 && groupedChanges.Count == 0)
+    if (itemIds.Count == 0)
     {
-      _logger.LogInformation("No items to prioritise for queue population.");
+      _logger.LogInformation("No active market items found; falling back to stale scan.");
       await PopulateQueueWithStaleMarketItems(stoppingToken);
       return;
     }
 
-    var profitableMarketQueueItems = profitableItemIds
-      .Select(BuildTornMarketQueueItem)
-      .ToList();
-
-    var profitableWeav3rQueueItems = profitableItemIds
-      .Select(BuildWeav3rQueueItem)
-      .ToList();
-
-    // Build the final queue, starting with the most frequently changing markets.
-    // Repeat calls for the profitable and grouped items, with small batches of
-    // left over items in between to ensure they get processed eventually.
-    var queueItems = new List<QueueItemDto>();
-    if (groupedChanges.Count != 0)
-    {
-      var maxWeight = groupedChanges.Values.Max();
-      for (var weight = maxWeight; weight > 0; weight--)
-      {
-        // Ensure that markets which change regularly are checked most often
-        var itemsToProcess = groupedChanges
-            .Where(kv => kv.Value >= weight)
-            .Select(kv => kv.Key);
-
-        queueItems.AddRange(BuildTornMarketQueueItems(itemsToProcess));
-        queueItems.AddRange(BuildWeav3rQueueItems(itemsToProcess));
-
-        // Include anything appearing in the profitable listings
-        // so we don't leave old entries in the list for too long
-        queueItems.AddRange(profitableMarketQueueItems);
-        queueItems.AddRange(profitableWeav3rQueueItems);
-      }
-    }
-    else
-    {
-      queueItems.AddRange(profitableMarketQueueItems);
-      queueItems.AddRange(profitableWeav3rQueueItems);
-    }
+    // TML and WBL items for the same ID are interleaved by QueueIndex in CreateQueueItemsAsync.
+    // Within each call type, profitable items come first (sorted by GetActiveMarketItemsForQueueAsync).
+    var queueItems = new List<QueueItemDto>(itemIds.Count * 2);
+    queueItems.AddRange(BuildTornMarketQueueItems(itemIds));
+    queueItems.AddRange(BuildWeav3rQueueItems(itemIds));
 
     await _queueItemRepository.CreateQueueItemsAsync(queueItems, stoppingToken);
   }
@@ -390,29 +360,6 @@ public class DatabaseService(
   public Task<UserDto?> UpdateUserPreferredThemeAsync(UserThemeSelectionInputModel inputModel, CancellationToken stoppingToken)
   {
     return _userRepository.UpdateUserPreferredThemeAsync(inputModel.UserId, inputModel.ThemeId, stoppingToken);
-  }
-
-  private async Task<(HashSet<int> profitableItemIds, Dictionary<int, int> groupedChanges)> GetItemChangeData(CancellationToken stoppingToken)
-  {
-    var profitableItems = await _itemRepository.GetProfitableItemsAsync(stoppingToken);
-    var profitableItemIds = profitableItems
-        .Where(pi => pi.CitySellPrice.HasValue && pi.TornCityMinPrice.HasValue
-            && pi.CitySellPrice.Value - pi.TornCityMinPrice.Value >= QueueProcessorConstants.MinProfitToPrioritise)
-        .Select(pi => pi.ItemId)
-        .ToHashSet();
-
-    var changeLogs = await _itemChangeLogRepository.GetRecentItemChangeLogsAsync(TimeConstants.TimeWindowHours, stoppingToken);
-    var groupedChanges = changeLogs
-        .Where(log => !profitableItemIds.Contains(log.ItemId))
-        .GroupBy(log => log.ItemId)
-        .Select(group => new
-        {
-          ItemId = group.Key,
-          Weight = (int)Math.Ceiling(group.Count() / QueueProcessorConstants.GroupDivisor)
-        })
-        .ToDictionary(x => x.ItemId, x => x.Weight);
-
-    return (profitableItemIds, groupedChanges);
   }
 
   private static IEnumerable<QueueItemDto> BuildTornMarketQueueItems(IEnumerable<int> itemIds)

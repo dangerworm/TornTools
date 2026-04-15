@@ -91,8 +91,7 @@ public class TornToolsDbContext(
       e.HasIndex(x => new { x.ItemStatus, x.NextAttemptAt, x.CreatedAt });
 
       e.Property(x => x.QueueIndex)
-             .ValueGeneratedOnAdd()
-             .UseIdentityAlwaysColumn();
+             .ValueGeneratedNever();
     });
 
     modelBuilder.Entity<UserEntity>(e =>
