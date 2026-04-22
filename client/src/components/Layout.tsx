@@ -40,6 +40,12 @@ export default function Layout() {
           {menuItems
             .filter((item) => !item.requiresItems || (item.requiresItems && items))
             .filter((item) => !item.requiresLogin || (item.requiresLogin && dotNetUserDetails))
+            .filter(
+              (item) =>
+                item.requiresAccessLevel == null ||
+                (dotNetUserDetails != null &&
+                  (dotNetUserDetails.accessLevel ?? 1) >= item.requiresAccessLevel),
+            )
             .map((item) => {
               if (item.requiresItems && (!items || items.length === 0)) return null
 
@@ -50,6 +56,11 @@ export default function Layout() {
                   onClick={() => setMobileOpen(false)}
                   selected={isActive(item.address)}
                   to={item.address}
+                  sx={(theme) => ({
+                    borderLeft: `3px solid ${isActive(item.address) ? theme.palette.primary.main : 'transparent'}`,
+                    pl: '13px',
+                    transition: 'border-color 0.2s',
+                  })}
                 >
                   <ListItemIcon>{item.icon}</ListItemIcon>
                   <ListItemText primary={item.title} />

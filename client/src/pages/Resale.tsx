@@ -60,9 +60,18 @@ const Resale = () => {
 
   // useMemo with [] ensures localStorage is read once on mount, not on every render.
   // The indices are also passed as initialValueIndex props to SteppedSlider (mount-only).
-  const initialMinProfitIndex = useMemo(() => loadSliderIndex('resale:minProfit:v1', DEFAULT_MIN_PROFIT_INDEX, PRICE_RANGE_VALUES), [])
-  const initialMaxBuyPriceIndex = useMemo(() => loadSliderIndex('resale:maxBuyPrice:v1', DEFAULT_MAX_BUY_PRICE_INDEX, PRICE_RANGE_VALUES), [])
-  const initialMaxTimeSinceLastUpdateIndex = useMemo(() => loadSliderIndex('resale:maxTimeMinutes:v1', DEFAULT_MAX_TIME_INDEX, MINUTE_RANGE_VALUES), [])
+  const initialMinProfitIndex = useMemo(
+    () => loadSliderIndex('resale:minProfit:v1', DEFAULT_MIN_PROFIT_INDEX, PRICE_RANGE_VALUES),
+    [],
+  )
+  const initialMaxBuyPriceIndex = useMemo(
+    () => loadSliderIndex('resale:maxBuyPrice:v1', DEFAULT_MAX_BUY_PRICE_INDEX, PRICE_RANGE_VALUES),
+    [],
+  )
+  const initialMaxTimeSinceLastUpdateIndex = useMemo(
+    () => loadSliderIndex('resale:maxTimeMinutes:v1', DEFAULT_MAX_TIME_INDEX, MINUTE_RANGE_VALUES),
+    [],
+  )
 
   const [minProfit, setMinProfit] = useState(PRICE_RANGE_VALUES[initialMinProfitIndex])
   const [maxBuyPrice, setMaxBuyPrice] = useState(PRICE_RANGE_VALUES[initialMaxBuyPriceIndex])
@@ -74,7 +83,8 @@ const Resale = () => {
 
   useEffect(() => {
     if (!lastFetched) return
-    const update = () => setSecondsSinceUpdate(Math.floor((Date.now() - lastFetched.getTime()) / 1000))
+    const update = () =>
+      setSecondsSinceUpdate(Math.floor((Date.now() - lastFetched.getTime()) / 1000))
     update()
     const id = window.setInterval(update, 1000)
     return () => window.clearInterval(id)
@@ -139,7 +149,7 @@ const Resale = () => {
             <Link to="/signin">Sign in here</Link>.
           </Typography>
         </Alert>
-        <Alert severity="info">
+        <Alert severity="info" sx={{ mb: 2 }}>
           <AlertTitle>Why is login required?</AlertTitle>
           <Typography variant="body2" gutterBottom>
             This tool requires access to Torn's market data, and to get that I have to scan the
@@ -184,7 +194,10 @@ const Resale = () => {
           suffixUnit=""
           sliderValues={PRICE_RANGE_VALUES}
           initialValueIndex={initialMinProfitIndex}
-          onValueChange={(v) => { setMinProfit(v); localStorage.setItem('resale:minProfit:v1', String(v)) }}
+          onValueChange={(v) => {
+            setMinProfit(v)
+            localStorage.setItem('resale:minProfit:v1', String(v))
+          }}
         />
         <SteppedSlider
           label="Max Buy Price"
@@ -192,7 +205,10 @@ const Resale = () => {
           suffixUnit=""
           sliderValues={PRICE_RANGE_VALUES}
           initialValueIndex={initialMaxBuyPriceIndex}
-          onValueChange={(v) => { setMaxBuyPrice(v); localStorage.setItem('resale:maxBuyPrice:v1', String(v)) }}
+          onValueChange={(v) => {
+            setMaxBuyPrice(v)
+            localStorage.setItem('resale:maxBuyPrice:v1', String(v))
+          }}
         />
         <SteppedSlider
           label="Max Updated Time"
@@ -200,7 +216,10 @@ const Resale = () => {
           suffixUnit="minute"
           sliderValues={MINUTE_RANGE_VALUES}
           initialValueIndex={initialMaxTimeSinceLastUpdateIndex}
-          onValueChange={(v) => { setMaxTimeSinceLastUpdate(v); localStorage.setItem('resale:maxTimeMinutes:v1', String(v)) }}
+          onValueChange={(v) => {
+            setMaxTimeSinceLastUpdate(v)
+            localStorage.setItem('resale:maxTimeMinutes:v1', String(v))
+          }}
         />
       </Grid>
 

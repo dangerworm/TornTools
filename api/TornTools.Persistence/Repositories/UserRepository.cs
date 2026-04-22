@@ -94,7 +94,8 @@ public class UserRepository(
         KeyAvailable = true,
         Name = userDto.Name,
         Gender = userDto.Gender,
-        Level = userDto.Level
+        Level = userDto.Level,
+        AccessLevel = userDto.AccessLevel
       };
 
       DbContext.Users.Add(userEntity);
@@ -103,6 +104,7 @@ public class UserRepository(
     {
       userEntity.Name = userDto.Name;
       userEntity.Gender = userDto.Gender;
+      userEntity.AccessLevel = userDto.AccessLevel;
 
       if (!string.Equals(userEntity.ApiKey, userDto.ApiKey, StringComparison.Ordinal))
       {

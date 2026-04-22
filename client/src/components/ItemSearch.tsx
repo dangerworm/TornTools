@@ -26,7 +26,7 @@ const ItemSearch = () => {
       slotProps={{
         listbox: {
           sx: {
-            bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#333' : '#fff'),
+            bgcolor: 'background.paper',
             borderRadius: 1,
             m: 0,
             p: 0,
@@ -35,11 +35,11 @@ const ItemSearch = () => {
         paper: {
           sx: (theme) => ({
             bgcolor: theme.palette.background.paper,
-            border: `1px solid ${theme.palette.mode === 'dark' ? '#555' : '#ccc'}`,
+            border: `1px solid ${theme.palette.divider}`,
             color: theme.palette.text.primary,
             m: 0,
             p: 0,
-            scrollbarColor: theme.palette.mode === 'dark' ? '#555 #333' : '#ccc #fff',
+            scrollbarColor: `${theme.palette.divider} ${theme.palette.background.paper}`,
           }),
         },
       }}
@@ -62,7 +62,8 @@ const ItemSearch = () => {
         >
           <Box
             sx={{
-              border: '1px solid #888',
+              border: '1px solid',
+              borderColor: 'divider',
               borderRadius: 2,
               display: 'flex',
               justifyContent: 'center',

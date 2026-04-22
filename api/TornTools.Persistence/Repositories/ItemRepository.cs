@@ -103,7 +103,7 @@ public class ItemRepository(
   public async Task<IEnumerable<ProfitableListingDto>> GetProfitableItemsAsync(CancellationToken stoppingToken)
   {
     var items = await DbContext.ProfitableListings
-        .AsNoTracking() 
+        .AsNoTracking()
         .Where(listing => listing.TornLastUpdated > DateTimeOffset.UtcNow.AddHours(-6) ||
                           listing.Weav3rLastUpdated > DateTimeOffset.UtcNow.AddHours(-6))
         .ToListAsync(stoppingToken);
@@ -140,7 +140,7 @@ public class ItemRepository(
 
     var activeSet = activeItemIds.ToHashSet();
 
-    // Profitable item IDs — those appearing in the profitable_listings view recently
+    // Profitable item IDs - those appearing in the profitable_listings view recently
     var sixHoursAgo = DateTimeOffset.UtcNow.AddHours(-6);
     var profitableSet = (await DbContext.ProfitableListings
         .AsNoTracking()

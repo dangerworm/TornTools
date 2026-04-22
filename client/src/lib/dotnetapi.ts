@@ -10,6 +10,7 @@ export interface DotNetUserDetails {
   id: number;
   name: string;
   level: number;
+  accessLevel: number;
   gender: string;
   favouriteItems: number[];
   preferredThemeId?: number | null;

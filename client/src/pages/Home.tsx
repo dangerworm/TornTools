@@ -1,10 +1,11 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router'
-import { Alert, AlertTitle, Card, CardContent, Divider, Grid, Typography } from '@mui/material'
+import { Alert, AlertTitle, Box, Card, CardContent, Divider, Grid, Typography } from '@mui/material'
+import { motion } from 'framer-motion'
 import Loading from '../components/Loading'
 import { menuItems } from '../components/Menu'
 import { useItems } from '../hooks/useItems'
 import { useUser } from '../hooks/useUser'
-import { useMemo } from 'react'
 
 const Home = () => {
   const { loading, items } = useItems()
@@ -21,7 +22,7 @@ const Home = () => {
 
   return (
     <>
-      <Typography variant="h3" gutterBottom className="passero-one">
+      <Typography variant="h3" gutterBottom sx={{ color: 'primary.main' }}>
         dangerworm&apos;s Tools
       </Typography>
 
@@ -58,18 +59,38 @@ const Home = () => {
           )}
 
           <Grid container spacing={2} sx={{ mt: 2 }}>
-            {visibleMenuItems.map((item) => (
+            {visibleMenuItems.map((item, index) => (
               <Grid key={item.address} size={{ xs: 12, md: 4 }}>
-                <Card variant="outlined" sx={{ height: '100%' }}>
-                  <CardContent>
-                    <Typography variant="h5" gutterBottom>
-                      <Link to={item.address} className="no-underline">
-                        {item.title}
-                      </Link>
-                    </Typography>
-                    <Typography variant="body1">{item.subTitle}</Typography>
-                  </CardContent>
-                </Card>
+                <motion.div
+                  initial={{ opacity: 0, y: 18 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.32, delay: index * 0.07, ease: 'easeOut' }}
+                  style={{ height: '100%' }}
+                >
+                  <Card
+                    variant="outlined"
+                    sx={{
+                      height: '100%',
+                      transition: 'border-color 0.2s, box-shadow 0.2s',
+                      '&:hover': {
+                        borderColor: 'primary.main',
+                        boxShadow: (theme) => `0 2px 18px ${theme.palette.primary.main}30`,
+                      },
+                    }}
+                  >
+                    <CardContent>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                        <Box sx={{ color: 'primary.main', display: 'flex' }}>{item.icon}</Box>
+                        <Typography variant="h5" sx={{ mb: 0 }}>
+                          <Link to={item.address} className="no-underline">
+                            {item.title}
+                          </Link>
+                        </Typography>
+                      </Box>
+                      <Typography variant="body1">{item.subTitle}</Typography>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               </Grid>
             ))}
           </Grid>

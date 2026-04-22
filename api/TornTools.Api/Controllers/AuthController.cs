@@ -70,6 +70,8 @@ public class AuthController(
     if (keyPayload?.Error is not null || keyPayload?.Info is null)
       return UnauthorizedAndClearCookie();
 
+    var accessLevel = keyPayload.Info.Access?.Level ?? 1;
+
     // Get name, level, gender, and the authoritative user ID
     string userBasicContent;
     try
@@ -99,6 +101,7 @@ public class AuthController(
     var userDetails = new UserDetailsInputModel
     {
       ApiKey = model.ApiKey,
+      AccessLevel = accessLevel,
       UserProfile = new UserProfileInputModel
       {
         Id = profile.Id,
@@ -154,6 +157,7 @@ public class AuthController(
     id = user.Id,
     name = user.Name,
     level = user.Level,
+    accessLevel = user.AccessLevel,
     gender = user.Gender,
     favouriteItems = user.FavouriteItems,
     preferredThemeId = user.PreferredThemeId,

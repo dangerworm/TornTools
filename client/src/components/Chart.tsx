@@ -153,11 +153,11 @@ const Chart = ({
       <div
         style={{
           padding: '4px 8px',
-          background: 'rgba(0,0,0,0.85)',
-          border: '1px solid #444',
+          background: theme.palette.background.paper,
+          border: `1px solid ${theme.palette.divider}`,
           borderRadius: 6,
           fontSize: '0.8rem',
-          color: '#fff',
+          color: theme.palette.text.primary,
         }}
       >
         <div>Time: {formatTimestamp(label!)}</div>

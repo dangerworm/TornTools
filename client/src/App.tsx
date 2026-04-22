@@ -13,6 +13,7 @@ import CityMarkets from './pages/CityMarkets'
 import ForeignMarkets from './pages/ForeignMarkets'
 import ItemDetails from './pages/ItemDetails'
 import Resale from './pages/Resale'
+import BazaarPriceLookup from './pages/BazaarPriceLookup'
 import Time from './pages/Time'
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
         <Route path="/foreign-markets" element={<ForeignMarkets />} />
         <Route path="/item/:itemId" element={<ItemDetails />} />
         <Route path="/resale" element={<Resale />} />
+        <Route path="/bazaar-prices" element={<BazaarPriceLookup />} />
         <Route path="/time" element={<Time />} />
 
         <Route path="*" element={<h1>Not Found</h1>} />
