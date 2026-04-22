@@ -16,13 +16,12 @@ permanent Drawer paper `position: relative` with `overflow: auto`, main Box `ove
 page itself doesn't scroll — only the panes inside it do. This is worth remembering as a canonical
 MUI sidebar layout.
 
-**Drew caught the formula ambiguity without being asked.** The suggested-price formula as written
+**Flag formula ambiguities before implementing.** The suggested-price formula as written
 (`(10 * Math.floor(price / 10) - 1) + 9`) algebraically simplifies to
 `10 * Math.floor(price/10) + 8`, which prices _above_ the market minimum in every case. The intended
 reading is clearly `10 * (Math.floor(price / 10) - 1) + 9` — highest X9 below the current $10 floor.
-I flagged the discrepancy before implementing, which was the right call. Drew said nothing about it,
-which means either he agreed silently or he didn't notice — either way, the implementation is
-correct.
+I flagged this before implementing and explained the reasoning; Drew confirmed by moving forward.
+When a formula looks wrong for its use case, say so explicitly rather than implementing it literally.
 
 **The Market Overview feature required honest scoping.** Drew initially floated a "total supply over
 time" metric, then correctly talked himself out of it: only 50 listings visible, bazaars invisible,
@@ -31,9 +30,10 @@ observable — price trend vs weekly average, change frequency, saturation signa
 "Experimental". That's the right instinct for a feature built on incomplete data: don't oversell,
 don't hide the caveats.
 
-**The sparklines showed "—" locally because the Materials items haven't had price changes in 24h (or
-1w).** This is correct behaviour — the data is genuinely absent. Drew knew this and moved to deploy
-rather than trying to fake it. The feature will work on prod where there's real history.
+**The sparklines showed "—" locally because the Materials items haven't had price changes tracked in
+the past week.** This is correct behaviour — the data is genuinely absent. Drew recognised this
+immediately and moved to deploy rather than chasing phantom data. The feature will work on prod where
+real history exists.
 
 **GitNexus doesn't index the TypeScript frontend.** Impact analysis on frontend symbols returns LOW
 with 0 upstreams because those symbols aren't in the graph. This is expected — just note the
