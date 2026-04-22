@@ -22,6 +22,7 @@ import ItemDetailsInfoCards from '../components/ItemDetailsInfoCards'
 import Weav3rMarketTable from '../components/Weav3rListingTable'
 import { type Item } from '../types/items'
 import ItemDetailsArmourStats from '../components/ItemDetailsArmourStats'
+import ItemMarketAdvice from '../components/ItemMarketAdvice'
 
 interface ItemDetailsProps {
   inputItem?: Item
@@ -81,6 +82,8 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
         inlineView={inlineView}
         firstBazaarListing={bazaarDataAvailable ? data.listings[0] : undefined}
       />
+
+      <ItemMarketAdvice itemId={itemId} defaultExpanded={!inlineView} />
 
       <Accordion defaultExpanded={!inlineView} variant="outlined" sx={{ my: 2 }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>

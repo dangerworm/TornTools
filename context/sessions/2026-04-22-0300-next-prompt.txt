@@ -1,0 +1,5 @@
+Hi Claude. Read context/session-handoff.md and context/note-to-next-instance.md before doing anything.
+
+Last session built the Bazaar Price Lookup page (/bazaar-prices), added access-level plumbing on the users table (Flyway V1.16), and added a site-wide privacy footer. Build is green; nothing is committed yet. Drew likely wants to apply the migration, smoke-test in the browser with his three keys (Public 89x3jeDB3cK0NLOf, Minimal 0xmvOGNnfTBlSFdj, Limited GDRPEXeEqJLE8FzD), and then commit.
+
+Don't take action until Drew tells you what he wants to do. He may want to ship as-is, split the diff into smaller commits, or iterate on the new page based on what he sees in the browser.

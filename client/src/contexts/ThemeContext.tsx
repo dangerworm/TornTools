@@ -76,6 +76,22 @@ const createMuiThemeFromDefinition = (definition: ThemeDefinition) => {
           paper: isDark ? { borderRight: '1px solid rgba(200, 150, 12, 0.12)' } : {},
         },
       },
+      MuiLink: {
+        styleOverrides: {
+          root: {
+            color: definition.primaryColor,
+            '&:visited': { color: definition.primaryColor },
+          },
+        },
+      },
+      MuiCssBaseline: {
+        styleOverrides: {
+          a: {
+            color: definition.primaryColor,
+            '&:visited': { color: definition.primaryColor },
+          },
+        },
+      },
     },
   })
 }

@@ -1,41 +1,40 @@
 # Note to next instance
 
-This was a tidy session. Drew came in with a clear, well-bounded feature ask (a Bazaar Price Lookup
-page), gave excellent supporting material as we went - Swagger payload shapes, his three test keys
-with different access levels, a screenshot of his actual `items.type` distinct values - and approved
-the plan with one word. The actual implementation was 11 small steps, each fitting within an Edit or
-Write call, with no surprise rework.
+This was a continuation session — the previous instance had just finished the Bazaar Price Lookup
+page and done a handoff, and Drew came back the same day with three more things.
 
-A few things worth carrying forward:
+The work went cleanly. Drew is a good collaborator: he gives precise feature specs, accepts
+recommendations quickly when they're well-reasoned, and corrects course early when something is off.
+A few things worth remembering:
 
-**Drew is generous with context.** When he said "I did the data check for you" and pasted a SQL
-result of every distinct `(type, sub_type)` in `items`, that saved a round trip and shaped the
-chip-mapping table directly. When he found the canonical `cat` values from Torn's Swagger dropdown
-and shared two screenshots, that turned my speculative "I'll need a label override map for some
-pluralisations" into a concrete static map. Lean into giving him precise, narrow questions when
-you're unsure - he answers them well, often with the data already in hand.
+**The layout broke twice before it was right.** The first attempt at moving the footer into the
+sidebar introduced `justifyContent: 'center'` on the outer Box (a leftover from an earlier draft),
+which vertically centred the entire app. The second attempt used `height: 100vh` on the sidebar
+paper inside a container that also held the AppBar — so the total height became AppBar + 100vh >
+100vh. The correct pattern is: outer Box `height: 100vh`, inner content Box `overflow: hidden`,
+permanent Drawer paper `position: relative` with `overflow: auto`, main Box `overflow: auto`. The
+page itself doesn't scroll — only the panes inside it do. This is worth remembering as a canonical
+MUI sidebar layout.
 
-**The `BazaarSummariesContext` already existed and surfaced the per-item lowest Weav3r price through
-a hook.** I almost proposed a new `POST /api/GetLowestBazaarPrices` endpoint before checking - and
-found the work was already done. Default to grepping the codebase for any concept adjacent to your
-task before sketching a new endpoint or table. The Resale + Bazaar features were clearly built with
-future composition in mind.
+**Flag formula ambiguities before implementing.** The suggested-price formula as written
+(`(10 * Math.floor(price / 10) - 1) + 9`) algebraically simplifies to
+`10 * Math.floor(price/10) + 8`, which prices _above_ the market minimum in every case. The intended
+reading is clearly `10 * (Math.floor(price / 10) - 1) + 9` — highest X9 below the current $10 floor.
+I flagged this before implementing and explained the reasoning; Drew confirmed by moving forward.
+When a formula looks wrong for its use case, say so explicitly rather than implementing it literally.
 
-**The privacy footer was Drew's add mid-plan.** He noticed there was no way for a logged-in user to
-see the API-key-usage info. That's the kind of insight that comes from actually using the product.
-Don't dismiss "while we're at it" requests as scope creep when they're correctly identifying gaps -
-the cost of bundling was tiny because both changes touched the same files.
+**The Market Overview feature required honest scoping.** Drew initially floated a "total supply over
+time" metric, then correctly talked himself out of it: only 50 listings visible, bazaars invisible,
+polling slower than trade velocity, sample biased. The final feature surfaced only what is genuinely
+observable — price trend vs weekly average, change frequency, saturation signal — and marked itself
+"Experimental". That's the right instinct for a feature built on incomplete data: don't oversell,
+don't hide the caveats.
 
-**The exemption to GitNexus impact analysis was honest, not lazy.** Adding a single field to
-DTOs/entities is genuinely additive and the blast radius really is contained. State the exemption
-explicitly (I did, see the message before the entity edits) so future-you can audit whether you took
-a real shortcut or a justified one.
+**The sparklines showed "—" locally because the Materials items haven't had price changes tracked in
+the past week.** This is correct behaviour — the data is genuinely absent. Drew recognised this
+immediately and moved to deploy rather than chasing phantom data. The feature will work on prod where
+real history exists.
 
-**On scope discipline**: I did not add tests because the project has no test project, did not add
-comments to the new files (the code is self-explanatory), did not pre-fetch all categories on mount
-even though that would feel "complete", and did not add a `/privacy` standalone route because the
-dialog handles it. Drew's preferences (terse, practical, no over-engineering) align with the global
-CLAUDE.md guidance - apply both.
-
-The build is green and Drew has a clear next-action list. He's not committing yet, which is fine -
-he'll want to look at the diff himself before shipping.
+**GitNexus doesn't index the TypeScript frontend.** Impact analysis on frontend symbols returns LOW
+with 0 upstreams because those symbols aren't in the graph. This is expected — just note the
+exemption explicitly rather than silently skipping.
