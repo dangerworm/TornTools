@@ -77,7 +77,7 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
             variant="h6"
             noWrap
             component="div"
-            className="geo"
+            className="passero-one"
             sx={{ display: { xs: 'none', md: 'block' } }}
           >
             dangerworm&apos;s Tools
