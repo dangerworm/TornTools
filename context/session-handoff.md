@@ -1,127 +1,147 @@
-# Session Handoff — 2026-04-15
+# Session Handoff — 2026-04-22
 
-## What we accomplished this session
+## What we did this session
 
-### Queue processing overhaul
+Built the **Bazaar Price Lookup** page end-to-end, plus the supporting access-level changes and a
+site-wide privacy footer. All planned steps are complete and verified at the build level. Nothing is
+committed yet — the diff is sitting on `development` ready for Drew to review and ship.
 
-The Resale page was showing stale data (30+ min old). Root cause chain: single-threaded
-processor, TML/WBL queue glut, and ~3-4 s Python startup overhead per Weav3r call.
+### Feature: Bazaar Price Lookup (`/bazaar-prices`)
 
-**QueueIndex interleaving** (`QueueItemRepository.CreateQueueItemsAsync`)
-Formula: `withinGroupIndex * typeCount + (int)callType` — ensures profitable-first ordering within
-each type. Now superseded by the processor split (see below), but still used for intra-type ordering.
+New page that lists each item in the user's Torn inventory, per category, alongside the current
+lowest Weav3r bazaar price (via the existing `GET /api/GetBazaarSummaries`). Workflow: pick a
+category chip → page lazy-fetches `/v2/user/inventory?cat=<canonical>` for that category → joins
+against `useItems` for image/links and `useBazaarSummaries` for the cheapest price → click the price
+to copy it to the clipboard.
 
-**SELECT FOR UPDATE SKIP LOCKED** (`QueueItemRepository.GetNextQueueItemAsync`)
-Replaced optimistic-concurrency approach with a raw Npgsql UPDATE...RETURNING that atomically
-claims a row. Workers never block each other; each gets a different row.
+- Single-select chip strip in the order Drew specified (Primary → Miscellaneous, 23 chips).
+- Chip-label → Torn-cat translation lives in `client/src/constants/bazaarCategories.ts` (e.g.
+  Drugs→Drug, Armor→Defensive, Miscellaneous→Other).
+- Equipped and faction-owned items excluded; same-id rows aggregated and quantities summed (Drew's
+  example showed dup uids per id like Glock 17 ×2, Skorpion ×2).
+- "No bazaar data" fallback for items the queue hasn't scanned recently.
+- Per-category fetch results cached in component state.
 
-**Persistent Python server** (`Weav3rPythonServer.cs` + `bazaar_server.py`)
-Instead of spawning a new Python process per Weav3r call (~3-4 s overhead), a singleton
-`Weav3rPythonServer` keeps `bazaar_server.py` alive as a subprocess and communicates via
-line-delimited JSON over stdin/stdout. `curl_cffi` with `impersonate="chrome124"` is required
-for Weav3r anti-bot — there is no .NET equivalent. Deploy workflow compiles `bazaar_server.py`
-to a self-contained binary via PyInstaller. `Weav3rApiCaller` now delegates to this singleton
-instead of spawning per-call.
+### Sign-in changes
 
-**TornMarketsProcessor + Weav3rBazaarsProcessor** (replaced `QueueProcessor`)
-Each processor handles exactly one `ApiCallType`. Both extend `QueueProcessorBase` which holds
-the shared worker loop. Key properties:
-- Each processor only dequeues, checks InProgress, and removes its own call type's rows.
-- Worker count read from `TornMarketsProcessorConfiguration` / `Weav3rBazaarsProcessorConfiguration`.
-- Overridable via Azure App Service env vars **without a redeploy**:
-  `TornMarketsProcessorConfiguration__WorkerCount` and `Weav3rBazaarsProcessorConfiguration__WorkerCount`
-- Both currently default to 1 worker each.
+- `fetchTornKeyInfo` (`client/src/lib/tornapi.ts:99`) now accepts levels 1–4 instead of rejecting
+  anything above Public. Custom keys still rejected.
+- `AuthController.Login` reads `keyPayload.Info.Access.Level` and persists it via the new
+  `UserDetailsInputModel.AccessLevel` field through `UpsertUserDetailsAsync`. Updated on every login
+  so a key upgrade refreshes the stored level.
+- `/auth/me` returns `accessLevel`.
 
-**Bug fixes (from Codex PR review)**
-- Repopulation now guarded with `HasInProgressItems(callType)` — prevents a worker from clearing
-  in-flight rows belonging to sibling workers when it sees an empty pending queue.
-- `RemoveQueueItemsAsync` filters on `Pending`-only (was "not Failed") as a defensive layer.
-- Rate-limit delay formula multiplied by `workerCount` so aggregate throughput across N workers
-  stays within the 80%-of-max budget.
+### Privacy notice + footer
 
-**Active item selection** (`DatabaseService.PopulateQueueWithTornMarketItems/WithWeav3rItems`)
-Replaced the stale-listing scan with `GetActiveMarketItemsForQueueAsync`:
-- Filters items with fewer than `2 * 7 * 24 / StaleListingThresholdHours` changes in 7 days.
-- Sorts: profitable items first (in `profitable_listings`), then most-stale first.
-- Falls back to stale scan for TML if no active items found; skips WBL population entirely.
-- `StaleListingThresholdHours` reduced from 24 → 12.
+- Extracted the access-key copy from `SignIn.tsx` into reusable
+  `client/src/components/PrivacyNotice.tsx` with an added "Choosing your key access level" section
+  explaining the Public-vs-Minimal+ trade-off.
+- `Footer.tsx` now renders a "Privacy & API key usage" link that opens `PrivacyNotice` in a Dialog
+  (visible on every page).
+- `SignIn.tsx` uses `<PrivacyNotice />` instead of the inline block.
 
-**Resale.tsx default filter**
-`DEFAULT_MAX_TIME_INDEX` changed from `5` (60 min) to `2` (5 min) — done after production
-confirmed TML/WBL alternating in logs.
+### Schema
 
-### Code quality fixes
+- `.docker/flyway/sql/Versioned/V1.16__add_access_level_to_users.sql` —
+  `ALTER TABLE public.users ADD "access_level" int4 NOT NULL DEFAULT 1;`
+- `UserEntity` (`api/TornTools.Persistence/Entities/UserEntity.cs:36-37`) gets `AccessLevel` with
+  default 1; mirrored on `UserDto`, `UserDetailsInputModel`, and the front-end `DotNetUserDetails`.
 
-**`dotnetapi.ts`** — replaced `try { res.json() } catch { if (!res.ok) throw }` pattern across
-all 9 fetch functions with `if (!res.ok) throw new Error(...)` then `return res.json()`. A 200
-with a non-JSON body (e.g. HTML error page) previously returned a silent empty default.
+### Nav gating
 
-**Input model validation** — added `[Required]`, `[StringLength]`, `[Range]`, `[RegularExpression]`
-to `LoginInputModel`, `UserDetailsInputModel`, `ThemeInputModel`, `UserProfileInputModel`,
-`WeakListingsInputModel`. Bad requests now return a clean 400 before controller logic runs.
-Torn API keys validated as exactly 16 characters. Theme colours validated as `^#[0-9A-Fa-f]{6}$`.
-Theme mode validated as `^(light|dark)$`.
+- `MenuItem` (`client/src/components/Menu.tsx`) gets optional `requiresAccessLevel: number`.
+- `Layout.tsx` filters out menu items where the user's `accessLevel` is below the threshold.
+- The new Bazaar Price Lookup entry has `requiresAccessLevel: 2`.
 
-### Architecture decision (documented, not implemented)
+### Docs
 
-Discussed microservices / multiple App Service instances for the Torn 1,000 calls/min IP cap.
-Decision: not hitting cap today (£10/month single App Service). When needed, scale the existing
-service horizontally — `SELECT FOR UPDATE SKIP LOCKED` already supports this with no code changes.
-Each additional App Service Plan instance gets its own outbound IP.
+- New `context/torn-api.md` — endpoints we use, access levels, category map, rate limits, link to
+  Swagger UI.
+- `CLAUDE.md` — pointer added immediately after the `<!-- gitnexus:end -->` marker so it survives
+  `npx gitnexus analyze`.
 
 ---
 
-## Current state of queue processing
+## Files changed (uncommitted)
 
-```
-TornMarketsProcessor  (1 worker)  →  claims Pending/TornMarketListings rows
-Weav3rBazaarsProcessor (1 worker) →  claims Pending/Weav3rBazaarListings rows
-Both running in the same process (TornTools.Api)
-```
+**New:**
 
-Repopulation: each processor independently detects exhaustion and repopulates its own half.
-Hangfire `CheckStaleMarketItems` job still populates both TML + WBL stale items as a backstop.
+- `.docker/flyway/sql/Versioned/V1.16__add_access_level_to_users.sql`
+- `client/src/components/PrivacyNotice.tsx`
+- `client/src/constants/bazaarCategories.ts`
+- `client/src/pages/BazaarPriceLookup.tsx`
+- `context/torn-api.md`
+
+**Modified:**
+
+- `api/TornTools.Api/Controllers/AuthController.cs`
+- `api/TornTools.Application/Services/DatabaseService.cs`
+- `api/TornTools.Core/DataTransferObjects/UserDto.cs`
+- `api/TornTools.Core/Models/InputModels/UserDetailsInputModel.cs`
+- `api/TornTools.Persistence/Entities/UserEntity.cs`
+- `api/TornTools.Persistence/Repositories/UserRepository.cs`
+- `client/src/App.tsx`
+- `client/src/components/Footer.tsx`
+- `client/src/components/Layout.tsx`
+- `client/src/components/Menu.tsx`
+- `client/src/lib/dotnetapi.ts`
+- `client/src/lib/tornapi.ts`
+- `client/src/pages/SignIn.tsx`
+- `CLAUDE.md`
+
+**Pre-existing modifications carried over from before this session:**
+
+- `TODO.md` (M)
+- `AGENTS.md` (M — gitnexus auto-managed block change)
+- `context/insights.md` (D)
 
 ---
 
-## Key file locations
+## Build state
 
-| Area | File |
-|---|---|
-| Base processor loop | `api/TornTools.Cron/Processors/QueueProcessorBase.cs` |
-| TML processor | `api/TornTools.Cron/Processors/TornMarketsProcessor.cs` |
-| WBL processor | `api/TornTools.Cron/Processors/Weav3rBazaarsProcessor.cs` |
-| Processor configs | `api/TornTools.Core/Configurations/TornMarketsProcessorConfiguration.cs` / `Weav3rBazaarsProcessorConfiguration.cs` |
-| Persistent Python server (C#) | `api/TornTools.Application/Services/Weav3rPythonServer.cs` |
-| Persistent Python server (py) | `api/TornTools.Api/Weav3rPython/bazaar_server.py` |
-| Queue dequeue SQL | `api/TornTools.Persistence/Repositories/QueueItemRepository.cs:68` |
-| Active item selection | `api/TornTools.Application/Services/DatabaseService.cs` (`PopulateQueueWithTornMarketItems`) |
-| Azure env vars | `infra/app_service.tf` (worker count overrides) |
-| Resale page | `client/src/pages/Resale.tsx` |
-| API client | `client/src/lib/dotnetapi.ts` |
-| Input models | `api/TornTools.Core/Models/InputModels/` |
+- `dotnet build` (api/) — clean: 6 projects, 0 errors, 0 warnings.
+- `npm run build` (client/) — clean: `tsc -b` + `vite build` both succeed. Pre-existing
+  > 500 kB chunk-size warning is unchanged.
 
 ---
 
-## Outstanding from previous sessions (not done)
+## Blockers / outstanding
 
-- **Persist slider values** — Resale min profit, max buy price, max updated time sliders not in
-  localStorage. Pattern: see outlet/checkbox toggles already done in `Resale.tsx`.
-- **Add stale-data warning** — surface a warning when backend hasn't updated recently.
-- **Profit source indicator** — show profit from City, Bazaar, Item Market as a chip set.
-- **Column sorting** — `ResaleItemsTable`, `FavouriteMarketsTable`, `Weav3rListingTable` have no
-  sortable headers. Reference impl: `ForeignMarketItemsTable.tsx` + `TableSortCell.tsx`.
-- **Item Details: Add link to market and shop** — `ItemDetailsHeader.tsx` has no market/shop links.
-- **Item Details: Rename "City Buy Price"** — still labeled in `ItemDetailsInfoCards.tsx:24`.
-- **Hangfire price/volatility job** — pre-compute snapshots; unblocks home page interesting items.
-- **Live "last updated" counter** — done (Nov 29 Peter email, implemented in a prior session).
-- **Profit per click efficiency metric** — not implemented (Jan 25 Peter email).
-- **Bazaar sell calculator modal** — not implemented.
-- All Item Quality features.
-- All Selective Scanning items.
-- `profitable_listings` plain view → materialised view (performance, under load).
-- `market_velocity` view aggregates all change logs with no date filter (will slow over time).
-- Route `[controller]/[action]` on ApiController — RPC-style URLs, not REST.
-- No test project.
-- API keys stored in plaintext in users table.
-- `torn-war-checker.html` in repo root — appears to be an unrelated standalone utility.
+1. **Migration not applied to dev DB.** `V1.16__add_access_level_to_users.sql` needs Drew to run
+   Flyway against the dev Postgres. Without it, `AuthController.Login` will fail to upsert (the
+   `access_level` column won't exist).
+2. **No manual smoke test yet.** Build passes but the feature has not been exercised in a browser.
+   Test plan: sign in with each of Drew's three keys (Public `89x3jeDB3cK0NLOf`, Minimal
+   `0xmvOGNnfTBlSFdj`, Limited `GDRPEXeEqJLE8FzD`); verify nav-entry gating; click each populated
+   chip; verify lowest prices match `/item/:id` for a few samples; try click-to-copy; confirm the
+   privacy dialog opens from the footer on at least three pages.
+3. **Nothing committed.** Drew may want to split into smaller commits (e.g. backend access-level
+   plumbing / privacy footer / new page) or one big feature commit.
+
+---
+
+## Next action
+
+1. Apply the migration: `flyway migrate` (or however dev DB migrations are run for this project) so
+   `users.access_level` exists.
+2. Start dev servers: api + client. Verify the smoke test list above.
+3. Commit (Drew's call on shape of commits — current diff is one cohesive feature so a single commit
+   is reasonable; backend/frontend split is the next-finest grain).
+4. After committing, run `npx gitnexus analyze --embeddings` to refresh the index (a hook should
+   handle this automatically per CLAUDE.md, but worth confirming).
+
+---
+
+## Notes
+
+- The Torn `/v2/user/inventory` endpoint requires Minimal access — we discovered this mid-session
+  and added the access-level plumbing as a result. Public keys cannot use the new page; they hit the
+  access-level guard explainer instead and the nav entry is hidden.
+- The category mapping in `bazaarCategories.ts` is hand-derived from Drew's screenshots of Torn's
+  Swagger dropdown. If Torn ever adds a new category, add a new entry to that array.
+- Pagination on `/v2/user/inventory` deferred — 250 cap should cover any realistic single-category
+  inventory. Add `_metadata.links.next` paging if any category overflows.
+- "All" chip intentionally omitted in v1 — would require firing 23 parallel calls. Add later if Drew
+  wants it.
+- The Layout nav filter uses `dotNetUserDetails != null` to gate on access level, so the entry
+  doesn't flicker in for unauthenticated users while `getMe()` resolves.
