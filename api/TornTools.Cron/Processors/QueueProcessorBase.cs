@@ -64,7 +64,7 @@ public abstract class QueueProcessorBase(
 
           if (queueItem?.Id is null)
           {
-            // No Pending items — either other workers hold them, or the queue is exhausted.
+            // No Pending items - either other workers hold them, or the queue is exhausted.
             // Repopulate only once all in-flight work for this call type has landed.
             if (await _repopulateLock.WaitAsync(0, stoppingToken))
             {
@@ -162,7 +162,7 @@ public abstract class QueueProcessorBase(
         await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
       }
 
-      // databaseService is still in scope here — 'using var scope' ends at the bottom of the while block.
+      // databaseService is still in scope here - 'using var scope' ends at the bottom of the while block.
       var delayMilliseconds = 100;
       try { delayMilliseconds = await GetDelayMillisecondsAsync(databaseService, stoppingToken); }
       catch { /* keep default */ }

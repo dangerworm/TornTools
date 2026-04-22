@@ -373,6 +373,7 @@ public class DatabaseService(
       Id = userDetails.UserProfile.Id,
       Name = userDetails.UserProfile.Name,
       Level = userDetails.UserProfile.Level,
+      AccessLevel = userDetails.AccessLevel,
       Gender = userDetails.UserProfile.Gender
     };
 

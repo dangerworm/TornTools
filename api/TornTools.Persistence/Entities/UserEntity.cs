@@ -33,6 +33,9 @@ public class UserEntity
   [Column("level")]
   public required int Level { get; set; }
 
+  [Column("access_level")]
+  public int AccessLevel { get; set; } = 1;
+
   public ICollection<UserFavouriteItemEntity> FavouriteItems { get; set; } = [];
 
   [Column("preferred_theme_id")]
@@ -52,6 +55,7 @@ public class UserEntity
       Name = Name,
       Gender = Gender,
       Level = Level,
+      AccessLevel = AccessLevel,
       FavouriteItems = FavouriteItems.Select(f => f.ItemId),
       PreferredThemeId = PreferredThemeId,
       PreferredTheme = PreferredTheme?.AsDto()

@@ -10,7 +10,7 @@ namespace TornTools.Application.Services;
 /// <summary>
 /// Singleton that manages a persistent bazaar_server process for Weav3r API calls.
 /// Keeping the process alive eliminates per-call Python startup overhead (~1-2s on production).
-/// Concurrent callers are serialised via a SemaphoreSlim — one request at a time per process.
+/// Concurrent callers are serialised via a SemaphoreSlim - one request at a time per process.
 /// </summary>
 public sealed class Weav3rPythonServer : IDisposable
 {

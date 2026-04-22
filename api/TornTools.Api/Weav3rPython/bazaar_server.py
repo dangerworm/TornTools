@@ -22,7 +22,7 @@ sys.stdout.reconfigure(line_buffering=True)
 
 while True:
     line = sys.stdin.readline()
-    if not line:  # EOF — C# closed stdin, exit cleanly
+    if not line:  # EOF - C# closed stdin, exit cleanly
         break
 
     line = line.strip()

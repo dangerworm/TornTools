@@ -1,65 +1,77 @@
-import AccessTimeFilled from "@mui/icons-material/AccessTimeFilled";
-import HomeIcon from "@mui/icons-material/Home";
-import LanguageIcon from '@mui/icons-material/Language';
-import LocationCityIcon from '@mui/icons-material/LocationCity';
-import SellIcon from "@mui/icons-material/Sell";
+import AccessTimeFilled from '@mui/icons-material/AccessTimeFilled'
+import HomeIcon from '@mui/icons-material/Home'
+import LanguageIcon from '@mui/icons-material/Language'
+import LocationCityIcon from '@mui/icons-material/LocationCity'
+import SellIcon from '@mui/icons-material/Sell'
+import StorefrontIcon from '@mui/icons-material/Storefront'
 
-export const DRAWER_WIDTH = 240; // px
+export const DRAWER_WIDTH = 240 // px
 
 export type MenuItem = {
-  address: string;
-  icon: React.ReactNode;
-  requiresItems: boolean;
-  requiresLogin: boolean;
-  showOnHomePage: boolean;
-  subTitle: string;
-  title: string;
-};
+  address: string
+  icon: React.ReactNode
+  requiresItems: boolean
+  requiresLogin: boolean
+  requiresAccessLevel?: number
+  showOnHomePage: boolean
+  subTitle: string
+  title: string
+}
 
 export const menuItems: MenuItem[] = [
   {
-    address: "/",
+    address: '/',
     icon: <HomeIcon />,
     requiresItems: false,
     requiresLogin: false,
     showOnHomePage: false,
-    subTitle: "",
-    title: "Home",
+    subTitle: '',
+    title: 'Home',
   },
   {
-    address: "/city-markets",
+    address: '/bazaar-prices',
+    icon: <StorefrontIcon />,
+    requiresItems: true,
+    requiresLogin: true,
+    requiresAccessLevel: 2,
+    showOnHomePage: true,
+    subTitle: 'Look up the lowest current bazaar price for each item in your inventory.',
+    title: 'Bazaar Price Lookup',
+  },
+  {
+    address: '/city-markets',
     icon: <LocationCityIcon />,
     requiresItems: true,
     requiresLogin: false,
     showOnHomePage: true,
-    subTitle: "View the item markets for Torn City, including price history and favourite items.",
-    title: "City Markets",
+    subTitle: 'View the item markets for Torn City, including price history and favourite items.',
+    title: 'City Markets',
   },
   {
-    address: "/foreign-markets",
+    address: '/foreign-markets',
     icon: <LanguageIcon />,
     requiresItems: true,
     requiresLogin: false,
     showOnHomePage: true,
-    subTitle: "View markets from other countries around the world.",
-    title: "Foreign Markets",
+    subTitle: 'View markets from other countries around the world.',
+    title: 'Foreign Markets',
   },
   {
-    address: "/resale",
+    address: '/resale',
     icon: <SellIcon />,
     requiresItems: true,
     requiresLogin: true,
     showOnHomePage: true,
-    subTitle: "Checks the market for profitable resale listings.",
-    title: "Resale",
+    subTitle: 'Checks the market for profitable resale listings.',
+    title: 'Resale',
   },
   {
-    address: "/time",
+    address: '/time',
     icon: <AccessTimeFilled />,
     requiresItems: false,
     requiresLogin: false,
     showOnHomePage: true,
-    subTitle: "Convert between your local time and Torn City time (TCT).",
-    title: "Time Calcs",
+    subTitle: 'Convert between your local time and Torn City time (TCT).',
+    title: 'Time Calcs',
   },
-];
+]

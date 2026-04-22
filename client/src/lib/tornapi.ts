@@ -49,6 +49,7 @@ const accessLevelMap: Record<number, string> = {
 
 const TORN_API_ENDPOINT_USER_BASIC = "https://api.torn.com/v2/user/basic";
 const TORN_API_ENDPOINT_KEY_INFO = "https://api.torn.com/v2/key/info";
+const TORN_API_ENDPOINT_USER_INVENTORY = "https://api.torn.com/v2/user/inventory";
 
 export async function fetchTornUserDetails(
   apiKey: string,
@@ -96,12 +97,62 @@ export async function fetchTornKeyInfo(
   if (!data.info) {
     throw new Error("No key info returned from Torn API");
   }
-  if (data.info.access.level > 1) {
-    throw new Error(`API key access level too high: ${accessLevelMap[data.info.access.level]} (${data.info.access.level})`);
+  if (data.info.access.level < 1 || data.info.access.level > 4) {
+    throw new Error(`Unsupported API key access level: ${accessLevelMap[data.info.access.level] ?? data.info.access.level} (${data.info.access.level})`);
   }
   if (data.info.access.type === "Custom") {
-    throw new Error("Only public API keys are supported");
+    throw new Error("Custom API keys are not supported. Please use a Public, Minimal, Limited, or Full key.");
   }
-  
+
   return data.info;
+}
+
+export interface TornInventoryItem {
+  id: number;
+  amount: number;
+  equipped: boolean;
+  faction_owned: boolean;
+  name: string;
+  uid: number;
+}
+
+export interface TornInventoryPayload {
+  inventory?: {
+    items: TornInventoryItem[];
+    timestamp: number;
+  };
+  _metadata?: {
+    links: { next: string | null; prev: string | null };
+    total: number;
+  };
+  error?: { code: number; error: string };
+  code?: number;
+}
+
+export async function fetchTornInventory(
+  apiKey: string,
+  cat: string,
+  signal?: AbortSignal
+): Promise<TornInventoryPayload> {
+  const headers: Record<string, string> = {
+    accept: "application/json",
+    Authorization: `ApiKey ${apiKey}`
+  };
+  const params = new URLSearchParams({
+    cat,
+    offset: "0",
+    limit: "250",
+    comment: "dangerworm's Tools"
+  });
+  const res = await fetch(`${TORN_API_ENDPOINT_USER_INVENTORY}?${params.toString()}`, { headers, signal });
+  let data: TornInventoryPayload = {};
+  try {
+    data = await res.json();
+  } catch {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  }
+  if (data.error) {
+    throw new Error(`Torn inventory API error (${cat}): ${data.error.error}`);
+  }
+  return data;
 }

@@ -1,4 +1,4 @@
-# Session Handoff — 2026-04-15
+# Session Handoff - 2026-04-15
 
 ## What we accomplished this session
 
@@ -8,7 +8,7 @@ The Resale page was showing stale data (30+ min old). Root cause chain: single-t
 TML/WBL queue glut, and ~3-4 s Python startup overhead per Weav3r call.
 
 **QueueIndex interleaving** (`QueueItemRepository.CreateQueueItemsAsync`) Formula:
-`withinGroupIndex * typeCount + (int)callType` — ensures profitable-first ordering within each type.
+`withinGroupIndex * typeCount + (int)callType` - ensures profitable-first ordering within each type.
 Now superseded by the processor split (see below), but still used for intra-type ordering.
 
 **SELECT FOR UPDATE SKIP LOCKED** (`QueueItemRepository.GetNextQueueItemAsync`) Replaced
@@ -18,7 +18,7 @@ Workers never block each other; each gets a different row.
 **Persistent Python server** (`Weav3rPythonServer.cs` + `bazaar_server.py`) Instead of spawning a
 new Python process per Weav3r call (~3-4 s overhead), a singleton `Weav3rPythonServer` keeps
 `bazaar_server.py` alive as a subprocess and communicates via line-delimited JSON over stdin/stdout.
-`curl_cffi` with `impersonate="chrome124"` is required for Weav3r anti-bot — there is no .NET
+`curl_cffi` with `impersonate="chrome124"` is required for Weav3r anti-bot - there is no .NET
 equivalent. Deploy workflow compiles `bazaar_server.py` to a self-contained binary via PyInstaller.
 `Weav3rApiCaller` now delegates to this singleton instead of spawning per-call.
 
@@ -36,7 +36,7 @@ properties:
 
 **Bug fixes (from Codex PR review)**
 
-- Repopulation now guarded with `HasInProgressItems(callType)` — prevents a worker from clearing
+- Repopulation now guarded with `HasInProgressItems(callType)` - prevents a worker from clearing
   in-flight rows belonging to sibling workers when it sees an empty pending queue.
 - `RemoveQueueItemsAsync` filters on `Pending`-only (was "not Failed") as a defensive layer.
 - Rate-limit delay formula multiplied by `workerCount` so aggregate throughput across N workers
@@ -50,16 +50,16 @@ Replaced the stale-listing scan with `GetActiveMarketItemsForQueueAsync`:
 - Falls back to stale scan for TML if no active items found; skips WBL population entirely.
 - `StaleListingThresholdHours` reduced from 24 → 12.
 
-**Resale.tsx default filter** `DEFAULT_MAX_TIME_INDEX` changed from `5` (60 min) to `2` (5 min) —
+**Resale.tsx default filter** `DEFAULT_MAX_TIME_INDEX` changed from `5` (60 min) to `2` (5 min) -
 done after production confirmed TML/WBL alternating in logs.
 
 ### Code quality fixes
 
-**`dotnetapi.ts`** — replaced `try { res.json() } catch { if (!res.ok) throw }` pattern across all 9
+**`dotnetapi.ts`** - replaced `try { res.json() } catch { if (!res.ok) throw }` pattern across all 9
 fetch functions with `if (!res.ok) throw new Error(...)` then `return res.json()`. A 200 with a
 non-JSON body (e.g. HTML error page) previously returned a silent empty default.
 
-**Input model validation** — added `[Required]`, `[StringLength]`, `[Range]`, `[RegularExpression]`
+**Input model validation** - added `[Required]`, `[StringLength]`, `[Range]`, `[RegularExpression]`
 to `LoginInputModel`, `UserDetailsInputModel`, `ThemeInputModel`, `UserProfileInputModel`,
 `WeakListingsInputModel`. Bad requests now return a clean 400 before controller logic runs. Torn API
 keys validated as exactly 16 characters. Theme colours validated as `^#[0-9A-Fa-f]{6}$`. Theme mode
@@ -69,7 +69,7 @@ validated as `^(light|dark)$`.
 
 Discussed microservices / multiple App Service instances for the Torn 1,000 calls/min IP cap.
 Decision: not hitting cap today (£10/month single App Service). When needed, scale the existing
-service horizontally — `SELECT FOR UPDATE SKIP LOCKED` already supports this with no code changes.
+service horizontally - `SELECT FOR UPDATE SKIP LOCKED` already supports this with no code changes.
 Each additional App Service Plan instance gets its own outbound IP.
 
 ---
@@ -108,23 +108,23 @@ Repopulation: each processor independently detects exhaustion and repopulates it
 
 ## Outstanding from previous sessions (not done)
 
-- **Persist slider values** — Resale min profit, max buy price, max updated time sliders not in
+- **Persist slider values** - Resale min profit, max buy price, max updated time sliders not in
   localStorage. Pattern: see outlet/checkbox toggles already done in `Resale.tsx`.
-- **Add stale-data warning** — surface a warning when backend hasn't updated recently.
-- **Profit source indicator** — show profit from City, Bazaar, Item Market as a chip set.
-- **Column sorting** — `ResaleItemsTable`, `FavouriteMarketsTable`, `Weav3rListingTable` have no
+- **Add stale-data warning** - surface a warning when backend hasn't updated recently.
+- **Profit source indicator** - show profit from City, Bazaar, Item Market as a chip set.
+- **Column sorting** - `ResaleItemsTable`, `FavouriteMarketsTable`, `Weav3rListingTable` have no
   sortable headers. Reference impl: `ForeignMarketItemsTable.tsx` + `TableSortCell.tsx`.
-- **Item Details: Add link to market and shop** — `ItemDetailsHeader.tsx` has no market/shop links.
-- **Item Details: Rename "City Buy Price"** — still labeled in `ItemDetailsInfoCards.tsx:24`.
-- **Hangfire price/volatility job** — pre-compute snapshots; unblocks home page interesting items.
-- **Live "last updated" counter** — done (Nov 29 Peter email, implemented in a prior session).
-- **Profit per click efficiency metric** — not implemented (Jan 25 Peter email).
-- **Bazaar sell calculator modal** — not implemented.
+- **Item Details: Add link to market and shop** - `ItemDetailsHeader.tsx` has no market/shop links.
+- **Item Details: Rename "City Buy Price"** - still labeled in `ItemDetailsInfoCards.tsx:24`.
+- **Hangfire price/volatility job** - pre-compute snapshots; unblocks home page interesting items.
+- **Live "last updated" counter** - done (Nov 29 Peter email, implemented in a prior session).
+- **Profit per click efficiency metric** - not implemented (Jan 25 Peter email).
+- **Bazaar sell calculator modal** - not implemented.
 - All Item Quality features.
 - All Selective Scanning items.
 - `profitable_listings` plain view → materialised view (performance, under load).
 - `market_velocity` view aggregates all change logs with no date filter (will slow over time).
-- Route `[controller]/[action]` on ApiController — RPC-style URLs, not REST.
+- Route `[controller]/[action]` on ApiController - RPC-style URLs, not REST.
 - No test project.
 - API keys stored in plaintext in users table.
-- `torn-war-checker.html` in repo root — appears to be an unrelated standalone utility.
+- `torn-war-checker.html` in repo root - appears to be an unrelated standalone utility.

@@ -1,10 +1,10 @@
-# Session Handoff — 2026-04-22
+# Session Handoff - 2026-04-22
 
 ## What we did this session
 
 Built the **Bazaar Price Lookup** page end-to-end, plus the supporting access-level changes and a
 site-wide privacy footer. All planned steps are complete and verified at the build level. Nothing is
-committed yet — the diff is sitting on `development` ready for Drew to review and ship.
+committed yet - the diff is sitting on `development` ready for Drew to review and ship.
 
 ### Feature: Bazaar Price Lookup (`/bazaar-prices`)
 
@@ -42,7 +42,7 @@ to copy it to the clipboard.
 
 ### Schema
 
-- `.docker/flyway/sql/Versioned/V1.16__add_access_level_to_users.sql` —
+- `.docker/flyway/sql/Versioned/V1.16__add_access_level_to_users.sql` -
   `ALTER TABLE public.users ADD "access_level" int4 NOT NULL DEFAULT 1;`
 - `UserEntity` (`api/TornTools.Persistence/Entities/UserEntity.cs:36-37`) gets `AccessLevel` with
   default 1; mirrored on `UserDto`, `UserDetailsInputModel`, and the front-end `DotNetUserDetails`.
@@ -55,9 +55,9 @@ to copy it to the clipboard.
 
 ### Docs
 
-- New `context/torn-api.md` — endpoints we use, access levels, category map, rate limits, link to
+- New `context/torn-api.md` - endpoints we use, access levels, category map, rate limits, link to
   Swagger UI.
-- `CLAUDE.md` — pointer added immediately after the `<!-- gitnexus:end -->` marker so it survives
+- `CLAUDE.md` - pointer added immediately after the `<!-- gitnexus:end -->` marker so it survives
   `npx gitnexus analyze`.
 
 ---
@@ -92,15 +92,15 @@ to copy it to the clipboard.
 **Pre-existing modifications carried over from before this session:**
 
 - `TODO.md` (M)
-- `AGENTS.md` (M — gitnexus auto-managed block change)
+- `AGENTS.md` (M - gitnexus auto-managed block change)
 - `context/insights.md` (D)
 
 ---
 
 ## Build state
 
-- `dotnet build` (api/) — clean: 6 projects, 0 errors, 0 warnings.
-- `npm run build` (client/) — clean: `tsc -b` + `vite build` both succeed. Pre-existing
+- `dotnet build` (api/) - clean: 6 projects, 0 errors, 0 warnings.
+- `npm run build` (client/) - clean: `tsc -b` + `vite build` both succeed. Pre-existing
   > 500 kB chunk-size warning is unchanged.
 
 ---
@@ -125,7 +125,7 @@ to copy it to the clipboard.
 1. Apply the migration: `flyway migrate` (or however dev DB migrations are run for this project) so
    `users.access_level` exists.
 2. Start dev servers: api + client. Verify the smoke test list above.
-3. Commit (Drew's call on shape of commits — current diff is one cohesive feature so a single commit
+3. Commit (Drew's call on shape of commits - current diff is one cohesive feature so a single commit
    is reasonable; backend/frontend split is the next-finest grain).
 4. After committing, run `npx gitnexus analyze --embeddings` to refresh the index (a hook should
    handle this automatically per CLAUDE.md, but worth confirming).
@@ -134,14 +134,14 @@ to copy it to the clipboard.
 
 ## Notes
 
-- The Torn `/v2/user/inventory` endpoint requires Minimal access — we discovered this mid-session
+- The Torn `/v2/user/inventory` endpoint requires Minimal access - we discovered this mid-session
   and added the access-level plumbing as a result. Public keys cannot use the new page; they hit the
   access-level guard explainer instead and the nav entry is hidden.
 - The category mapping in `bazaarCategories.ts` is hand-derived from Drew's screenshots of Torn's
   Swagger dropdown. If Torn ever adds a new category, add a new entry to that array.
-- Pagination on `/v2/user/inventory` deferred — 250 cap should cover any realistic single-category
+- Pagination on `/v2/user/inventory` deferred - 250 cap should cover any realistic single-category
   inventory. Add `_metadata.links.next` paging if any category overflows.
-- "All" chip intentionally omitted in v1 — would require firing 23 parallel calls. Add later if Drew
+- "All" chip intentionally omitted in v1 - would require firing 23 parallel calls. Add later if Drew
   wants it.
 - The Layout nav filter uses `dotNetUserDetails != null` to gate on access level, so the entry
   doesn't flicker in for unauthenticated users while `getMe()` resolves.

@@ -40,6 +40,12 @@ export default function Layout() {
           {menuItems
             .filter((item) => !item.requiresItems || (item.requiresItems && items))
             .filter((item) => !item.requiresLogin || (item.requiresLogin && dotNetUserDetails))
+            .filter(
+              (item) =>
+                item.requiresAccessLevel == null ||
+                (dotNetUserDetails != null &&
+                  (dotNetUserDetails.accessLevel ?? 1) >= item.requiresAccessLevel),
+            )
             .map((item) => {
               if (item.requiresItems && (!items || items.length === 0)) return null
 

@@ -36,8 +36,8 @@
 - **Profit per click efficiency metric** - derive a "profit per click" score: baseline 3 clicks per
   listing (+2 per additional line, +2 per unit for non-stacking items). Show as a sortable column
   with a user-configurable minimum profit/click threshold (like the min profit slider). Lets users
-  deprioritise high-click-cost deals even when total profit looks attractive.
-  (Jan 25 email, Peter Sheppard)
+  deprioritise high-click-cost deals even when total profit looks attractive. (Jan 25 email, Peter
+  Sheppard)
 - **Bazaar sell chip** - "Sell at bazaar" profit is not shown because the user sets their own price;
   implement as a calculator modal (see UI/UX: Bazaar sell calculator modal).
 - **Price alerts** - alert when an item drops below a given price, even before a profit exists
@@ -47,8 +47,10 @@
 - **Min/max filters** - change most filters from single value to min/max range
   ([Trello](https://trello.com/c/mhlT5P45))
 - **Filter by quantity** ([Trello](https://trello.com/c/hCwp8Kkr))
-- **Filter out weapons-only markets** - where you can only buy in bulk
-  ([Trello](https://trello.com/c/vcbymt73))
+- **Filter out non-bulk markets** - most weapons and armour cannot be bought in bulk, which is faffy
+  and takes a long time ([Trello](https://trello.com/c/vcbymt73)). The filter would enable users to
+  view only markets where bulk buying is possible. The filter is easy: items.type == 'Armor' ||
+  (items.type == 'Weapon' && items.sub_type != 'Temporary')
 
 ### Data and Analysis
 
@@ -91,8 +93,8 @@
 - **Single ungrouped table option** - done; "Show all countries in one table" checkbox added
   (persisted), renders flat table with Country column (flag + name, sortable).
   ([Trello](https://trello.com/c/IX5d3Suy))
-- **Column sorting** - done; `ForeignMarketItemsTable` has full `TableSortCell` headers including
-  a Country column (rendered when `showCountry` is true, covering the ungrouped view).
+- **Column sorting** - done; `ForeignMarketItemsTable` has full `TableSortCell` headers including a
+  Country column (rendered when `showCountry` is true, covering the ungrouped view).
 - **Don't show out of stock** - done; "Hide Out of Stock" checkbox added (default on), persisted.
   ([Trello](https://trello.com/c/jEhH3v6x))
 - **Add stock refill times** ([Trello](https://trello.com/c/6RIEi31r))
