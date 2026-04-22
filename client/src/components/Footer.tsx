@@ -1,5 +1,13 @@
 import CloseIcon from '@mui/icons-material/Close'
-import { Box, Dialog, DialogContent, DialogTitle, IconButton, Typography } from '@mui/material'
+import {
+  Box,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Link,
+  Typography,
+} from '@mui/material'
 import { useState } from 'react'
 import PrivacyNotice from './PrivacyNotice'
 
@@ -11,41 +19,46 @@ export default function Footer() {
       <Box
         component="footer"
         sx={{
-          mt: 3,
-          pt: 2,
+          px: 2,
+          py: 1.5,
           textAlign: 'center',
-          width: '100%',
           borderTop: (theme) => `1px solid ${theme.palette.divider}`,
         }}
       >
-        <Typography variant="body2" gutterBottom color="text.secondary">
-          This website is maintained by{' '}
-          <a href="https://www.torn.com/index.php" target="_blank" rel="noopener noreferrer">
+        <Typography variant="caption" display="block" gutterBottom color="text.secondary">
+          Maintained by{' '}
+          <Link href="https://www.torn.com/index.php" target="_blank" rel="noopener noreferrer">
             dangerworm [3943900]
-          </a>
-          .&nbsp;
-          <a target="_blank" rel="noopener noreferrer" onClick={() => setPrivacyOpen(true)}>
+          </Link>
+          . View{' '}
+          <Link
+            component="button"
+            variant="caption"
+            onClick={() => setPrivacyOpen(true)}
+            sx={{ verticalAlign: 'baseline' }}
+          >
             Privacy &amp; API key usage
-          </a>
+          </Link>
+          .
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          You can find this project's source code on{' '}
-          <a
+        <Typography variant="caption" display="block" color="text.secondary">
+          Source on{' '}
+          <Link
             href="https://github.com/dangerworm/TornTools"
             target="_blank"
             rel="noopener noreferrer"
           >
             GitHub
-          </a>
+          </Link>
           .{' '}
-          <a
+          <Link
             href="https://www.torn.com/messages.php#/p=compose&XID=3943900"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Your feedback is appreciated
-          </a>
-          .{' '}
+            Feedback welcome
+          </Link>
+          .
         </Typography>
       </Box>
 

@@ -21,6 +21,7 @@ import {
 import { useCallback, useMemo, useState } from 'react'
 import { Link as RouterLink } from 'react-router'
 import Loading from '../components/Loading'
+import PriceSparkline from '../components/PriceSparkline'
 import {
   BAZAAR_CATEGORIES,
   BAZAAR_MIN_ACCESS_LEVEL,
@@ -81,6 +82,7 @@ const BazaarPriceLookup = () => {
   const [selected, setSelected] = useState<BazaarCategory | null>(null)
   const [byCategory, setByCategory] = useState<Record<string, CategoryState>>({})
   const [copiedId, setCopiedId] = useState<number | null>(null)
+  const [copiedSuggestedId, setCopiedSuggestedId] = useState<number | null>(null)
 
   const loadCategory = useCallback(
     async (category: BazaarCategory) => {
@@ -139,6 +141,22 @@ const BazaarPriceLookup = () => {
       // clipboard not available - silently ignore
     }
   }
+
+  const handleCopySuggested = async (id: number, price: number) => {
+    try {
+      await navigator.clipboard.writeText(String(price))
+      setCopiedSuggestedId(id)
+      window.setTimeout(
+        () => setCopiedSuggestedId((current) => (current === id ? null : current)),
+        1200,
+      )
+    } catch {
+      // clipboard not available - silently ignore
+    }
+  }
+
+  const suggestedPrice = (minPrice: number): number =>
+    Math.max(1, 10 * (Math.floor(minPrice / 10) - 1) + 9)
 
   const currentState = selected ? byCategory[selected.cat] : undefined
   const aggregatedRows = useMemo(
@@ -258,6 +276,8 @@ const BazaarPriceLookup = () => {
                     <TableCell>Item</TableCell>
                     <TableCell align="right">Qty</TableCell>
                     <TableCell align="right">Lowest Bazaar Price</TableCell>
+                    <TableCell align="center">Trend (1w)</TableCell>
+                    <TableCell align="right">Suggested Price</TableCell>
                     <TableCell>Last seen</TableCell>
                   </TableRow>
                 </TableHead>
@@ -295,6 +315,35 @@ const BazaarPriceLookup = () => {
                                 sx={{ fontSize: '0.875rem', borderRadius: 1, px: 1 }}
                               >
                                 {formatPrice(summary.minPrice)}
+                                <ContentCopyIcon sx={{ fontSize: '0.875rem', ml: 0.5 }} />
+                              </IconButton>
+                            </Tooltip>
+                          ) : (
+                            <Typography
+                              variant="body2"
+                              sx={{ color: 'text.disabled', fontStyle: 'italic' }}
+                            >
+                              No bazaar data
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell align="center">
+                          <PriceSparkline itemId={row.id} />
+                        </TableCell>
+                        <TableCell align="right">
+                          {summary ? (
+                            <Tooltip
+                              title={copiedSuggestedId === row.id ? 'Copied!' : 'Click to copy'}
+                              placement="left"
+                            >
+                              <IconButton
+                                size="small"
+                                onClick={() =>
+                                  handleCopySuggested(row.id, suggestedPrice(summary.minPrice))
+                                }
+                                sx={{ fontSize: '0.875rem', borderRadius: 1, px: 1 }}
+                              >
+                                {formatPrice(suggestedPrice(summary.minPrice))}
                                 <ContentCopyIcon sx={{ fontSize: '0.875rem', ml: 0.5 }} />
                               </IconButton>
                             </Tooltip>

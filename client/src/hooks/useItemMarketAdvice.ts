@@ -1,0 +1,111 @@
+import { useCallback, useEffect, useState } from 'react'
+import { fetchItemPriceHistory, fetchItemVelocityHistory } from '../lib/dotnetapi'
+
+export type PriceTrend = 'climbing' | 'stable' | 'falling' | 'unknown'
+export type ActivityLevel = 'high' | 'medium' | 'low' | 'unknown'
+
+export interface MarketAdvice {
+  priceTrend: PriceTrend
+  activityLevel: ActivityLevel
+  isSaturated: boolean
+  currentPrice: number | null
+  weeklyAvgPrice: number | null
+  changesLast24h: number | null
+  dailyAvgChanges7d: number | null
+  loading: boolean
+  error: string | null
+}
+
+const TREND_THRESHOLD = 0.05
+const HIGH_ACTIVITY_THRESHOLD = 30
+const LOW_ACTIVITY_THRESHOLD = 5
+const SATURATION_AVG_PER_HOUR = 2
+const SATURATION_MIN_BUCKETS = 20
+
+export function useItemMarketAdvice(itemId: number | undefined): MarketAdvice {
+  const [state, setState] = useState<MarketAdvice>({
+    priceTrend: 'unknown',
+    activityLevel: 'unknown',
+    isSaturated: false,
+    currentPrice: null,
+    weeklyAvgPrice: null,
+    changesLast24h: null,
+    dailyAvgChanges7d: null,
+    loading: false,
+    error: null,
+  })
+
+  const load = useCallback(async () => {
+    if (!itemId) return
+    setState((prev) => ({ ...prev, loading: true, error: null }))
+
+    try {
+      const [price1d, price1w, velocity1d, velocity1w] = await Promise.all([
+        fetchItemPriceHistory(itemId, '1d'),
+        fetchItemPriceHistory(itemId, '1w'),
+        fetchItemVelocityHistory(itemId, '1d'),
+        fetchItemVelocityHistory(itemId, '1w'),
+      ])
+
+      const pricePoints1d = price1d.filter((p) => (p.price ?? 0) > 0)
+      const currentPrice =
+        pricePoints1d.length > 0 ? pricePoints1d[pricePoints1d.length - 1].price! : null
+
+      const pricePoints1w = price1w.filter((p) => (p.price ?? 0) > 0)
+      const weeklyAvgPrice =
+        pricePoints1w.length > 0
+          ? pricePoints1w.reduce((sum, p) => sum + p.price!, 0) / pricePoints1w.length
+          : null
+
+      const changesLast24h = velocity1d.reduce((sum, p) => sum + (p.velocity ?? 0), 0)
+      const totalChanges7d = velocity1w.reduce((sum, p) => sum + (p.velocity ?? 0), 0)
+      const dailyAvgChanges7d = totalChanges7d / 7
+
+      const nonZeroBuckets = velocity1d.filter((p) => (p.velocity ?? 0) > 0).length
+      const totalBuckets = velocity1d.length
+      const avgChangesPerHour = changesLast24h / Math.max(totalBuckets, 1)
+      const isSaturated =
+        nonZeroBuckets === totalBuckets &&
+        totalBuckets >= SATURATION_MIN_BUCKETS &&
+        avgChangesPerHour >= SATURATION_AVG_PER_HOUR
+
+      let priceTrend: PriceTrend = 'unknown'
+      const referencePrice = weeklyAvgPrice ?? (pricePoints1d.length >= 4 ? pricePoints1d[0].price! : null)
+      if (currentPrice !== null && referencePrice !== null && referencePrice > 0) {
+        const ratio = currentPrice / referencePrice
+        if (ratio > 1 + TREND_THRESHOLD) priceTrend = 'climbing'
+        else if (ratio < 1 - TREND_THRESHOLD) priceTrend = 'falling'
+        else priceTrend = 'stable'
+      }
+
+      let activityLevel: ActivityLevel = 'unknown'
+      if (changesLast24h >= HIGH_ACTIVITY_THRESHOLD) activityLevel = 'high'
+      else if (changesLast24h >= LOW_ACTIVITY_THRESHOLD) activityLevel = 'medium'
+      else if (totalBuckets > 0) activityLevel = 'low'
+
+      setState({
+        priceTrend,
+        activityLevel,
+        isSaturated,
+        currentPrice,
+        weeklyAvgPrice,
+        changesLast24h,
+        dailyAvgChanges7d,
+        loading: false,
+        error: null,
+      })
+    } catch (e) {
+      setState((prev) => ({
+        ...prev,
+        loading: false,
+        error: e instanceof Error ? e.message : 'Failed to load market overview',
+      }))
+    }
+  }, [itemId])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  return state
+}

@@ -33,10 +33,10 @@ export default function Layout() {
     }
 
     return (
-      <Box>
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Toolbar sx={{ display: { xs: 'flex', md: 'none' } }} />
         <Divider />
-        <List>
+        <List sx={{ flexGrow: 1 }}>
           {menuItems
             .filter((item) => !item.requiresItems || (item.requiresItems && items))
             .filter((item) => !item.requiresLogin || (item.requiresLogin && dotNetUserDetails))
@@ -68,6 +68,7 @@ export default function Layout() {
               )
             })}
         </List>
+        <Footer />
       </Box>
     )
   }, [dotNetUserDetails, items, location.pathname])
@@ -79,8 +80,7 @@ export default function Layout() {
           theme.palette.mode === 'light' ? theme.palette.grey[100] : theme.palette.grey[900],
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
-        minHeight: '100vh',
+        height: '100vh',
       }}
     >
       <TopAppBar handleDrawerToggle={handleDrawerToggle} />
@@ -89,8 +89,10 @@ export default function Layout() {
         sx={{
           backgroundColor: (theme) => theme.palette.background.default,
           display: { xs: 'block', md: 'flex' },
+          flexGrow: 1,
           maxWidth: MAX_CONTENT_WIDTH,
           mx: 'auto',
+          overflow: 'hidden',
           width: '100%',
         }}
       >
@@ -114,12 +116,14 @@ export default function Layout() {
           variant="permanent"
           open
           sx={{
-            display: { xs: 'none', md: 'block' },
+            display: { xs: 'none', md: 'flex' },
+            flexDirection: 'column',
             flexShrink: 0,
             '& .MuiDrawer-paper': {
               position: 'relative',
               boxSizing: 'border-box',
               width: DRAWER_WIDTH,
+              overflow: 'auto',
             },
           }}
         >
@@ -129,19 +133,13 @@ export default function Layout() {
         <Box
           component="main"
           sx={{
-            display: 'flex',
-            flexDirection: 'column',
             flexGrow: 1,
             maxWidth: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` },
-            minHeight: '100vh',
+            overflow: 'auto',
             p: 3,
           }}
         >
-          <Box sx={{ flexGrow: 1 }}>
-            <Outlet />
-          </Box>
-
-          <Footer />
+          <Outlet />
         </Box>
       </Box>
     </Box>
