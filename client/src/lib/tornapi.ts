@@ -138,21 +138,36 @@ export async function fetchTornInventory(
     accept: "application/json",
     Authorization: `ApiKey ${apiKey}`
   };
-  const params = new URLSearchParams({
+
+  const allItems: TornInventoryItem[] = [];
+  let nextUrl: string | null = `${TORN_API_ENDPOINT_USER_INVENTORY}?${new URLSearchParams({
     cat,
     offset: "0",
     limit: "250",
-    comment: "dangerworm's Tools"
-  });
-  const res = await fetch(`${TORN_API_ENDPOINT_USER_INVENTORY}?${params.toString()}`, { headers, signal });
-  let data: TornInventoryPayload = {};
-  try {
-    data = await res.json();
-  } catch {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    comment: "dangerworm's Tools",
+  }).toString()}`;
+  let lastPayload: TornInventoryPayload = {};
+
+  while (nextUrl) {
+    const res = await fetch(nextUrl, { headers, signal });
+    let data: TornInventoryPayload = {};
+    try {
+      data = await res.json();
+    } catch {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    }
+    if (data.error) {
+      throw new Error(`Torn inventory API error (${cat}): ${data.error.error}`);
+    }
+    allItems.push(...(data.inventory?.items ?? []));
+    lastPayload = data;
+    nextUrl = data._metadata?.links.next ?? null;
   }
-  if (data.error) {
-    throw new Error(`Torn inventory API error (${cat}): ${data.error.error}`);
-  }
-  return data;
+
+  return {
+    ...lastPayload,
+    inventory: lastPayload.inventory
+      ? { ...lastPayload.inventory, items: allItems }
+      : undefined,
+  };
 }

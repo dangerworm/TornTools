@@ -84,7 +84,17 @@ const BazaarPriceLookup = () => {
 
   const loadCategory = useCallback(
     async (category: BazaarCategory) => {
-      if (!apiKey) return
+      if (!apiKey) {
+        setByCategory((prev) => ({
+          ...prev,
+          [category.cat]: {
+            loading: false,
+            error: 'No API key available. Please sign out and sign in again.',
+            items: null,
+          },
+        }))
+        return
+      }
       setByCategory((prev) => ({
         ...prev,
         [category.cat]: { loading: true, error: null, items: prev[category.cat]?.items ?? null },
