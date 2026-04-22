@@ -27,6 +27,11 @@
 - **Add armour** - done; `ItemDetailsArmourStats` component exists, `DetailsBaseStatsArmor` is in
   `ItemEntity` and `ItemDto`, `GetMarketItemsAsync` has no type filter so armour is scanned and
   appears in profitable listings. ([Trello](https://trello.com/c/PRmX5Ped))
+- **Show all navigation links** - let's have the Bazaar link and the Resale link appear in the
+  navigation bar at all times. We can hopefully drive more people to add their keys by letting them
+  click on them but them then seeing the warnings about it being locked until the add a key. I think
+  we should also lock down any page that uses the Torn market data (City markets, Foreign Markets,
+  Resale) for people who haven't added at least a public key.
 
 ### Resale Page
 

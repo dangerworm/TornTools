@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchItemPriceHistory, fetchItemVelocityHistory } from '../lib/dotnetapi'
 
 export type PriceTrend = 'climbing' | 'stable' | 'falling' | 'unknown'
@@ -35,8 +35,11 @@ export function useItemMarketAdvice(itemId: number | undefined): MarketAdvice {
     error: null,
   })
 
+  const generationRef = useRef(0)
+
   const load = useCallback(async () => {
     if (!itemId) return
+    const generation = ++generationRef.current
     setState((prev) => ({ ...prev, loading: true, error: null }))
 
     try {
@@ -83,6 +86,7 @@ export function useItemMarketAdvice(itemId: number | undefined): MarketAdvice {
       else if (changesLast24h >= LOW_ACTIVITY_THRESHOLD) activityLevel = 'medium'
       else if (totalBuckets > 0) activityLevel = 'low'
 
+      if (generationRef.current !== generation) return
       setState({
         priceTrend,
         activityLevel,
@@ -95,6 +99,7 @@ export function useItemMarketAdvice(itemId: number | undefined): MarketAdvice {
         error: null,
       })
     } catch (e) {
+      if (generationRef.current !== generation) return
       setState((prev) => ({
         ...prev,
         loading: false,

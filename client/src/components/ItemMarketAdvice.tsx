@@ -36,7 +36,7 @@ const activityLabel: Record<ActivityLevel, string> = {
 function buildAdviceSentence(trend: PriceTrend, activity: ActivityLevel): string | null {
   if (trend === 'unknown' || activity === 'unknown') return null
 
-  const sentences: Record<PriceTrend, Record<Exclude<ActivityLevel, 'unknown'>, string>> = {
+  const sentences: Record<Exclude<PriceTrend, 'unknown'>, Record<Exclude<ActivityLevel, 'unknown'>, string>> = {
     climbing: {
       high: 'Prices are climbing in a highly active market, suggesting strong demand. Expect to pay a premium; a good time to list if you\'re selling.',
       medium: 'Prices are rising with moderate activity — demand may be outpacing supply. Could be a good time to list.',
@@ -54,7 +54,7 @@ function buildAdviceSentence(trend: PriceTrend, activity: ActivityLevel): string
     },
   }
 
-  return activity !== 'unknown' ? sentences[trend][activity] : null
+  return sentences[trend][activity]
 }
 
 const ItemMarketAdvice = ({ itemId, defaultExpanded = true }: ItemMarketAdviceProps) => {

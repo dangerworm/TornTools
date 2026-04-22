@@ -21,7 +21,6 @@ import {
 import { useCallback, useMemo, useState } from 'react'
 import { Link as RouterLink } from 'react-router'
 import Loading from '../components/Loading'
-import PriceSparkline from '../components/PriceSparkline'
 import {
   BAZAAR_CATEGORIES,
   BAZAAR_MIN_ACCESS_LEVEL,
@@ -276,7 +275,6 @@ const BazaarPriceLookup = () => {
                     <TableCell>Item</TableCell>
                     <TableCell align="right">Qty</TableCell>
                     <TableCell align="right">Lowest Bazaar Price</TableCell>
-                    <TableCell align="center">Trend (1w)</TableCell>
                     <TableCell align="right">Suggested Price</TableCell>
                     <TableCell>Last seen</TableCell>
                   </TableRow>
@@ -326,9 +324,6 @@ const BazaarPriceLookup = () => {
                               No bazaar data
                             </Typography>
                           )}
-                        </TableCell>
-                        <TableCell align="center">
-                          <PriceSparkline itemId={row.id} />
                         </TableCell>
                         <TableCell align="right">
                           {summary ? (
