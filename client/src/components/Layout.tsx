@@ -56,6 +56,11 @@ export default function Layout() {
                   onClick={() => setMobileOpen(false)}
                   selected={isActive(item.address)}
                   to={item.address}
+                  sx={(theme) => ({
+                    borderLeft: `3px solid ${isActive(item.address) ? theme.palette.primary.main : 'transparent'}`,
+                    pl: '13px',
+                    transition: 'border-color 0.2s',
+                  })}
                 >
                   <ListItemIcon>{item.icon}</ListItemIcon>
                   <ListItemText primary={item.title} />

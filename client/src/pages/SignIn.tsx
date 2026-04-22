@@ -52,7 +52,7 @@ const SignIn = () => {
   return (
     <>
       <Box>
-        <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
+        <Typography variant="h4" gutterBottom sx={{ mt: 2 }}>
           Account Sign-In
         </Typography>
 

@@ -13,6 +13,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
+import { useTheme } from '@mui/material/styles'
 import ForeignMarketItemsTable from '../components/ForeignMarketItemsTable'
 import OptionGroup from '../components/OptionGroup'
 import { useUser } from '../hooks/useUser'
@@ -34,6 +35,7 @@ const itemTypesOfInterest = ['Drug', 'Flower', 'Plushie']
 const VALID_FM_SALE_OUTLETS: SaleOutlet[] = ['bazaar', 'market', 'anonymousMarket']
 
 const ForeignMarkets = () => {
+  const theme = useTheme()
   const { rows, error } = useForeignMarketsScan({ intervalMs: 60000 })
   const { apiKey, tornUserProfile, fetchTornProfileAsync } = useUser()
   const { summaries: bazaarSummaries } = useBazaarSummaries()
@@ -45,7 +47,9 @@ const ForeignMarkets = () => {
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
   const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>(itemTypesOfInterest)
   const [saleOutlet, setSaleOutlet] = useState<SaleOutlet>(() => {
-    const stored = localStorage.getItem('torntools:foreign-markets:sale-outlet:v1') as SaleOutlet | null
+    const stored = localStorage.getItem(
+      'torntools:foreign-markets:sale-outlet:v1',
+    ) as SaleOutlet | null
     return stored && VALID_FM_SALE_OUTLETS.includes(stored) ? stored : 'market'
   })
   const [showProfitableOnly, setShowProfitableOnly] = useState(
@@ -99,13 +103,22 @@ const ForeignMarkets = () => {
     return rows.filter(
       (row) =>
         (!hideOutOfStock || row.quantity > 0) &&
-        (!showProfitableOnly || isForeignStockItemProfitable(row, saleOutlet, bazaarSummaries[row.itemId]?.minPrice)) &&
+        (!showProfitableOnly ||
+          isForeignStockItemProfitable(row, saleOutlet, bazaarSummaries[row.itemId]?.minPrice)) &&
         (selectedItemTypes.length === 0 || selectedItemTypes.includes(row.item.type!)) &&
         (row.itemName.toLowerCase().includes(lowerSearchTerm) ||
           row.item.type?.toLowerCase().includes(lowerSearchTerm) ||
           row.item.subType?.toLowerCase().includes(lowerSearchTerm)),
     )
-  }, [rows, searchTerm, selectedItemTypes, showProfitableOnly, hideOutOfStock, saleOutlet, bazaarSummaries])
+  }, [
+    rows,
+    searchTerm,
+    selectedItemTypes,
+    showProfitableOnly,
+    hideOutOfStock,
+    saleOutlet,
+    bazaarSummaries,
+  ])
 
   const sortedDestinations = useMemo(() => {
     if (orderByFlightTime) {
@@ -176,7 +189,10 @@ const ForeignMarkets = () => {
               onChange={() => {
                 const next = !orderByFlightTime
                 setOrderByFlightTime(next)
-                localStorage.setItem('torntools:foreign-markets:order-by-flight-time:v1', String(next))
+                localStorage.setItem(
+                  'torntools:foreign-markets:order-by-flight-time:v1',
+                  String(next),
+                )
               }}
             />
           }
@@ -190,7 +206,10 @@ const ForeignMarkets = () => {
               onChange={() => {
                 const next = !showAllCountries
                 setShowAllCountries(next)
-                localStorage.setItem('torntools:foreign-markets:show-all-countries:v1', String(next))
+                localStorage.setItem(
+                  'torntools:foreign-markets:show-all-countries:v1',
+                  String(next),
+                )
               }}
             />
           }
@@ -218,7 +237,7 @@ const ForeignMarkets = () => {
                   alt={`Flag of ${destination.country}`}
                   style={{
                     border: selectedCountries.includes(destination.country || '')
-                      ? '4px solid #0966c2'
+                      ? `4px solid ${theme.palette.primary.main}`
                       : '2px solid transparent',
                     borderRadius: '3em',
                     cursor: 'pointer',
@@ -299,7 +318,10 @@ const ForeignMarkets = () => {
                   onChange={() => {
                     const next = !showProfitableOnly
                     setShowProfitableOnly(next)
-                    localStorage.setItem('torntools:foreign-markets:show-profitable-only:v1', String(next))
+                    localStorage.setItem(
+                      'torntools:foreign-markets:show-profitable-only:v1',
+                      String(next),
+                    )
                   }}
                 />
               }
@@ -313,7 +335,10 @@ const ForeignMarkets = () => {
                   onChange={() => {
                     const next = !hideOutOfStock
                     setHideOutOfStock(next)
-                    localStorage.setItem('torntools:foreign-markets:hide-out-of-stock:v1', String(next))
+                    localStorage.setItem(
+                      'torntools:foreign-markets:hide-out-of-stock:v1',
+                      String(next),
+                    )
                   }}
                 />
               }
@@ -325,11 +350,13 @@ const ForeignMarkets = () => {
 
       {saleOutlet === 'bazaar' ? (
         <Typography variant="body2" sx={{ mt: 1, mb: 2, color: 'text.secondary' }}>
-          Note: bazaar sell prices show the current cheapest listing from the most recent Weav3r scan. Items with no scan data show no sell price.
+          Note: bazaar sell prices show the current cheapest listing from the most recent Weav3r
+          scan. Items with no scan data show no sell price.
         </Typography>
       ) : (
         <Typography variant="body2" sx={{ mt: 1, mb: 2, color: 'text.secondary' }}>
-          Note: sell prices are based on Torn's daily average market price, not the most recent market scan.
+          Note: sell prices are based on Torn's daily average market price, not the most recent
+          market scan.
         </Typography>
       )}
 
@@ -347,67 +374,62 @@ const ForeignMarkets = () => {
         </FormGroup>
       </Box>
 
-      {showAllCountries ? (
-        (() => {
-          const visibleItems = filteredItems.filter(
-            (i) => selectedCountries.length === 0 || selectedCountries.includes(i.country),
-          )
-          return visibleItems.length > 0 ? (
-            <Box sx={{ mb: 4 }}>
-              <Divider sx={{ mt: 2, mb: 4 }} />
-              <ForeignMarketItemsTable
-                items={visibleItems}
-                saleOutlet={saleOutlet}
-                showCountry
-              />
-            </Box>
-          ) : null
-        })()
-      ) : (
-        sortedDestinations
-          .filter(
-            (destination) =>
-              selectedCountries.length === 0 || selectedCountries.includes(destination.country || ''),
-          )
-          .map((destination) => (
-            <Fragment key={destination.country}>
-              {filteredItems.filter((i) => i.country === destination.country).length > 0 && (
-                <Box key={destination.country} sx={{ mb: 4 }}>
-                  <Divider sx={{ mt: 2, mb: 4 }} />
-                  <Typography component={'span'} variant="h5" gutterBottom>
-                    <img
-                      src={`/${destination.country?.toLowerCase().replace(' ', '-')}.svg`}
-                      alt={`Flag of ${destination.country}`}
-                      style={{
-                        maxWidth: '1em',
-                        height: 'auto',
-                        marginRight: 8,
-                        top: 3,
-                        position: 'relative',
-                      }}
-                    />
-                    {destination.country}
-                  </Typography>
-                  <Typography
-                    component={'span'}
-                    variant="body2"
-                    sx={(theme) => ({ color: theme.palette.text.secondary, ml: 2 })}
-                  >
-                    Flight time:{' '}
-                    {destination.flightTimesMinutes.standard
-                      ? `${prettyPrintFlightTime(destination.flightTimesMinutes.standard)} (standard)`
-                      : 'N/A'}
-                  </Typography>
+      {showAllCountries
+        ? (() => {
+            const visibleItems = filteredItems.filter(
+              (i) => selectedCountries.length === 0 || selectedCountries.includes(i.country),
+            )
+            return visibleItems.length > 0 ? (
+              <Box sx={{ mb: 4 }}>
+                <Divider sx={{ mt: 2, mb: 4 }} />
+                <ForeignMarketItemsTable items={visibleItems} saleOutlet={saleOutlet} showCountry />
+              </Box>
+            ) : null
+          })()
+        : sortedDestinations
+            .filter(
+              (destination) =>
+                selectedCountries.length === 0 ||
+                selectedCountries.includes(destination.country || ''),
+            )
+            .map((destination) => (
+              <Fragment key={destination.country}>
+                {filteredItems.filter((i) => i.country === destination.country).length > 0 && (
+                  <Box key={destination.country} sx={{ mb: 4 }}>
+                    <Divider sx={{ mt: 2, mb: 4 }} />
+                    <Typography component={'span'} variant="h5" gutterBottom>
+                      <img
+                        src={`/${destination.country?.toLowerCase().replace(' ', '-')}.svg`}
+                        alt={`Flag of ${destination.country}`}
+                        style={{
+                          maxWidth: '1em',
+                          height: 'auto',
+                          marginRight: 8,
+                          top: 3,
+                          position: 'relative',
+                        }}
+                      />
+                      {destination.country}
+                    </Typography>
+                    <Typography
+                      component={'span'}
+                      variant="body2"
+                      sx={(theme) => ({ color: theme.palette.text.secondary, ml: 2 })}
+                    >
+                      Flight time:{' '}
+                      {destination.flightTimesMinutes.standard
+                        ? `${prettyPrintFlightTime(destination.flightTimesMinutes.standard)} (standard)`
+                        : 'N/A'}
+                    </Typography>
 
-                  <ForeignMarketItemsTable
-                    items={filteredItems.filter((i) => i.country === destination.country)}
-                    saleOutlet={saleOutlet}
-                  />
-                </Box>
-              )}
-            </Fragment>
-          ))
-      )}
+                    <ForeignMarketItemsTable
+                      items={filteredItems.filter((i) => i.country === destination.country)}
+                      saleOutlet={saleOutlet}
+                    />
+                  </Box>
+                )}
+              </Fragment>
+            ))}
     </Box>
   )
 }

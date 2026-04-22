@@ -196,7 +196,7 @@ const BazaarPriceLookup = () => {
         Bazaar Price Lookup
       </Typography>
 
-      <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+      <Typography variant="body1" gutterBottom sx={{ mb: 2 }}>
         Pick a category to load that slice of your inventory. Each item shows the current lowest
         Weav3r bazaar listing - click the price to copy it to your clipboard, then paste it into
         Torn's "Add items to your Bazaar" page.
