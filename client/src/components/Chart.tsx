@@ -209,7 +209,8 @@ const Chart = ({
                 <AreaChart
                   data={data}
                   margin={{
-                    left: data[data.length - 1].toLocaleString().length / 4,
+                    left: 12,
+                    right: 8,
                     top: 10,
                   }}
                 >
