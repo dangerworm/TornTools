@@ -208,7 +208,7 @@ const ForeignMarkets = () => {
       </Typography>
 
       <Box>
-        <Grid container spacing={1}>
+        <Grid container spacing={0.5} sx={{ flexWrap: 'nowrap', overflow: 'hidden' }}>
           {sortedDestinations.map((destination: TravelDestination) => (
             <Grid key={destination.country} size="auto">
               <Box
@@ -216,8 +216,8 @@ const ForeignMarkets = () => {
                   alignItems: 'center',
                   display: 'inline-flex',
                   flexDirection: 'column',
-                  minWidth: '4em',
-                  mr: 1,
+                  minWidth: '3.4em',
+                  mr: 0.5,
                   textAlign: 'center',
                 }}
               >
@@ -226,12 +226,12 @@ const ForeignMarkets = () => {
                   alt={`Flag of ${destination.country}`}
                   style={{
                     border: selectedCountries.includes(destination.country || '')
-                      ? `4px solid ${theme.palette.primary.main}`
+                      ? `3px solid ${theme.palette.primary.main}`
                       : '2px solid transparent',
-                    borderRadius: '3em',
+                    borderRadius: '2.5em',
                     cursor: 'pointer',
-                    maxWidth: '3em',
-                    height: '3em',
+                    maxWidth: '2.5em',
+                    height: '2.5em',
                     objectFit: 'cover',
                   }}
                   onClick={() => handleCountryFilterChange(destination.country || '')}
@@ -245,7 +245,7 @@ const ForeignMarkets = () => {
                 </Typography>
                 <Typography
                   variant="caption"
-                  sx={(theme) => ({ color: theme.palette.text.secondary, mt: 0.5 })}
+                  sx={(theme) => ({ color: theme.palette.text.secondary })}
                 >
                   {destination.flightTimesMinutes.standard
                     ? prettyPrintFlightTime(destination.flightTimesMinutes.standard)
@@ -255,6 +255,24 @@ const ForeignMarkets = () => {
             </Grid>
           ))}
         </Grid>
+        <FormControlLabel
+          sx={{ mt: 1 }}
+          control={
+            <Checkbox
+              size="small"
+              checked={orderByFlightTime}
+              onChange={() => {
+                const next = !orderByFlightTime
+                setOrderByFlightTime(next)
+                localStorage.setItem(
+                  'torntools:foreign-markets:order-by-flight-time:v1',
+                  String(next),
+                )
+              }}
+            />
+          }
+          label="Order by flight time"
+        />
       </Box>
 
       {showAllCountries
@@ -347,22 +365,6 @@ const ForeignMarkets = () => {
         <FormControlLabel
           control={
             <Checkbox
-              checked={orderByFlightTime}
-              onChange={() => {
-                const next = !orderByFlightTime
-                setOrderByFlightTime(next)
-                localStorage.setItem(
-                  'torntools:foreign-markets:order-by-flight-time:v1',
-                  String(next),
-                )
-              }}
-            />
-          }
-          label="Order by flight time"
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
               checked={showAllCountries}
               onChange={() => {
                 const next = !showAllCountries
@@ -387,8 +389,14 @@ const ForeignMarkets = () => {
         <Chip
           label="All"
           size="small"
-          variant={selectedItemTypes.length === 0 ? 'filled' : 'outlined'}
-          onClick={() => setSelectedItemTypes([])}
+          variant={
+            selectedItemTypes.length === 0 || selectedItemTypes.length === itemTypes.length
+              ? 'filled'
+              : 'outlined'
+          }
+          onClick={() =>
+            setSelectedItemTypes((prev) => (prev.length === itemTypes.length ? [] : [...itemTypes]))
+          }
           sx={{ mb: 0.5, mr: 0.5 }}
         />
         {itemTypes.map((type) => (

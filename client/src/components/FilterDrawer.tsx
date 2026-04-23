@@ -8,6 +8,7 @@ import SectionHeader from './SectionHeader'
 
 export const FILTER_DRAWER_WIDTH = 300
 const COLLAPSED_STRIP_WIDTH = 44
+const COLLAPSE_TRANSITION = '900ms cubic-bezier(0.22, 0.61, 0.36, 1)'
 const COLLAPSE_STORAGE_KEY = 'torntools:ui:filter-drawer:collapsed:v1'
 
 interface FilterDrawerProps {
@@ -42,76 +43,94 @@ const FilterDrawer = ({ activeCount, children, main, title = 'Filters' }: Filter
     }
   }, [collapsed])
 
-  const hasActive = activeCount && activeCount > 0
+  const hasActive = (activeCount ?? 0) > 0
+  const countLabel = activeCount === 1 ? '1 active filter' : `${activeCount ?? 0} active filters`
+  const strippedToggleTitle = hasActive ? `Show filters — ${countLabel}` : 'Show filters'
 
-  const desktopPanel = collapsed ? (
+  // Single animated panel — width transitions between strip and full so
+  // the table flex-widens/narrows smoothly instead of snapping.
+  const desktopPanel = (
     <Box
       sx={{
-        alignItems: 'flex-start',
         borderLeft: '1px solid rgba(200, 150, 12, 0.16)',
         bgcolor: 'background.paper',
         display: { xs: 'none', md: 'flex' },
         flexDirection: 'column',
         flexShrink: 0,
-        gap: 1,
-        pt: 1.5,
-        width: COLLAPSED_STRIP_WIDTH,
-      }}
-    >
-      <Tooltip title="Show filters" placement="left">
-        <IconButton
-          aria-label="show filters"
-          onClick={() => setCollapsed(false)}
-          size="small"
-          sx={{ color: 'primary.main', mx: 'auto' }}
-        >
-          <Badge badgeContent={hasActive ? activeCount : undefined} color="secondary">
-            <ChevronLeftIcon />
-          </Badge>
-        </IconButton>
-      </Tooltip>
-      <Typography
-        variant="caption"
-        sx={{
-          color: 'text.secondary',
-          letterSpacing: '0.15em',
-          mx: 'auto',
-          textTransform: 'uppercase',
-          writingMode: 'vertical-rl',
-          transform: 'rotate(180deg)',
-          mt: 1,
-        }}
-      >
-        {title}
-      </Typography>
-    </Box>
-  ) : (
-    <Box
-      sx={{
-        borderLeft: '1px solid rgba(200, 150, 12, 0.16)',
-        bgcolor: 'background.paper',
-        display: { xs: 'none', md: 'block' },
-        flexShrink: 0,
         maxHeight: '100%',
-        overflowY: 'auto',
-        width: FILTER_DRAWER_WIDTH,
+        overflow: 'hidden',
+        transition: `width ${COLLAPSE_TRANSITION}`,
+        width: collapsed ? COLLAPSED_STRIP_WIDTH : FILTER_DRAWER_WIDTH,
       }}
     >
-      <Box sx={{ p: 2 }}>
-        <SectionHeader
-          variant="subtitle1"
-          action={
-            <Tooltip title="Hide filters">
-              <IconButton aria-label="hide filters" onClick={() => setCollapsed(true)} size="small">
-                <ChevronRightIcon />
-              </IconButton>
-            </Tooltip>
-          }
+      {collapsed ? (
+        <Box
+          sx={{
+            alignItems: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1,
+            pb: 2,
+            pt: 1.5,
+          }}
         >
-          {title}
-        </SectionHeader>
-        {children}
-      </Box>
+          <Tooltip title={strippedToggleTitle} placement="left">
+            <IconButton
+              aria-label={strippedToggleTitle}
+              onClick={() => setCollapsed(false)}
+              size="small"
+              sx={{ color: 'primary.main' }}
+            >
+              <Badge
+                badgeContent={hasActive ? activeCount : undefined}
+                color="secondary"
+                overlap="circular"
+              >
+                <ChevronLeftIcon />
+              </Badge>
+            </IconButton>
+          </Tooltip>
+          <Typography
+            variant="caption"
+            sx={{
+              color: 'text.secondary',
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase',
+              writingMode: 'vertical-rl',
+              transform: 'rotate(180deg)',
+              mt: 1,
+            }}
+          >
+            {title}
+          </Typography>
+        </Box>
+      ) : (
+        <Box
+          sx={{
+            overflowY: 'auto',
+            p: 2,
+            width: FILTER_DRAWER_WIDTH,
+          }}
+        >
+          <SectionHeader
+            variant="subtitle1"
+            action={
+              <Tooltip title="Hide filters">
+                <IconButton
+                  aria-label="hide filters"
+                  onClick={() => setCollapsed(true)}
+                  size="small"
+                >
+                  <ChevronRightIcon />
+                </IconButton>
+              </Tooltip>
+            }
+          >
+            {title}
+          </SectionHeader>
+          {children}
+        </Box>
+      )}
     </Box>
   )
 

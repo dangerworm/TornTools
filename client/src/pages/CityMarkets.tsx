@@ -174,7 +174,12 @@ const CityMarkets = () => {
               ? 'filled'
               : 'outlined'
           }
-          onClick={() => setSelectedItemTypes([])}
+          onClick={() => {
+            // Toggle between "all selected" (explicit full list) and "none",
+            // so users can jump from "only X" → "everything except X" in two
+            // clicks (click All to fill, click X to remove).
+            setSelectedItemTypes((prev) => (prev.length === itemTypes.length ? [] : [...itemTypes]))
+          }}
           sx={{ mb: 0.5, mr: 0.5 }}
         />
         {itemTypes.map((type) => (
@@ -209,7 +214,9 @@ const CityMarkets = () => {
               ? 'filled'
               : 'outlined'
           }
-          onClick={() => setSelectedVendors([])}
+          onClick={() =>
+            setSelectedVendors((prev) => (prev.length === vendors.length ? [] : [...vendors]))
+          }
           sx={{ mb: 0.5, mr: 0.5 }}
         />
         {vendors.map((vendor) => (

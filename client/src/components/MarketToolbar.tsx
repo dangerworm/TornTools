@@ -35,6 +35,15 @@ const MarketToolbar = ({
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <TextField
+        label="Search"
+        variant="outlined"
+        size="small"
+        value={searchTerm}
+        onChange={(e) => onSearchTermChange(e.target.value)}
+        fullWidth
+      />
+
       <OptionGroup
         options={options}
         selectedOption={saleOutlet}
@@ -58,15 +67,6 @@ const MarketToolbar = ({
           />
         }
         label="Show profitable items only"
-      />
-
-      <TextField
-        label="Search"
-        variant="outlined"
-        size="small"
-        value={searchTerm}
-        onChange={(e) => onSearchTermChange(e.target.value)}
-        fullWidth
       />
     </Box>
   )

@@ -204,8 +204,14 @@ const AllItems = () => {
         <Chip
           label="All"
           size="small"
-          variant={selectedItemTypes.length === 0 ? 'filled' : 'outlined'}
-          onClick={() => setSelectedItemTypes([])}
+          variant={
+            selectedItemTypes.length === 0 || selectedItemTypes.length === itemTypes.length
+              ? 'filled'
+              : 'outlined'
+          }
+          onClick={() =>
+            setSelectedItemTypes((prev) => (prev.length === itemTypes.length ? [] : [...itemTypes]))
+          }
           sx={{ mb: 0.5, mr: 0.5 }}
         />
         {itemTypes.map((type) => (
