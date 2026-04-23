@@ -1,6 +1,3 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { TableRow, TableCell, IconButton, Collapse } from '@mui/material'
 import {
   Favorite,
   FavoriteBorder,
@@ -9,10 +6,14 @@ import {
   OpenInNew,
   Storefront,
 } from '@mui/icons-material'
+import { Collapse, IconButton, TableCell, TableRow, Tooltip } from '@mui/material'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useUser } from '../hooks/useUser'
 import ItemDetails from '../pages/ItemDetails'
 import { type Item } from '../types/items'
 import ItemCell from './ItemCell'
+import LazySparkline from './LazySparkline'
 
 const openTornMarketPage = (itemId: number) => {
   window.open(
@@ -23,13 +24,16 @@ const openTornMarketPage = (itemId: number) => {
 
 interface FavouriteItemsTableRowProps {
   item: Item
+  showSubtype: boolean
 }
 
-const FavouriteItemsTableRow = ({ item }: FavouriteItemsTableRowProps) => {
+const FavouriteItemsTableRow = ({ item, showSubtype }: FavouriteItemsTableRowProps) => {
   const navigate = useNavigate()
   const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser()
 
   const [open, setOpen] = useState(false)
+  const isFavourite = dotNetUserDetails?.favouriteItems?.includes(item.id) ?? false
+  const expandedColSpan = 5 + (dotNetUserDetails ? 1 : 0) + (showSubtype ? 1 : 0) + 1
 
   return (
     <>
@@ -39,31 +43,39 @@ const FavouriteItemsTableRow = ({ item }: FavouriteItemsTableRowProps) => {
             {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
           </IconButton>
         </TableCell>
-        <TableCell align="left" onClick={() => toggleFavouriteItemAsync(item.id)}>
-          {dotNetUserDetails?.favouriteItems?.includes(item.id) ? (
-            <Favorite sx={{ cursor: 'pointer', color: '#1976d2' }} />
-          ) : (
-            <FavoriteBorder sx={{ cursor: 'pointer', color: 'gray' }} />
-          )}
-        </TableCell>
+        {dotNetUserDetails && (
+          <TableCell align="center" onClick={() => toggleFavouriteItemAsync(item.id)}>
+            <Tooltip title={isFavourite ? 'Remove from favourites' : 'Add to favourites'}>
+              {isFavourite ? (
+                <Favorite sx={{ cursor: 'pointer', color: 'primary.main' }} />
+              ) : (
+                <FavoriteBorder sx={{ cursor: 'pointer', color: 'text.secondary' }} />
+              )}
+            </Tooltip>
+          </TableCell>
+        )}
         <TableCell>
           <ItemCell itemId={item.id} itemName={item?.name ?? `Item ${item.id}`} />
         </TableCell>
 
         <TableCell>{item.type}</TableCell>
 
-        <TableCell>{item.subType ? item.subType : (<span>&mdash;</span>)}</TableCell>
+        {showSubtype && <TableCell>{item.subType ?? ''}</TableCell>}
+
+        <TableCell align="center">
+          <LazySparkline itemId={item.id} />
+        </TableCell>
 
         <TableCell align="center" onClick={() => navigate(`/item/${item.id}`)}>
-          <OpenInNew />
+          <OpenInNew sx={{ cursor: 'pointer' }} />
         </TableCell>
-        
+
         <TableCell align="center" onClick={() => openTornMarketPage(item.id)}>
-          <Storefront />
+          <Storefront sx={{ cursor: 'pointer' }} />
         </TableCell>
       </TableRow>
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={10}>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={expandedColSpan}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <ItemDetails inputItem={item} inlineView={true} />
           </Collapse>

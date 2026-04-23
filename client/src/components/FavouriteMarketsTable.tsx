@@ -10,12 +10,16 @@ import {
 } from '@mui/material'
 import { type Item } from '../types/items'
 import FavouriteItemsTableRow from './FavouriteMarketsTableRow'
+import { useUser } from '../hooks/useUser'
 
 interface FavouriteItemsTableProps {
   items: Item[]
 }
 
 const FavouriteMarketsTable = ({ items }: FavouriteItemsTableProps) => {
+  const { dotNetUserDetails } = useUser()
+  const hasSubtype = items.some((item) => !!item.subType)
+
   return (
     <Box>
       <TableContainer component={Paper} sx={{ mt: 2 }}>
@@ -25,19 +29,28 @@ const FavouriteMarketsTable = ({ items }: FavouriteItemsTableProps) => {
               <TableCell align="center" sx={{ width: 48 }}>
                 Info
               </TableCell>
-              <TableCell align="center" sx={{ width: 48 }}>
-                Fav
-              </TableCell>
+              {dotNetUserDetails && (
+                <TableCell align="center" sx={{ width: 48 }}>
+                  Fav
+                </TableCell>
+              )}
               <TableCell align="left">Item</TableCell>
               <TableCell align="left">Type</TableCell>
-              <TableCell align="left">Subtype</TableCell>
-              <TableCell align="center">Item Page</TableCell>
-              <TableCell align="center">Torn</TableCell>
+              {hasSubtype && <TableCell align="left">Subtype</TableCell>}
+              <TableCell align="center" sx={{ width: 110 }}>
+                Trend (1w)
+              </TableCell>
+              <TableCell align="center" sx={{ width: 48 }}>
+                Item Page
+              </TableCell>
+              <TableCell align="center" sx={{ width: 48 }}>
+                Torn
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {items.map((item) => (
-              <FavouriteItemsTableRow key={item.id} item={item} />
+              <FavouriteItemsTableRow key={item.id} item={item} showSubtype={hasSubtype} />
             ))}
           </TableBody>
         </Table>
