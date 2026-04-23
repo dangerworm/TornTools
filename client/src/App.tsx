@@ -8,6 +8,7 @@ import UserSettings from './pages/UserSettings'
 
 import Home from './pages/Home'
 
+import AllItems from './pages/AllItems'
 import CityMarkets from './pages/CityMarkets'
 import ForeignMarkets from './pages/ForeignMarkets'
 import ItemDetails from './pages/ItemDetails'
@@ -29,6 +30,7 @@ function App() {
         <Route path="/resale" element={<Resale />} />
         <Route path="/bazaar-prices" element={<BazaarPriceLookup />} />
         <Route path="/time" element={<Time />} />
+        <Route path="/items" element={<AllItems />} />
 
         <Route path="*" element={<h1>Not Found</h1>} />
       </Route>

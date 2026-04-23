@@ -1,4 +1,5 @@
 import AccessTimeFilled from '@mui/icons-material/AccessTimeFilled'
+import CategoryIcon from '@mui/icons-material/Category'
 import FavoriteIcon from '@mui/icons-material/Favorite'
 import HomeIcon from '@mui/icons-material/Home'
 import LanguageIcon from '@mui/icons-material/Language'
@@ -91,6 +92,16 @@ export const menuItems: MenuItem[] = [
     section: 'utilities',
     subTitle: 'Convert between your local time and Torn City time (TCT).',
     title: 'Time',
+  },
+  {
+    address: '/items',
+    icon: <CategoryIcon />,
+    requiresItems: true,
+    requiresLogin: false,
+    showOnHomePage: false,
+    section: 'utilities',
+    subTitle: 'Browse every item in the Torn catalogue.',
+    title: 'All Items',
   },
   {
     address: '/favourites',
