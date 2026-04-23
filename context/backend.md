@@ -12,9 +12,6 @@ Route: `[controller]/[action]` → `/api/*`
 | GET    | `/api/GetForeignStockItems`    | None | Returns Yata-sourced foreign stock    |
 | GET    | `/api/GetProfitableListings`   | None | Queries `profitable_listings` DB view |
 | POST   | `/api/PostToggleUserFavourite` | JWT  | Body: `{ userId, itemId, add }`       |
-| GET    | `/api/GetThemes`               | None | Optional `?userId=` query param       |
-| POST   | `/api/PostTheme`               | JWT  | Upsert custom theme                   |
-| POST   | `/api/PostUserThemeSelection`  | JWT  | Set preferred theme                   |
 
 Note: `GetProfitableListings` passes `CancellationToken.None` instead of the request token - a minor
 bug.
@@ -83,7 +80,6 @@ Single service interface. Key method groups:
   `RemoveQueueItemAsync`
 - API keys: `GetApiKeyCountAsync`, `GetNextApiKeyAsync`, `MarkKeyUnavailableAsync`
 - Users: `GetUserByIdAsync`, `UpsertUserDetailsAsync`, `ToggleUserFavouriteAsync`
-- Themes: `GetThemesAsync`, `UpsertThemeAsync`, `UpdateUserPreferredThemeAsync`
 
 ---
 
@@ -100,7 +96,6 @@ Single service interface. Key method groups:
 | `ForeignStockItemEntity`       | `foreign_stock_items` | `(itemId, country)` composite |
 | `UserEntity`                   | `users`               | `id` (long) - Torn user ID    |
 | `UserFavouriteItemEntity`      | `user_favourites`     | `(userId, itemId)` composite  |
-| `ThemeEntity`                  | `themes`              | `id`                          |
 | `QueueItemEntity`              | `queue_items`         | `id`                          |
 
 ### DB Views
@@ -169,7 +164,7 @@ Registers recurring Hangfire jobs (queue population on a schedule).
 ## Migrations (`/.docker/flyway/sql/`)
 
 Versioned (`Versioned/V1.x__`):
-`audit → items → call_queue → listings → item_change_logs → users → user_favourites → foreign_stock_items → themes → add_last_updated_to_items → add_key_status_to_users`
+`audit → items → call_queue → listings → item_change_logs → users → user_favourites → foreign_stock_items → add_last_updated_to_items → add_key_status_to_users → item_change_log_summaries → clean_invalid_listings → queue_index_generated_by_default → add_access_level_to_users → remove_themes`
 
 Repeatable (`Repeatable/R__`):
 

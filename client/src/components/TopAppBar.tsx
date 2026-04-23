@@ -1,8 +1,6 @@
 import {
   AccountCircle,
   AccountCircleOutlined,
-  DarkMode,
-  LightMode,
   Menu as MenuIcon,
 } from '@mui/icons-material'
 import {
@@ -18,7 +16,6 @@ import {
 import { useState, type MouseEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MAX_CONTENT_WIDTH } from '../constants/uiConstants'
-import { useThemeSettings } from '../hooks/useThemeSettings'
 import { useUser } from '../hooks/useUser'
 import '../index.css'
 import ItemSearch from './ItemSearch'
@@ -30,7 +27,6 @@ interface TopAppBarProps {
 function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
   const navigate = useNavigate()
   const { dotNetUserDetails, logoutAsync } = useUser()
-  const { selectTheme, selectedThemeId } = useThemeSettings()
 
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null)
 
@@ -95,18 +91,6 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
         >
           <ItemSearch />
         </Box>
-
-        {!dotNetUserDetails && (
-          <Box sx={{ ml: 'auto' }}>
-            <IconButton color="inherit" aria-label="colour mode toggle">
-              {selectedThemeId === 2 ? (
-                <LightMode onClick={() => void selectTheme(1)} sx={{ fontSize: 32 }} />
-              ) : (
-                <DarkMode onClick={() => void selectTheme(2)} sx={{ fontSize: 32 }} />
-              )}
-            </IconButton>
-          </Box>
-        )}
 
         <Box sx={{ ml: 'auto' }}>
           <IconButton

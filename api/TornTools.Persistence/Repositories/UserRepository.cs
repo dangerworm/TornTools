@@ -15,7 +15,6 @@ public class UserRepository(
   {
     var entity = await DbContext.Users
         .Include(u => u.FavouriteItems)
-        .Include(u => u.PreferredTheme)
         .FirstOrDefaultAsync(u => u.Id == userId, stoppingToken);
 
     return entity?.AsDto();
@@ -81,7 +80,6 @@ public class UserRepository(
   {
     var userEntity = await DbContext.Users
         .Include(u => u.FavouriteItems)
-        .Include(u => u.PreferredTheme)
         .FirstOrDefaultAsync(u => u.Id == userDto.Id, stoppingToken);
 
     if (userEntity == null)
@@ -114,20 +112,6 @@ public class UserRepository(
       }
     }
 
-    if (userEntity.PreferredThemeId == null)
-    {
-      var defaultTheme = await DbContext.Themes
-          .Where(t => t.UserId == null)
-          .OrderBy(t => t.Id)
-          .FirstOrDefaultAsync(stoppingToken);
-
-      if (defaultTheme != null)
-      {
-        userEntity.PreferredThemeId = defaultTheme.Id;
-        userEntity.PreferredTheme = defaultTheme;
-      }
-    }
-
     await DbContext.SaveChangesAsync(stoppingToken);
 
     return userEntity.AsDto();
@@ -157,70 +141,9 @@ public class UserRepository(
 
     var userEntity = await DbContext.Users
         .Include(u => u.FavouriteItems)
-        .Include(u => u.PreferredTheme)
         .FirstOrDefaultAsync(u => u.Id == userId, stoppingToken);
 
     return userEntity?.AsDto();
-  }
-
-  public async Task<IEnumerable<ThemeDto>> GetThemesAsync(long? userId, CancellationToken stoppingToken)
-  {
-    return await DbContext.Themes
-        .AsNoTracking()
-        .Where(t => t.UserId == null || t.UserId == userId)
-        .OrderBy(t => t.Name)
-        .Select(t => t.AsDto())
-        .ToListAsync(stoppingToken);
-  }
-
-  public async Task<ThemeDto> UpsertThemeAsync(ThemeDto themeDto, CancellationToken stoppingToken)
-  {
-    var themeEntity = await DbContext.Themes
-        .FirstOrDefaultAsync(t => t.Id == themeDto.Id, stoppingToken);
-
-    if (themeEntity == null)
-    {
-      themeEntity = new ThemeEntity
-      {
-        Name = themeDto.Name,
-        Mode = themeDto.Mode,
-        PrimaryColor = themeDto.PrimaryColor,
-        SecondaryColor = themeDto.SecondaryColor,
-        UserId = themeDto.UserId
-      };
-
-      await DbContext.Themes.AddAsync(themeEntity, stoppingToken);
-    }
-    else
-    {
-      themeEntity.Name = themeDto.Name;
-      themeEntity.Mode = themeDto.Mode;
-      themeEntity.PrimaryColor = themeDto.PrimaryColor;
-      themeEntity.SecondaryColor = themeDto.SecondaryColor;
-      themeEntity.UserId = themeDto.UserId;
-    }
-
-    await DbContext.SaveChangesAsync(stoppingToken);
-    return themeEntity.AsDto();
-  }
-
-  public async Task<UserDto?> UpdateUserPreferredThemeAsync(long userId, long? themeId, CancellationToken stoppingToken)
-  {
-    var userEntity = await DbContext.Users
-        .Include(u => u.FavouriteItems)
-        .Include(u => u.PreferredTheme)
-        .FirstOrDefaultAsync(u => u.Id == userId, stoppingToken);
-
-    if (userEntity == null)
-    {
-      return null;
-    }
-
-    userEntity.PreferredThemeId = themeId;
-
-    await DbContext.SaveChangesAsync(stoppingToken);
-
-    return userEntity.AsDto();
   }
 }
 

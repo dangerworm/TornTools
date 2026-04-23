@@ -385,31 +385,6 @@ public class DatabaseService(
     return _userRepository.ToggleUserFavourite(model.UserId, model.ItemId, model.Add, stoppingToken);
   }
 
-  public Task<IEnumerable<ThemeDto>> GetThemesAsync(long? userId, CancellationToken stoppingToken)
-  {
-    return _userRepository.GetThemesAsync(userId, stoppingToken);
-  }
-
-  public Task<ThemeDto> UpsertThemeAsync(ThemeInputModel themeInputModel, CancellationToken stoppingToken)
-  {
-    var dto = new ThemeDto
-    {
-      Id = themeInputModel.Id ?? 0,
-      Name = themeInputModel.Name,
-      Mode = themeInputModel.Mode,
-      PrimaryColor = themeInputModel.PrimaryColor,
-      SecondaryColor = themeInputModel.SecondaryColor,
-      UserId = themeInputModel.UserId
-    };
-
-    return _userRepository.UpsertThemeAsync(dto, stoppingToken);
-  }
-
-  public Task<UserDto?> UpdateUserPreferredThemeAsync(UserThemeSelectionInputModel inputModel, CancellationToken stoppingToken)
-  {
-    return _userRepository.UpdateUserPreferredThemeAsync(inputModel.UserId, inputModel.ThemeId, stoppingToken);
-  }
-
   private static IEnumerable<QueueItemDto> BuildTornMarketQueueItems(IEnumerable<int> itemIds)
   {
     foreach (var itemId in itemIds)

@@ -159,8 +159,6 @@ public class AuthController(
     level = user.Level,
     accessLevel = user.AccessLevel,
     gender = user.Gender,
-    favouriteItems = user.FavouriteItems,
-    preferredThemeId = user.PreferredThemeId,
-    preferredTheme = user.PreferredTheme
+    favouriteItems = user.FavouriteItems
   };
 }

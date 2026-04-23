@@ -11,6 +11,4 @@ public class UserDto
   public int AccessLevel { get; set; } = 1;
   public required string Gender { get; set; }
   public IEnumerable<int> FavouriteItems { get; set; } = [];
-  public long? PreferredThemeId { get; set; }
-  public ThemeDto? PreferredTheme { get; set; }
 }

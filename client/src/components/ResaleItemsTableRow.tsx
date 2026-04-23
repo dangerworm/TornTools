@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Chip, rgbToHex, TableCell, TableRow } from '@mui/material'
 import { Favorite, FavoriteBorder, OpenInNew } from '@mui/icons-material'
-import { useThemeSettings } from '../hooks/useThemeSettings'
 import { useUser } from '../hooks/useUser'
 import { getFormattedText } from '../lib/textFormat'
 import { getSecondsSinceLastUpdate, timeAgo } from '../lib/time'
@@ -46,7 +45,6 @@ const ResaleItemsTableRow = ({
   saleOutlet,
 }: ResaleItemsTableRowProps) => {
   const navigate = useNavigate()
-  const { availableThemes, selectedThemeId } = useThemeSettings()
   const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser()
 
   const buyPriceRange = getBuyPriceRange(row, purchaseOutlet, saleOutlet)
@@ -59,11 +57,7 @@ const ResaleItemsTableRow = ({
   const rowColor = (date: Date | null): string => {
     if (date === null) return `rgba(128, 128, 128, 0.87)`
     const diffSeconds = getSecondsSinceLastUpdate(date)
-    const selectedTheme = availableThemes.find((t) => t.id === selectedThemeId)
-    let colorValue = Math.min(Math.max(Math.floor(diffSeconds / 3), 0), 171)
-    if (selectedTheme?.mode != null && selectedTheme.mode === 'dark') {
-      colorValue = 255 - colorValue
-    }
+    const colorValue = 255 - Math.min(Math.max(Math.floor(diffSeconds / 3), 0), 171)
     return `rgba(${colorValue}, ${colorValue}, ${colorValue}, 0.87)`
   }
 

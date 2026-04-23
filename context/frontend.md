@@ -6,7 +6,7 @@
 | ------------------ | ------------------ | --------------------------------- |
 | `/`                | `Home`             | Dashboard placeholder             |
 | `/signin`          | `SignIn`           | API key entry + confirmation flow |
-| `/settings`        | `UserSettings`     | Theme selection, account settings |
+| `/settings`        | `UserSettings`     | API key management                |
 | `/favourites`      | `FavouriteMarkets` | User's bookmarked items           |
 | `/markets`         | `Markets`          | Hub/nav for market sub-pages      |
 | `/city-markets`    | `CityMarkets`      | Torn City NPC vendor markets      |
@@ -22,7 +22,7 @@ All routes share `<Layout>` (nav drawer + footer). The `*` catch-all renders a b
 
 ## Global State (`client/src/contexts/`)
 
-Three React Context providers, each with a matching hook in `hooks/`.
+Two React Context providers, each with a matching hook in `hooks/`.
 
 ### UserContext / `useUser`
 
@@ -32,8 +32,7 @@ State:
 
 - `apiKey` - Torn API key (restored from localStorage on mount)
 - `tornUserProfile` - fetched directly from Torn API (name, level, gender, id)
-- `dotNetUserDetails` - fetched from backend on login or `getMe()` (includes `favouriteItems[]`,
-  `preferredThemeId`)
+- `dotNetUserDetails` - fetched from backend on login or `getMe()` (includes `favouriteItems[]`)
 
 Loading/error pairs for both async paths.
 
@@ -54,13 +53,8 @@ File: `contexts/ItemsContext.tsx`, `hooks/useItems.ts`
 State: `itemsById` (map), `items` (sorted array), `loading`, `error` Source: `GET /api/GetItems`
 Cache: localStorage, 1h TTL. Exposes `refresh()` to force re-fetch.
 
-### ThemeContext / `useThemeSettings`
-
-File: `contexts/ThemeContext.tsx`, `hooks/useThemeSettings.ts`
-
-State: `availableThemes`, `selectedThemeId`, `currentTheme` Methods: `selectTheme(id)`,
-`saveTheme(definition)`, `refreshThemes()` Built-in themes: Default Light, Default Dark (no user
-ID). MUI theme created dynamically via `createTheme` from the active `ThemeDefinition`.
+Theme: a single dark Torn-gold palette is defined in `theme/appTheme.ts` and applied at the root via
+MUI `ThemeProvider` in `main.tsx`. No user customisation, no context.
 
 ---
 
@@ -74,8 +68,7 @@ success responses.
 
 Key functions: `login`, `getMe`, `logout`, `fetchItems`, `fetchForeignStockItems`,
 `fetchProfitableListings`, `fetchItemPriceHistory`, `fetchItemVelocityHistory`,
-`postAddUserFavourite`, `postRemoveUserFavourite`, `fetchThemes`, `postThemeDefinition`,
-`postUserThemeSelection`.
+`postAddUserFavourite`, `postRemoveUserFavourite`.
 
 Auth URL stripping: `/auth/*` endpoints strip `/api` suffix from `API_BASE_URL` via regex replace.
 
@@ -154,7 +147,6 @@ rendering.
 | `foreignStockItems.ts`  | `ForeignStockItem`                                                      |
 | `profitableListings.ts` | `ProfitableListing` (includes `cityProfit`, `marketProfit(tax)` method) |
 | `history.ts`            | `HistoryResult`, `HistoryWindow`                                        |
-| `themes.ts`             | `ThemeDefinition`, `ThemeInput`                                         |
 | `markets.ts`            | `SaleOutlet`, `TaxType`                                                 |
 | `common.ts`             | `saleOutletOptions`, `taxTypeOptions`                                   |
 

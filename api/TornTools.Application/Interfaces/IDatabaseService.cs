@@ -51,7 +51,4 @@ public interface IDatabaseService
   Task<List<UserDto>> GetUsersAsync(CancellationToken stoppingToken);
   Task<UserDto> UpsertUserDetailsAsync(UserDetailsInputModel userDetails, CancellationToken stoppingToken);
   Task<UserDto?> ToggleUserFavourite(UserFavouriteInputModel userFavouriteModel, CancellationToken stoppingToken);
-  Task<IEnumerable<ThemeDto>> GetThemesAsync(long? userId, CancellationToken stoppingToken);
-  Task<ThemeDto> UpsertThemeAsync(ThemeInputModel themeInputModel, CancellationToken stoppingToken);
-  Task<UserDto?> UpdateUserPreferredThemeAsync(UserThemeSelectionInputModel inputModel, CancellationToken stoppingToken);
 }
