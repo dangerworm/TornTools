@@ -13,7 +13,7 @@ import {
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import CityMarketItemsTable from '../components/CityMarketItemsTable'
 import Loading from '../components/Loading'
-import LoginRequiredForFairness from '../components/LoginRequiredForFairness'
+import LoginRequired from '../components/LoginRequired'
 import { menuItems } from '../components/Menu'
 import OptionGroup from '../components/OptionGroup'
 import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
@@ -109,7 +109,7 @@ const CityMarkets = () => {
           City Markets
         </Typography>
 
-        <LoginRequiredForFairness />
+        <LoginRequired tool="City Markets" requiredLevel="public" />
       </Box>
     )
   }

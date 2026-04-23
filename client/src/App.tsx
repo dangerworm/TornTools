@@ -8,7 +8,6 @@ import UserSettings from './pages/UserSettings'
 
 import Home from './pages/Home'
 
-import Markets from './pages/Markets'
 import CityMarkets from './pages/CityMarkets'
 import ForeignMarkets from './pages/ForeignMarkets'
 import ItemDetails from './pages/ItemDetails'
@@ -24,7 +23,6 @@ function App() {
         <Route path="/signin" element={<SignIn />} />
         <Route path="/favourites" element={<FavouriteMarkets />} />
         <Route path="/settings" element={<UserSettings />} />
-        <Route path="/markets" element={<Markets />} />
         <Route path="/city-markets" element={<CityMarkets />} />
         <Route path="/foreign-markets" element={<ForeignMarkets />} />
         <Route path="/item/:itemId" element={<ItemDetails />} />

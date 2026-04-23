@@ -2,7 +2,7 @@ import { Alert, AlertTitle, Box, Typography } from '@mui/material'
 import { useEffect, useRef } from 'react'
 import FavouriteMarketsTable from '../components/FavouriteMarketsTable'
 import Loading from '../components/Loading'
-import LoginRequiredForToken from '../components/LoginRequiredForToken'
+import LoginRequired from '../components/LoginRequired'
 import { useItems } from '../hooks/useItems'
 import { useUser } from '../hooks/useUser'
 
@@ -24,7 +24,7 @@ const FavouriteMarkets = () => {
         <Typography variant="h4" gutterBottom>
           Favourite Markets
         </Typography>
-        <LoginRequiredForToken />
+        <LoginRequired tool="Favourite Markets" requiredLevel="public" />
       </Box>
     )
   }

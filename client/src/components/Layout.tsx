@@ -6,16 +6,24 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  ListSubheader,
   Toolbar,
 } from '@mui/material'
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { MAX_CONTENT_WIDTH } from '../constants/uiConstants'
 import { useItems } from '../hooks/useItems'
 import { useUser } from '../hooks/useUser'
 import '../index.css'
 import Footer from './Footer'
-import { DRAWER_WIDTH, menuItems } from './Menu'
+import {
+  DRAWER_WIDTH,
+  menuItems,
+  SECTION_LABELS,
+  SECTION_ORDER,
+  type MenuItem as NavMenuItem,
+  type MenuSection,
+} from './Menu'
 import TopAppBar from './TopAppBar'
 
 export default function Layout() {
@@ -32,41 +40,89 @@ export default function Layout() {
       return location.pathname === to || location.pathname.startsWith(`${to}/`)
     }
 
+    const disabledFor = (item: NavMenuItem) => {
+      if (item.requiresItems && (!items || items.length === 0)) return true
+      if (item.requiresLogin && !dotNetUserDetails) return true
+      const userAccessLevel = dotNetUserDetails?.accessLevel ?? 1
+      if (item.requiresAccessLevel != null && userAccessLevel < item.requiresAccessLevel) {
+        return true
+      }
+      return false
+    }
+
+    const renderItem = (item: NavMenuItem) => {
+      const disabled = disabledFor(item)
+      return (
+        <ListItemButton
+          component={NavLink}
+          key={item.address}
+          onClick={() => setMobileOpen(false)}
+          selected={isActive(item.address)}
+          to={item.address}
+          sx={(theme) => ({
+            color: disabled ? theme.palette.action.disabled : 'inherit',
+            borderLeft: `3px solid ${
+              isActive(item.address) ? theme.palette.primary.main : 'transparent'
+            }`,
+            pl: '13px',
+            transition: 'border-color 0.2s',
+          })}
+        >
+          <ListItemIcon sx={{ color: disabled ? 'action.disabled' : 'inherit' }}>
+            {item.icon}
+          </ListItemIcon>
+          <ListItemText primary={item.title} />
+        </ListItemButton>
+      )
+    }
+
+    const ungrouped = menuItems.filter((item) => !item.section)
+    const grouped: Record<MenuSection, NavMenuItem[]> = {
+      markets: [],
+      utilities: [],
+      you: [],
+    }
+    menuItems.forEach((item) => {
+      if (item.section) grouped[item.section].push(item)
+    })
+
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Toolbar sx={{ display: { xs: 'flex', md: 'none' } }} />
         <Divider />
-        <List sx={{ flexGrow: 1 }}>
-          {menuItems.map((item) => {
-            let isDisabled = false
-            isDisabled = isDisabled || (item.requiresItems && (!items || items.length === 0))
-            isDisabled = isDisabled || (item.requiresLogin && !dotNetUserDetails)
-
-            const userAccessLevel = dotNetUserDetails?.accessLevel ?? 1
-            const hasAccess =
-              item.requiresAccessLevel == null || userAccessLevel >= item.requiresAccessLevel
-            isDisabled = isDisabled || (item.requiresAccessLevel != null && !hasAccess)
-
+        <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+          {ungrouped.length > 0 && <List disablePadding>{ungrouped.map(renderItem)}</List>}
+          {SECTION_ORDER.map((section) => {
+            const sectionItems = grouped[section]
+            if (sectionItems.length === 0) return null
             return (
-              <ListItemButton
-                component={NavLink}
-                key={item.address}
-                onClick={() => setMobileOpen(false)}
-                selected={isActive(item.address)}
-                to={item.address}
-                sx={(theme) => ({
-                  color: isDisabled ? theme.palette.action.disabled : 'inherit',
-                  borderLeft: `3px solid ${isActive(item.address) ? theme.palette.primary.main : 'transparent'}`,
-                  pl: '13px',
-                  transition: 'border-color 0.2s',
-                })}
-              >
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.title} />
-              </ListItemButton>
+              <Fragment key={section}>
+                <Divider sx={{ my: 0.5 }} />
+                <List
+                  disablePadding
+                  subheader={
+                    <ListSubheader
+                      component="div"
+                      disableSticky
+                      sx={{
+                        bgcolor: 'transparent',
+                        color: 'text.secondary',
+                        fontSize: '0.7rem',
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        lineHeight: 2,
+                      }}
+                    >
+                      {SECTION_LABELS[section]}
+                    </ListSubheader>
+                  }
+                >
+                  {sectionItems.map(renderItem)}
+                </List>
+              </Fragment>
             )
           })}
-        </List>
+        </Box>
         <Footer />
       </Box>
     )

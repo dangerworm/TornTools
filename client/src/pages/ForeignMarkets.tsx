@@ -16,7 +16,7 @@ import { useTheme } from '@mui/material/styles'
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import ForeignMarketItemsTable from '../components/ForeignMarketItemsTable'
 import Loading from '../components/Loading'
-import LoginRequiredForFairness from '../components/LoginRequiredForFairness'
+import LoginRequired from '../components/LoginRequired'
 import { menuItems } from '../components/Menu'
 import OptionGroup from '../components/OptionGroup'
 import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
@@ -176,7 +176,7 @@ const ForeignMarkets = () => {
           Foreign Markets
         </Typography>
 
-        <LoginRequiredForFairness />
+        <LoginRequired tool="Foreign Markets" requiredLevel="public" />
       </Box>
     )
   }
