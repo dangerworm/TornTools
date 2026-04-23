@@ -55,10 +55,10 @@ const ForeignMarkets = () => {
     return stored && VALID_FM_SALE_OUTLETS.includes(stored) ? stored : 'market'
   })
   const [showProfitableOnly, setShowProfitableOnly] = useState(
-    () => localStorage.getItem('torntools:foreign-markets:show-profitable-only:v1') !== 'false',
+    () => localStorage.getItem('torntools:foreign-markets:show-profitable-only:v1') === 'true',
   )
   const [hideOutOfStock, setHideOutOfStock] = useState(
-    () => localStorage.getItem('torntools:foreign-markets:hide-out-of-stock:v1') !== 'false',
+    () => localStorage.getItem('torntools:foreign-markets:hide-out-of-stock:v1') === 'true',
   )
   const [showAllCountries, setShowAllCountries] = useState(
     () => localStorage.getItem('torntools:foreign-markets:show-all-countries:v1') === 'true',

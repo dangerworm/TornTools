@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Chip, rgbToHex, TableCell, TableRow } from '@mui/material'
+import { rgbToHex, TableCell, TableRow, Tooltip } from '@mui/material'
 import { Favorite, FavoriteBorder, OpenInNew } from '@mui/icons-material'
 import { useUser } from '../hooks/useUser'
 import { getFormattedText } from '../lib/textFormat'
@@ -15,6 +15,7 @@ import {
 import type { ProfitableListing } from '../types/profitableListings'
 import type { PurchaseOutlet, SaleOutlet } from '../types/markets'
 import ItemCell from './ItemCell'
+import StatChip from './StatChip'
 
 const MotionTableRow = motion.create(TableRow)
 
@@ -27,12 +28,11 @@ interface ResaleItemsTableRowProps {
 
 const ProfitChip = ({ profit }: { profit: number | null }) => {
   if (profit === null)
-    return <Chip label="N/A" size="small" sx={{ opacity: 0.3, whiteSpace: 'nowrap' }} />
+    return <StatChip chipVariant="status" label="N/A" sx={{ opacity: 0.5, whiteSpace: 'nowrap' }} />
   return (
-    <Chip
+    <StatChip
+      chipVariant={profit >= 0 ? 'profit' : 'loss'}
       label={getFormattedText('$', profit, '')}
-      color={profit >= 0 ? 'success' : 'error'}
-      size="small"
       sx={{ whiteSpace: 'nowrap' }}
     />
   )
@@ -81,11 +81,19 @@ const ResaleItemsTableRow = ({
     >
       {dotNetUserDetails && (
         <TableCell align="left" onClick={() => toggleFavouriteItemAsync(row.itemId)}>
-          {dotNetUserDetails.favouriteItems?.includes(row.itemId) ? (
-            <Favorite sx={{ cursor: 'pointer', color: '#1976d2' }} />
-          ) : (
-            <FavoriteBorder sx={{ cursor: 'pointer', color: 'gray' }} />
-          )}
+          <Tooltip
+            title={
+              dotNetUserDetails.favouriteItems?.includes(row.itemId)
+                ? 'Remove from favourites'
+                : 'Add to favourites'
+            }
+          >
+            {dotNetUserDetails.favouriteItems?.includes(row.itemId) ? (
+              <Favorite sx={{ cursor: 'pointer', color: 'primary.main' }} />
+            ) : (
+              <FavoriteBorder sx={{ cursor: 'pointer', color: 'text.secondary' }} />
+            )}
+          </Tooltip>
         </TableCell>
       )}
 

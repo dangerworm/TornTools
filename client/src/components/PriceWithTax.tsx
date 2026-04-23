@@ -34,9 +34,11 @@ const PriceWithTax = ({
   const primary = getFormattedText('$', value, '')
   const hasTax = taxRate != null && taxRate > 0
   const netValue = hasTax ? value * (1 - taxRate) : null
+  // Non-breaking spaces keep the net line on one glyph-run so narrow table
+  // cells don't wrap mid-phrase ("after 5%\ntax").
   const netLabel =
     netValue != null
-      ? `${getFormattedText('$', netValue, '')} after ${Math.round(taxRate! * 100)}% tax`
+      ? `${getFormattedText('$', netValue, '')} after ${Math.round(taxRate! * 100)}% tax`
       : null
 
   if (!hasTax) {
@@ -67,8 +69,14 @@ const PriceWithTax = ({
         alignItems: align === 'right' ? 'flex-end' : align === 'left' ? 'flex-start' : 'center',
       }}
     >
-      <Typography variant={primaryVariant}>{primary}</Typography>
-      <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+      <Typography variant={primaryVariant} sx={{ whiteSpace: 'nowrap' }}>
+        {primary}
+      </Typography>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ lineHeight: 1.2, whiteSpace: 'nowrap' }}
+      >
         {netLabel}
       </Typography>
     </Box>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Box, TableRow, TableCell, Chip, IconButton, Collapse } from '@mui/material'
+import { Box, TableRow, TableCell, IconButton, Collapse } from '@mui/material'
 import {
   Favorite,
   FavoriteBorder,
@@ -8,6 +8,7 @@ import {
   KeyboardArrowUp,
   OpenInNew,
 } from '@mui/icons-material'
+import { Tooltip } from '@mui/material'
 import { useUser } from '../hooks/useUser'
 import { getFormattedText } from '../lib/textFormat'
 import { SALE_TAX } from '../lib/profitCalculations'
@@ -17,15 +18,15 @@ import { type SortableForeignStockItem } from '../types/foreignStockItems'
 import type { SaleOutlet } from '../types/markets'
 import ItemCell from './ItemCell'
 import PriceWithTax from './PriceWithTax'
+import StatChip from './StatChip'
 
 const ProfitChip = ({ profit }: { profit: number | null }) => {
   if (profit === null)
-    return <Chip label="N/A" size="small" sx={{ opacity: 0.3, whiteSpace: 'nowrap' }} />
+    return <StatChip chipVariant="status" label="N/A" sx={{ opacity: 0.5, whiteSpace: 'nowrap' }} />
   return (
-    <Chip
+    <StatChip
+      chipVariant={profit >= 0 ? 'profit' : 'loss'}
       label={getFormattedText('$', profit, '')}
-      color={profit >= 0 ? 'success' : 'error'}
-      size="small"
       sx={{ whiteSpace: 'nowrap' }}
     />
   )
@@ -65,11 +66,19 @@ const ForeignMarketItemsTableRow = ({
 
         {dotNetUserDetails && (
           <TableCell align="center" onClick={() => toggleFavouriteItemAsync(item.itemId)}>
-            {dotNetUserDetails.favouriteItems?.includes(item.itemId) ? (
-              <Favorite sx={{ cursor: 'pointer', color: '#1976d2' }} />
-            ) : (
-              <FavoriteBorder sx={{ cursor: 'pointer', color: 'gray' }} />
-            )}
+            <Tooltip
+              title={
+                dotNetUserDetails.favouriteItems?.includes(item.itemId)
+                  ? 'Remove from favourites'
+                  : 'Add to favourites'
+              }
+            >
+              {dotNetUserDetails.favouriteItems?.includes(item.itemId) ? (
+                <Favorite sx={{ cursor: 'pointer', color: 'primary.main' }} />
+              ) : (
+                <FavoriteBorder sx={{ cursor: 'pointer', color: 'text.secondary' }} />
+              )}
+            </Tooltip>
           </TableCell>
         )}
 
@@ -106,7 +115,7 @@ const ForeignMarketItemsTableRow = ({
 
         <TableCell align="right" onClick={() => navigate(`/item/${item.itemId}`)}>
           {item.quantity === 0 ? (
-            <Chip label="Out of Stock" color="error" size="small" />
+            <StatChip chipVariant="loss" label="Out of stock" />
           ) : (
             <span>{getFormattedText('', item.quantity ?? 0, '')}</span>
           )}

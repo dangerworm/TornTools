@@ -6,9 +6,9 @@ import {
   AccordionSummary,
   Alert,
   Box,
-  Chip,
   Typography,
 } from '@mui/material'
+import StatChip from './StatChip'
 import {
   useItemMarketAdvice,
   type ActivityLevel,
@@ -83,12 +83,10 @@ const ItemMarketAdvice = ({
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Typography variant="h5">Market Overview</Typography>
-          <Chip
+          <StatChip
+            chipVariant="experimental"
             icon={<ScienceIcon sx={{ fontSize: '0.85rem' }} />}
             label="Experimental"
-            size="small"
-            color="warning"
-            variant="outlined"
             sx={{ fontSize: '0.7rem', height: 22 }}
           />
         </Box>

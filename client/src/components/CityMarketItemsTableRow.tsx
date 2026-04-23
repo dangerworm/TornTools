@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { TableRow, TableCell, Chip, IconButton, Collapse } from '@mui/material'
+import { TableRow, TableCell, IconButton, Collapse, Tooltip } from '@mui/material'
 import {
   Favorite,
   FavoriteBorder,
@@ -17,6 +17,7 @@ import { type SortableItem } from '../types/items'
 import type { SaleOutlet } from '../types/markets'
 import ItemCell from './ItemCell'
 import PriceWithTax from './PriceWithTax'
+import StatChip from './StatChip'
 
 const shopUrls: Map<string, string> = new Map([
   ["Big Al's Gun Shop", 'https://www.torn.com/bigalgunshop.php'],
@@ -75,11 +76,19 @@ const CityMarketItemsTableRow = ({
 
         {dotNetUserDetails && (
           <TableCell align="center" onClick={() => toggleFavouriteItemAsync(item.id)}>
-            {dotNetUserDetails.favouriteItems?.includes(item.id) ? (
-              <Favorite sx={{ cursor: 'pointer', color: '#1976d2' }} />
-            ) : (
-              <FavoriteBorder sx={{ cursor: 'pointer', color: 'gray' }} />
-            )}
+            <Tooltip
+              title={
+                dotNetUserDetails.favouriteItems?.includes(item.id)
+                  ? 'Remove from favourites'
+                  : 'Add to favourites'
+              }
+            >
+              {dotNetUserDetails.favouriteItems?.includes(item.id) ? (
+                <Favorite sx={{ cursor: 'pointer', color: 'primary.main' }} />
+              ) : (
+                <FavoriteBorder sx={{ cursor: 'pointer', color: 'text.secondary' }} />
+              )}
+            </Tooltip>
           </TableCell>
         )}
 
@@ -121,10 +130,11 @@ const CityMarketItemsTableRow = ({
           <TableCell align="right" onClick={() => navigate(`/item/${item.id}`)}>
             {!item.profit && item.profit !== 0 ? (
               <span>&mdash;</span>
-            ) : item.profit >= 0 ? (
-              <Chip color={'success'} label={getFormattedText('$', item.profit, '')} size="small" />
             ) : (
-              <Chip color={'error'} label={getFormattedText('$', item.profit, '')} size="small" />
+              <StatChip
+                chipVariant={item.profit >= 0 ? 'profit' : 'loss'}
+                label={getFormattedText('$', item.profit, '')}
+              />
             )}
           </TableCell>
         ) : (

@@ -23,7 +23,7 @@ const CityMarkets = () => {
   const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>([])
   const [selectedVendors, setSelectedVendors] = useState<string[]>([])
   const [showProfitableOnly, setShowProfitableOnly] = useState(
-    () => localStorage.getItem('torntools:city-markets:show-profitable-only:v1') !== 'false',
+    () => localStorage.getItem('torntools:city-markets:show-profitable-only:v1') === 'true',
   )
   const [saleOutlet, setSaleOutlet] = useState<SaleOutlet>(() => {
     const stored = localStorage.getItem(
