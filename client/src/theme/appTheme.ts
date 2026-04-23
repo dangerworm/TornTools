@@ -103,5 +103,21 @@ export const appTheme = createTheme({
         },
       ],
     },
+    // MUI splits horizontal padding between chip variants (outlined gets
+    // 8px, filled gets 7px) and only outlined has a 1px border. The
+    // combined effect makes a toggled chip change width, which shifts
+    // wrap points in the dense filter-chip rows. We match borders and
+    // label padding across variants so toggling only swaps colours.
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          border: '1px solid transparent',
+        },
+        label: {
+          paddingLeft: 8,
+          paddingRight: 8,
+        },
+      },
+    },
   },
 })
