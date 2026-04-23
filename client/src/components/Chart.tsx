@@ -136,6 +136,16 @@ const Chart = ({
     [valuePrefix, valueSuffix],
   )
 
+  // Widen the Y-axis gutter to fit the longest tick label. At font-size 13,
+  // each glyph averages ~7px; the +14 accounts for the tick line + the gap
+  // between text and plot area. 60 is the recharts default for short values
+  // like $12, so we only grow past that when digits demand it.
+  const yAxisWidth = useMemo(() => {
+    if (!ticks.length) return 60
+    const longest = ticks.reduce((max, t) => Math.max(max, formatValue(t).length), 0)
+    return Math.max(60, longest * 7 + 14)
+  }, [ticks, formatValue])
+
   interface CustomTooltipProps {
     active?: boolean
     label?: number
@@ -209,7 +219,6 @@ const Chart = ({
                 <AreaChart
                   data={data}
                   margin={{
-                    left: 12,
                     right: 8,
                     top: 10,
                   }}
@@ -235,6 +244,7 @@ const Chart = ({
                     tick={tickFormat}
                     tickFormatter={formatValue}
                     ticks={ticks}
+                    width={yAxisWidth}
                   />
                   <Tooltip content={CustomTooltip} />
                   <Area
