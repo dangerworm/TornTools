@@ -15,16 +15,32 @@ const ItemCell = ({ itemId, itemName, rowColour }: ItemCellProps) => {
         gap: 1,
       }}
     >
-      <img
-        alt=""
-        src={`https://www.torn.com/images/items/${itemId}/small.png`}
-        width={46}
-        height={19}
-        style={{ borderRadius: 4, paddingRight: 8 }}
-        onError={(e) => {
-          ;(e.currentTarget as HTMLImageElement).style.display = 'none'
+      <Box
+        sx={{
+          alignItems: 'center',
+          display: 'flex',
+          height: 32,
+          justifyContent: 'center',
+          mr: 1,
+          width: 40,
         }}
-      />
+      >
+        <Box
+          component="img"
+          alt=""
+          src={`https://www.torn.com/images/items/${itemId}/small.png`}
+          sx={{
+            borderRadius: 0.5,
+            display: 'block',
+            maxHeight: '100%',
+            maxWidth: '100%',
+            objectFit: 'contain',
+          }}
+          onError={(e) => {
+            ;(e.currentTarget as HTMLImageElement).style.display = 'none'
+          }}
+        />
+      </Box>
       <Typography
         variant="body1"
         style={{

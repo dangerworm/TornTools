@@ -52,25 +52,29 @@ export default function Layout() {
 
     const renderItem = (item: NavMenuItem) => {
       const disabled = disabledFor(item)
+      const active = isActive(item.address)
+      const color = disabled ? 'action.disabled' : active ? 'primary.main' : 'text.secondary'
       return (
         <ListItemButton
           component={NavLink}
           key={item.address}
           onClick={() => setMobileOpen(false)}
-          selected={isActive(item.address)}
+          selected={active}
           to={item.address}
           sx={(theme) => ({
-            color: disabled ? theme.palette.action.disabled : 'inherit',
-            borderLeft: `3px solid ${
-              isActive(item.address) ? theme.palette.primary.main : 'transparent'
-            }`,
+            color,
+            borderLeft: `3px solid ${active ? theme.palette.primary.main : 'transparent'}`,
             pl: '13px',
-            transition: 'border-color 0.2s',
+            transition: 'border-color 0.2s, color 0.15s',
+            '&:hover': {
+              color: disabled ? 'action.disabled' : 'primary.main',
+            },
+            '& .MuiListItemText-primary': {
+              fontWeight: active ? 500 : 400,
+            },
           })}
         >
-          <ListItemIcon sx={{ color: disabled ? 'action.disabled' : 'inherit' }}>
-            {item.icon}
-          </ListItemIcon>
+          <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}>{item.icon}</ListItemIcon>
           <ListItemText primary={item.title} />
         </ListItemButton>
       )

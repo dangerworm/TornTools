@@ -1,4 +1,6 @@
 import CloseIcon from '@mui/icons-material/Close'
+import VisibilityIcon from '@mui/icons-material/Visibility'
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import {
   Alert,
   Box,
@@ -9,6 +11,7 @@ import {
   Divider,
   Grid,
   IconButton,
+  InputAdornment,
   Link,
   styled,
   TextField,
@@ -44,6 +47,7 @@ const SignIn = () => {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [signInInFlight, setSignInInFlight] = useState(false)
+  const [showKey, setShowKey] = useState(false)
 
   useEffect(() => {
     if (signInInFlight && dotNetUserDetails) {
@@ -168,7 +172,22 @@ const SignIn = () => {
             value={apiKey || ''}
             onChange={(e) => setApiKey(e.target.value || null)}
             sx={{ mt: 2 }}
-            type={'password'}
+            type={showKey ? 'text' : 'password'}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={showKey ? 'hide API key' : 'show API key'}
+                      onClick={() => setShowKey((prev) => !prev)}
+                      edge="end"
+                    >
+                      {showKey ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
           />
 
           {loadingTornUserProfile && (

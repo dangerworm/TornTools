@@ -1,5 +1,4 @@
 import {
-  Avatar,
   Box,
   Chip,
   Divider,
@@ -130,12 +129,27 @@ const AllItems = () => {
                 <TableRow key={item.id} hover>
                   <TableCell>
                     {item.image ? (
-                      <Avatar
-                        src={item.image}
-                        alt={item.name}
-                        variant="square"
-                        sx={{ width: 32, height: 32 }}
-                      />
+                      <Box
+                        sx={{
+                          alignItems: 'center',
+                          display: 'flex',
+                          height: 32,
+                          justifyContent: 'center',
+                          width: 32,
+                        }}
+                      >
+                        <Box
+                          component="img"
+                          src={item.image}
+                          alt={item.name}
+                          sx={{
+                            display: 'block',
+                            maxHeight: '100%',
+                            maxWidth: '100%',
+                            objectFit: 'contain',
+                          }}
+                        />
+                      </Box>
                     ) : null}
                   </TableCell>
                   <TableCell>

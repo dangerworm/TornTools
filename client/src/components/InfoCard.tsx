@@ -36,6 +36,10 @@ const InfoCard = ({
       elevation={2}
       sx={{
         backgroundColor: 'background.paper',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        justifyContent: 'flex-start',
         p: 2,
         textAlign: 'center',
       }}
