@@ -252,6 +252,8 @@ const Chart = ({
                 <BarChart
                   data={data}
                   margin={{
+                    left: 8,
+                    right: 8,
                     top: 10,
                   }}
                 >
@@ -260,6 +262,7 @@ const Chart = ({
                     dataKey="timestamp"
                     type="number"
                     domain={['dataMin', 'dataMax']}
+                    padding={{ left: 24, right: 24 }}
                     tickFormatter={formatTimestamp}
                     stroke={axisColor}
                     tick={tickFormat}
