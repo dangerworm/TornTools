@@ -14,7 +14,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Loading from '../components/Loading'
 import PrivacyNotice from '../components/PrivacyNotice'
 import { useUser } from '../hooks/useUser'
@@ -36,17 +37,33 @@ const SignIn = () => {
     loadingTornUserProfile,
     errorTornUserProfile,
     confirmApiKeyAsync,
+    dotNetUserDetails,
   } = useUser()
 
+  const navigate = useNavigate()
+
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [signInInFlight, setSignInInFlight] = useState(false)
+
+  useEffect(() => {
+    if (signInInFlight && dotNetUserDetails) {
+      setSignInInFlight(false)
+      setDialogOpen(false)
+      navigate('/')
+    }
+  }, [signInInFlight, dotNetUserDetails, navigate])
 
   const handleClose = () => {
     setDialogOpen(false)
   }
 
-  const handleSignIn = () => {
-    confirmApiKeyAsync()
-    setDialogOpen(false)
+  const handleSignIn = async () => {
+    setSignInInFlight(true)
+    try {
+      await confirmApiKeyAsync()
+    } catch {
+      setSignInInFlight(false)
+    }
   }
 
   return (
@@ -196,7 +213,13 @@ const SignIn = () => {
                 Click the button below to add your API key. By doing so you agree to the usage terms
                 and that your data will be stored and used as described.
               </Typography>
-              <Button fullWidth variant="contained" sx={{ my: 2 }} onClick={() => handleSignIn()}>
+              <Button
+                fullWidth
+                variant="contained"
+                sx={{ my: 2 }}
+                onClick={handleSignIn}
+                disabled={signInInFlight}
+              >
                 Sign in
               </Button>
             </Box>
