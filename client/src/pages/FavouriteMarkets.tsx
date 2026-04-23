@@ -51,7 +51,7 @@ const FavouriteMarkets = () => {
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
-        Favourite Markets
+        Favourites
       </Typography>
       <Typography variant="body1" gutterBottom>
         Quickly jump back to the items you follow the most.
