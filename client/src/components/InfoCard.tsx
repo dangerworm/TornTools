@@ -1,21 +1,36 @@
-import { Card, Typography, Chip, Box } from '@mui/material'
+import { Box, Card, Typography } from '@mui/material'
+import type { ReactNode } from 'react'
 import { getFormattedText } from '../lib/textFormat'
+import StatChip from './StatChip'
 
 interface InfoCardProps {
   heading: string
   isCurrency?: boolean
+  // When true, the card renders a green StatChip wrapping the price to
+  // signal a profit opportunity. Callers decide the rule — typically
+  // "this outlet's sell price (post-tax) exceeds the city buy price".
   isProfitable?: boolean
+  // After-tax percentage applied to `value` when isCurrency && isProfitable.
+  // Surfaces as "$X after N% tax" next to the primary price. See
+  // PriceWithTax for the standalone site-wide pattern.
   taxType?: number
   value?: number | null
+  // Optional small line beneath the primary value — e.g. "Latest scan: $612"
+  // on the Market Price card to show the most recent scanned value next
+  // to Torn's daily average.
+  subtitle?: ReactNode
 }
 
 const InfoCard = ({
   heading,
   isCurrency,
   isProfitable = false,
+  subtitle,
   taxType = 0,
   value,
 }: InfoCardProps) => {
+  const formatted = value != null ? getFormattedText(isCurrency ? '$' : '', value, '') : null
+
   return (
     <Card
       elevation={2}
@@ -25,33 +40,46 @@ const InfoCard = ({
         textAlign: 'center',
       }}
     >
-      <Typography gutterBottom sx={{ fontWeight: 'bold', fontSize: '1.2em' }}>
+      <Typography gutterBottom sx={{ fontWeight: 'bold', fontSize: '1.1em' }}>
         {heading}
       </Typography>
-      {!value && (
-        <Typography gutterBottom sx={{ fontSize: '1.5em' }}>
+
+      {value == null && (
+        <Typography sx={{ fontSize: '1.4em' }}>
           <span>&mdash;</span>
         </Typography>
       )}
-      {value && (
+
+      {value != null && (
         <>
-          {isProfitable && (
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
-              <Chip
-                color="success"
-                label={getFormattedText('$', value, '')}
+          {isProfitable ? (
+            <Box
+              sx={{
+                alignItems: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 0.5,
+              }}
+            >
+              <StatChip
+                chipVariant="profit"
+                label={formatted}
                 size="medium"
-                sx={{ fontSize: '1.5em', mr: 1 }}
+                sx={{ fontSize: '1.2em', fontWeight: 500, px: 1 }}
               />
-              <Typography component={'p'} variant="caption" color="textSecondary">
-                &nbsp;
-                {isCurrency && taxType > 0 && `${getFormattedText('$', value * (1 - taxType), '')} after ${Math.round(taxType * 100)}% tax`}
-              </Typography>
+              {isCurrency && taxType > 0 && (
+                <Typography variant="caption" color="text.secondary">
+                  {getFormattedText('$', value * (1 - taxType), '')} after{' '}
+                  {Math.round(taxType * 100)}% tax
+                </Typography>
+              )}
             </Box>
+          ) : (
+            <Typography sx={{ fontSize: '1.4em', mb: 0.5 }}>{formatted}</Typography>
           )}
-          {!isProfitable && (
-            <Typography gutterBottom sx={{ fontSize: '1.5em', mb: 0.5 }}>
-              {getFormattedText(isCurrency ? '$' : '', value, '')}
+          {subtitle && (
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+              {subtitle}
             </Typography>
           )}
         </>

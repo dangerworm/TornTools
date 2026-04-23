@@ -11,6 +11,7 @@ import {
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import Loading from '../components/Loading'
+import { useItemMarketAdvice } from '../hooks/useItemMarketAdvice'
 import { useItemPriceHistory, useItemVelocityHistory } from '../hooks/useItemHistory'
 import { useItems } from '../hooks/useItems'
 import { useWeav3rMarketplaceQuery } from '../hooks/useWeav3rListings'
@@ -40,6 +41,7 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
   )
 
   const { data } = useWeav3rMarketplaceQuery(itemId)
+  const advice = useItemMarketAdvice(itemId)
 
   const bazaarDataAvailable = data?.listings && data.listings.length > 0 && data.listings[0]
 
@@ -81,9 +83,10 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
         item={item}
         inlineView={inlineView}
         firstBazaarListing={bazaarDataAvailable ? data.listings[0] : undefined}
+        advice={advice}
       />
 
-      <ItemMarketAdvice itemId={itemId} defaultExpanded={!inlineView} />
+      <ItemMarketAdvice itemId={itemId} defaultExpanded={!inlineView} advice={advice} />
 
       <Accordion defaultExpanded={!inlineView} variant="outlined" sx={{ my: 2 }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>

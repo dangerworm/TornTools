@@ -12,6 +12,7 @@ import {
 import {
   useItemMarketAdvice,
   type ActivityLevel,
+  type MarketAdvice,
   type PriceTrend,
 } from '../hooks/useItemMarketAdvice'
 import Loading from './Loading'
@@ -19,6 +20,10 @@ import Loading from './Loading'
 interface ItemMarketAdviceProps {
   itemId: number | undefined
   defaultExpanded?: boolean
+  // Optional pre-fetched advice. When provided, the component skips its
+  // own hook call so the parent can share a single fetch between this
+  // component and the info cards.
+  advice?: MarketAdvice
 }
 
 const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`
@@ -65,8 +70,13 @@ function buildAdviceSentence(trend: PriceTrend, activity: ActivityLevel): string
   return sentences[trend][activity]
 }
 
-const ItemMarketAdvice = ({ itemId, defaultExpanded = true }: ItemMarketAdviceProps) => {
-  const advice = useItemMarketAdvice(itemId)
+const ItemMarketAdvice = ({
+  advice: externalAdvice,
+  defaultExpanded = true,
+  itemId,
+}: ItemMarketAdviceProps) => {
+  const internalAdvice = useItemMarketAdvice(externalAdvice ? undefined : itemId)
+  const advice = externalAdvice ?? internalAdvice
 
   return (
     <Accordion defaultExpanded={defaultExpanded} variant="outlined" sx={{ my: 2 }}>
