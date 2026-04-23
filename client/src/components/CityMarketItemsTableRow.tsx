@@ -11,9 +11,12 @@ import {
 } from '@mui/icons-material'
 import { useUser } from '../hooks/useUser'
 import { getFormattedText } from '../lib/textFormat'
+import { SALE_TAX } from '../lib/profitCalculations'
 import ItemDetails from '../pages/ItemDetails'
 import { type SortableItem } from '../types/items'
+import type { SaleOutlet } from '../types/markets'
 import ItemCell from './ItemCell'
+import PriceWithTax from './PriceWithTax'
 
 const shopUrls: Map<string, string> = new Map([
   ["Big Al's Gun Shop", 'https://www.torn.com/bigalgunshop.php'],
@@ -47,10 +50,12 @@ interface CityMarketItemsTableRowProps {
   item: SortableItem
   showCityPrice: boolean
   showVendor: boolean
+  saleOutlet: SaleOutlet
 }
 
 const CityMarketItemsTableRow = ({
   item,
+  saleOutlet,
   showCityPrice,
   showVendor,
 }: CityMarketItemsTableRowProps) => {
@@ -109,11 +114,7 @@ const CityMarketItemsTableRow = ({
         )}
 
         <TableCell align="right" onClick={() => navigate(`/item/${item.id}`)}>
-          {item.sellPrice !== null ? (
-            <span>{getFormattedText('$', item.sellPrice, '')}</span>
-          ) : (
-            <span>&mdash;</span>
-          )}
+          <PriceWithTax value={item.grossSellPrice} taxRate={SALE_TAX[saleOutlet]} />
         </TableCell>
 
         {showCityPrice ? (

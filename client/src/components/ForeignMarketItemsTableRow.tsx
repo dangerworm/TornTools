@@ -1,94 +1,83 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Box,
-  TableRow,
-  TableCell,
-  Chip,
-  IconButton,
-  Collapse,
-} from "@mui/material";
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Box, TableRow, TableCell, Chip, IconButton, Collapse } from '@mui/material'
 import {
   Favorite,
   FavoriteBorder,
   KeyboardArrowDown,
   KeyboardArrowUp,
   OpenInNew,
-} from "@mui/icons-material";
-import { useUser } from "../hooks/useUser";
-import { getFormattedText } from "../lib/textFormat";
-import { timeAgo } from "../lib/time";
-import ItemDetails from "../pages/ItemDetails";
-import { type SortableForeignStockItem } from "../types/foreignStockItems";
-import ItemCell from "./ItemCell";
+} from '@mui/icons-material'
+import { useUser } from '../hooks/useUser'
+import { getFormattedText } from '../lib/textFormat'
+import { SALE_TAX } from '../lib/profitCalculations'
+import { timeAgo } from '../lib/time'
+import ItemDetails from '../pages/ItemDetails'
+import { type SortableForeignStockItem } from '../types/foreignStockItems'
+import type { SaleOutlet } from '../types/markets'
+import ItemCell from './ItemCell'
+import PriceWithTax from './PriceWithTax'
 
 const ProfitChip = ({ profit }: { profit: number | null }) => {
-  if (profit === null) return <Chip label="N/A" size="small" sx={{ opacity: 0.3, whiteSpace: 'nowrap' }} />;
+  if (profit === null)
+    return <Chip label="N/A" size="small" sx={{ opacity: 0.3, whiteSpace: 'nowrap' }} />
   return (
     <Chip
-      label={getFormattedText("$", profit, "")}
-      color={profit >= 0 ? "success" : "error"}
+      label={getFormattedText('$', profit, '')}
+      color={profit >= 0 ? 'success' : 'error'}
       size="small"
       sx={{ whiteSpace: 'nowrap' }}
     />
-  );
-};
+  )
+}
 
 const openTornMarketPage = (itemId: number) => {
   window.open(
     `https://www.torn.com/page.php?sid=ItemMarket#/market/view=search&itemID=${itemId}&sortField=price&sortOrder=ASC`,
-    "_blank"
-  );
-};
-
-interface ForeignMarketItemsTableRowProps {
-  item: SortableForeignStockItem;
-  showCountry?: boolean;
+    '_blank',
+  )
 }
 
-const ForeignMarketItemsTableRow = ({ item, showCountry = false }: ForeignMarketItemsTableRowProps) => {
-  const navigate = useNavigate();
-  const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser();
+interface ForeignMarketItemsTableRowProps {
+  item: SortableForeignStockItem
+  showCountry?: boolean
+  saleOutlet: SaleOutlet
+}
 
-  const [open, setOpen] = useState(false);
+const ForeignMarketItemsTableRow = ({
+  item,
+  saleOutlet,
+  showCountry = false,
+}: ForeignMarketItemsTableRowProps) => {
+  const navigate = useNavigate()
+  const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser()
+
+  const [open, setOpen] = useState(false)
 
   return (
     <>
       <TableRow hover key={item.itemId}>
-
         <TableCell align="center">
-          <IconButton
-            aria-label="expand row"
-            size="small"
-            onClick={() => setOpen(!open)}
-          >
+          <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
             {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
           </IconButton>
         </TableCell>
 
         {dotNetUserDetails && (
-          <TableCell
-            align="center"
-            onClick={() => toggleFavouriteItemAsync(item.itemId)}
-          >
+          <TableCell align="center" onClick={() => toggleFavouriteItemAsync(item.itemId)}>
             {dotNetUserDetails.favouriteItems?.includes(item.itemId) ? (
-              <Favorite sx={{ cursor: "pointer", color: "#1976d2" }} />
+              <Favorite sx={{ cursor: 'pointer', color: '#1976d2' }} />
             ) : (
-              <FavoriteBorder sx={{ cursor: "pointer", color: "gray" }} />
+              <FavoriteBorder sx={{ cursor: 'pointer', color: 'gray' }} />
             )}
           </TableCell>
         )}
 
         <TableCell onClick={() => navigate(`/item/${item.itemId}`)}>
-          <ItemCell
-            itemId={item.itemId}
-            itemName={item.item?.name ?? `Item ${item.itemId}`}
-          />
+          <ItemCell itemId={item.itemId} itemName={item.item?.name ?? `Item ${item.itemId}`} />
         </TableCell>
 
-        <TableCell onClick={() => navigate(`/item/${item.itemId}`)}>
-          {item.item.type}
-        </TableCell>
+        <TableCell onClick={() => navigate(`/item/${item.itemId}`)}>{item.item.type}</TableCell>
 
         {showCountry && (
           <TableCell onClick={() => navigate(`/item/${item.itemId}`)}>
@@ -103,54 +92,31 @@ const ForeignMarketItemsTableRow = ({ item, showCountry = false }: ForeignMarket
           </TableCell>
         )}
 
-        <TableCell
-          align="right"
-          onClick={() => navigate(`/item/${item.itemId}`)}
-        >
-          {item.cost ? (
-            <span>{getFormattedText("$", item.cost, "")}</span>
-          ) : (
-            <span>&mdash;</span>
-          )}
+        <TableCell align="right" onClick={() => navigate(`/item/${item.itemId}`)}>
+          {item.cost ? <span>{getFormattedText('$', item.cost, '')}</span> : <span>&mdash;</span>}
         </TableCell>
 
-        <TableCell
-          align="right"
-          onClick={() => navigate(`/item/${item.itemId}`)}
-        >
-          {item.sellPrice != null ? (
-            <span>{getFormattedText("$", item.sellPrice, "")}</span>
-          ) : (
-            <span>&mdash;</span>
-          )}
+        <TableCell align="right" onClick={() => navigate(`/item/${item.itemId}`)}>
+          <PriceWithTax value={item.grossSellPrice} taxRate={SALE_TAX[saleOutlet]} />
         </TableCell>
 
         <TableCell align="right" onClick={() => navigate(`/item/${item.itemId}`)}>
           <ProfitChip profit={item.profit} />
         </TableCell>
 
-        <TableCell
-          align="right"
-          onClick={() => navigate(`/item/${item.itemId}`)}
-        >
+        <TableCell align="right" onClick={() => navigate(`/item/${item.itemId}`)}>
           {item.quantity === 0 ? (
             <Chip label="Out of Stock" color="error" size="small" />
           ) : (
-            <span>{getFormattedText("", item.quantity ?? 0, "")}</span>
+            <span>{getFormattedText('', item.quantity ?? 0, '')}</span>
           )}
         </TableCell>
 
-        <TableCell
-          align="right"
-          onClick={() => navigate(`/item/${item.itemId}`)}
-        >
+        <TableCell align="right" onClick={() => navigate(`/item/${item.itemId}`)}>
           {item.lastUpdated ? timeAgo(item.lastUpdated) : <span>&ndash;</span>}
         </TableCell>
 
-        <TableCell
-          align="center"
-          onClick={() => openTornMarketPage(item.itemId)}
-        >
+        <TableCell align="center" onClick={() => openTornMarketPage(item.itemId)}>
           <OpenInNew />
         </TableCell>
       </TableRow>
@@ -162,7 +128,7 @@ const ForeignMarketItemsTableRow = ({ item, showCountry = false }: ForeignMarket
         </TableCell>
       </TableRow>
     </>
-  );
-};
+  )
+}
 
-export default ForeignMarketItemsTableRow;
+export default ForeignMarketItemsTableRow
