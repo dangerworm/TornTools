@@ -1,4 +1,3 @@
-import { useMemo, useState } from 'react'
 import {
   Alert,
   AlertTitle,
@@ -15,10 +14,11 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
+import { useMemo, useState } from 'react'
+import Loading from '../components/Loading'
 import { useThemeSettings } from '../hooks/useThemeSettings'
 import { useUser } from '../hooks/useUser'
 import type { ThemeInput, ThemeMode } from '../types/themes'
-import Loading from '../components/Loading'
 
 const UserSettings = () => {
   const {
@@ -66,7 +66,7 @@ const UserSettings = () => {
           <Typography variant="h6" gutterBottom>
             API Key
           </Typography>
-          <Typography variant="body2" gutterBottom>
+          <Typography variant="body1" gutterBottom>
             Update your Torn API key or re-confirm it if you generated a new one.
           </Typography>
           <Stack spacing={2} sx={{ mt: 1, width: '100%' }}>
@@ -100,7 +100,7 @@ const UserSettings = () => {
           <Typography variant="h6" gutterBottom>
             Theme & Appearance
           </Typography>
-          <Typography variant="body2" gutterBottom>
+          <Typography variant="body1" gutterBottom>
             Switch between light and dark modes or build your own colour scheme.
           </Typography>
 
@@ -191,7 +191,7 @@ const UserSettings = () => {
             {currentSelection && (
               <Alert severity="info" sx={{ mt: 2 }}>
                 <AlertTitle>Theme changed successfully</AlertTitle>
-                <Typography variant="body2" gutterBottom>
+                <Typography variant="body1" gutterBottom>
                   Active theme: {currentSelection.name} ({currentSelection.mode})
                 </Typography>
               </Alert>

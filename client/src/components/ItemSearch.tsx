@@ -1,5 +1,5 @@
+import { Autocomplete, Box, TextField, Typography, createFilterOptions } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
-import { Autocomplete, TextField, Box, Typography, createFilterOptions } from '@mui/material'
 import { useItems } from '../hooks/useItems'
 
 const ItemSearch = () => {
@@ -88,7 +88,7 @@ const ItemSearch = () => {
           </Box>
 
           <Box sx={{ flex: 1, pl: 2, mt: 0.5 }}>
-            <Typography variant="body2" sx={{ fontWeight: 500, m: 0 }}>
+            <Typography variant="body1" sx={{ fontWeight: 500, m: 0 }}>
               {option.label}
             </Typography>
             <Typography component="p" variant="caption" sx={{ color: 'text.secondary', mt: -0.2 }}>

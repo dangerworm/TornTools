@@ -1,8 +1,8 @@
-import { Chip, Grid, Typography } from '@mui/material'
 import Favorite from '@mui/icons-material/Favorite'
 import FavoriteBorder from '@mui/icons-material/FavoriteBorder'
-import { type Item } from '../types/items'
+import { Chip, Grid, Typography } from '@mui/material'
 import { useUser } from '../hooks/useUser'
+import { type Item } from '../types/items'
 
 import { getFormattedText } from '../lib/textFormat'
 
@@ -36,7 +36,7 @@ const ItemDetailsHeader = ({ item, inlineView = false }: ItemDetailsHeaderProps)
             {item?.circulation && (
               <Typography
                 component={'p'}
-                variant="body2"
+                variant="body1"
                 color="text.secondary"
                 sx={{ mb: 1, ml: 1 }}
               >

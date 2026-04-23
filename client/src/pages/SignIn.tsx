@@ -52,19 +52,19 @@ const SignIn = () => {
   return (
     <>
       <Box>
-        <Typography variant="h4" gutterBottom sx={{ mt: 2 }}>
-          Account Sign-In
-        </Typography>
+        <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
+          <Grid size={{ xs: 6 }}>
+            {/* Only set gutterBottom on screens which are MUI size lg or larger */}
+            <Typography variant="h4">Sign In</Typography>
+          </Grid>
+          <Grid size={{ xs: 6 }} sx={{ textAlign: 'right' }}>
+            <Button onClick={() => setDialogOpen(true)} variant="contained">
+              Sign in / Register
+            </Button>
+          </Grid>
+        </Grid>
 
         <PrivacyNotice />
-
-        <Button
-          onClick={() => setDialogOpen(true)}
-          sx={{ ml: 'auto', mr: 'auto', mt: 3, display: 'block' }}
-          variant="contained"
-        >
-          Sign in / Register
-        </Button>
       </Box>
 
       <BootstrapDialog
@@ -108,15 +108,40 @@ const SignIn = () => {
           <Typography variant="body1" gutterBottom>
             Enter your Torn API key here.
           </Typography>
-          <Typography component={'p'} variant="body2" gutterBottom>
-            If you don't have an API key you can get one from your{' '}
+          <Typography component={'p'} variant="body1" gutterBottom>
+            If you don't have an API key you can get one from your Torn settings page.
+          </Typography>
+          <Typography component={'p'} variant="body1" gutterBottom>
+            <Link
+              href="https://www.torn.com/preferences.php#tab=api?&step=addNewKey&title=dangerworm&#39;s tools&type=1"
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{
+                textDecoration: 'none',
+                fontWeight: 'bold',
+                color: (theme) => theme.palette.grey[500],
+                '&:hover': { color: (theme) => theme.palette.grey[500] },
+                '&:visited': { color: (theme) => theme.palette.grey[500] },
+              }}
+            >
+              Click here for a Public API key
+            </Link>
+            .
+          </Typography>
+          <Typography component={'p'} variant="body1" gutterBottom>
             <Link
               href="https://www.torn.com/preferences.php#tab=api?&step=addNewKey&title=dangerworm&#39;s tools&type=2"
               target="_blank"
               rel="noopener noreferrer"
-              sx={{ textDecoration: 'none' }}
+              sx={{
+                textDecoration: 'none',
+                fontWeight: 'bold',
+                color: (theme) => theme.palette.success.main,
+                '&:hover': { color: (theme) => theme.palette.success.main },
+                '&:visited': { color: (theme) => theme.palette.success.main },
+              }}
             >
-              Torn settings page
+              Click here for a Minimal API key
             </Link>
             .
           </Typography>

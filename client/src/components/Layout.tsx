@@ -1,5 +1,3 @@
-import { useMemo, useState } from 'react'
-import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import {
   Box,
   Divider,
@@ -10,13 +8,15 @@ import {
   ListItemText,
   Toolbar,
 } from '@mui/material'
+import { useMemo, useState } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { MAX_CONTENT_WIDTH } from '../constants/uiConstants'
 import { useItems } from '../hooks/useItems'
 import { useUser } from '../hooks/useUser'
-import { DRAWER_WIDTH, menuItems } from './Menu'
-import { MAX_CONTENT_WIDTH } from '../constants/uiConstants'
-import TopAppBar from './TopAppBar'
-import Footer from './Footer'
 import '../index.css'
+import Footer from './Footer'
+import { DRAWER_WIDTH, menuItems } from './Menu'
+import TopAppBar from './TopAppBar'
 
 export default function Layout() {
   const { items } = useItems()
@@ -37,36 +37,35 @@ export default function Layout() {
         <Toolbar sx={{ display: { xs: 'flex', md: 'none' } }} />
         <Divider />
         <List sx={{ flexGrow: 1 }}>
-          {menuItems
-            .filter((item) => !item.requiresItems || (item.requiresItems && items))
-            .filter((item) => !item.requiresLogin || (item.requiresLogin && dotNetUserDetails))
-            .filter(
-              (item) =>
-                item.requiresAccessLevel == null ||
-                (dotNetUserDetails != null &&
-                  (dotNetUserDetails.accessLevel ?? 1) >= item.requiresAccessLevel),
-            )
-            .map((item) => {
-              if (item.requiresItems && (!items || items.length === 0)) return null
+          {menuItems.map((item) => {
+            let isDisabled = false
+            isDisabled = isDisabled || (item.requiresItems && (!items || items.length === 0))
+            isDisabled = isDisabled || (item.requiresLogin && !dotNetUserDetails)
 
-              return (
-                <ListItemButton
-                  component={NavLink}
-                  key={item.address}
-                  onClick={() => setMobileOpen(false)}
-                  selected={isActive(item.address)}
-                  to={item.address}
-                  sx={(theme) => ({
-                    borderLeft: `3px solid ${isActive(item.address) ? theme.palette.primary.main : 'transparent'}`,
-                    pl: '13px',
-                    transition: 'border-color 0.2s',
-                  })}
-                >
-                  <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.title} />
-                </ListItemButton>
-              )
-            })}
+            const userAccessLevel = dotNetUserDetails?.accessLevel ?? 1
+            const hasAccess =
+              item.requiresAccessLevel == null || userAccessLevel >= item.requiresAccessLevel
+            isDisabled = isDisabled || (item.requiresAccessLevel != null && !hasAccess)
+
+            return (
+              <ListItemButton
+                component={NavLink}
+                key={item.address}
+                onClick={() => setMobileOpen(false)}
+                selected={isActive(item.address)}
+                to={item.address}
+                sx={(theme) => ({
+                  color: isDisabled ? theme.palette.action.disabled : 'inherit',
+                  borderLeft: `3px solid ${isActive(item.address) ? theme.palette.primary.main : 'transparent'}`,
+                  pl: '13px',
+                  transition: 'border-color 0.2s',
+                })}
+              >
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.title} />
+              </ListItemButton>
+            )
+          })}
         </List>
         <Footer />
       </Box>

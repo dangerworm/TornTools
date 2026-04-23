@@ -1,4 +1,3 @@
-import { Fragment, useEffect, useMemo, useState } from 'react'
 import {
   Alert,
   AlertTitle,
@@ -14,12 +13,15 @@ import {
   Typography,
 } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import ForeignMarketItemsTable from '../components/ForeignMarketItemsTable'
-import OptionGroup from '../components/OptionGroup'
-import { useUser } from '../hooks/useUser'
-import { useForeignMarketsScan } from '../hooks/useForeignMarketsScan'
-import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
 import Loading from '../components/Loading'
+import LoginRequiredForFairness from '../components/LoginRequiredForFairness'
+import { menuItems } from '../components/Menu'
+import OptionGroup from '../components/OptionGroup'
+import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
+import { useForeignMarketsScan } from '../hooks/useForeignMarketsScan'
+import { useUser } from '../hooks/useUser'
 import {
   prettyPrintFlightTime,
   travelDestinations,
@@ -37,6 +39,8 @@ const VALID_FM_SALE_OUTLETS: SaleOutlet[] = ['bazaar', 'market', 'anonymousMarke
 const ForeignMarkets = () => {
   const theme = useTheme()
   const { rows, error } = useForeignMarketsScan({ intervalMs: 60000 })
+  const { dotNetUserDetails } = useUser()
+
   const { apiKey, tornUserProfile, fetchTornProfileAsync } = useUser()
   const { summaries: bazaarSummaries } = useBazaarSummaries()
 
@@ -160,11 +164,28 @@ const ForeignMarkets = () => {
   }
 
   if (!rows) return <Loading message="Loading foreign markets..." />
+
+  if (
+    menuItems.length > 0 &&
+    menuItems.find((item) => item.address === '/foreign-markets')?.requiresLogin &&
+    !dotNetUserDetails
+  ) {
+    return (
+      <Box>
+        <Typography variant="h4" gutterBottom>
+          Foreign Markets
+        </Typography>
+
+        <LoginRequiredForFairness />
+      </Box>
+    )
+  }
+
   if (error) {
     return (
       <Alert severity="error" sx={{ mb: 2 }}>
         <AlertTitle>Error</AlertTitle>
-        <Typography variant="body2" gutterBottom>
+        <Typography variant="body1" gutterBottom>
           {error}
         </Typography>
       </Alert>
@@ -349,12 +370,12 @@ const ForeignMarkets = () => {
       </Grid>
 
       {saleOutlet === 'bazaar' ? (
-        <Typography variant="body2" sx={{ mt: 1, mb: 2, color: 'text.secondary' }}>
+        <Typography variant="body1" sx={{ mt: 1, mb: 2, color: 'text.secondary' }}>
           Note: bazaar sell prices show the current cheapest listing from the most recent Weav3r
           scan. Items with no scan data show no sell price.
         </Typography>
       ) : (
-        <Typography variant="body2" sx={{ mt: 1, mb: 2, color: 'text.secondary' }}>
+        <Typography variant="body1" sx={{ mt: 1, mb: 2, color: 'text.secondary' }}>
           Note: sell prices are based on Torn's daily average market price, not the most recent
           market scan.
         </Typography>
@@ -413,7 +434,7 @@ const ForeignMarkets = () => {
                     </Typography>
                     <Typography
                       component={'span'}
-                      variant="body2"
+                      variant="body1"
                       sx={(theme) => ({ color: theme.palette.text.secondary, ml: 2 })}
                     >
                       Flight time:{' '}

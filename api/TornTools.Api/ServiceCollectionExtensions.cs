@@ -14,6 +14,7 @@ public static class ServiceCollectionExtensions
     var origins = new List<string>
     {
       "http://localhost:5173",
+      "http://localhost:5174",
       "https://localhost:7012"
     };
 

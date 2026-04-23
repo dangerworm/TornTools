@@ -1,6 +1,3 @@
-import { Fragment, useEffect, useMemo, useState } from 'react'
-import { useItems } from '../hooks/useItems'
-import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
 import {
   Box,
   Checkbox,
@@ -13,17 +10,24 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import Loading from '../components/Loading'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import CityMarketItemsTable from '../components/CityMarketItemsTable'
-import { isItemProfitableOnMarket } from '../types/items'
+import Loading from '../components/Loading'
+import LoginRequiredForFairness from '../components/LoginRequiredForFairness'
+import { menuItems } from '../components/Menu'
 import OptionGroup from '../components/OptionGroup'
+import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
+import { useItems } from '../hooks/useItems'
+import { useUser } from '../hooks/useUser'
 import { saleOutletOptions } from '../types/common'
+import { isItemProfitableOnMarket } from '../types/items'
 import type { SaleOutlet } from '../types/markets'
 
 const VALID_CM_SALE_OUTLETS: SaleOutlet[] = ['bazaar', 'market', 'anonymousMarket']
 
 const CityMarkets = () => {
   const { items, refresh } = useItems()
+  const { dotNetUserDetails } = useUser()
   const { summaries: bazaarSummaries } = useBazaarSummaries()
 
   const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>([])
@@ -32,7 +36,9 @@ const CityMarkets = () => {
     () => localStorage.getItem('torntools:city-markets:show-profitable-only:v1') !== 'false',
   )
   const [saleOutlet, setSaleOutlet] = useState<SaleOutlet>(() => {
-    const stored = localStorage.getItem('torntools:city-markets:sale-outlet:v1') as SaleOutlet | null
+    const stored = localStorage.getItem(
+      'torntools:city-markets:sale-outlet:v1',
+    ) as SaleOutlet | null
     return stored && VALID_CM_SALE_OUTLETS.includes(stored) ? stored : 'market'
   })
   const [searchTerm, setSearchTerm] = useState('')
@@ -78,7 +84,8 @@ const CityMarkets = () => {
     if (!items) return []
     return items.filter(
       (i) =>
-        (!showProfitableOnly || isItemProfitableOnMarket(i, saleOutlet, bazaarSummaries[i.id]?.minPrice)) &&
+        (!showProfitableOnly ||
+          isItemProfitableOnMarket(i, saleOutlet, bazaarSummaries[i.id]?.minPrice)) &&
         (selectedItemTypes.length === 0 || selectedItemTypes.includes(i.type!)) &&
         (selectedVendors.length === 0 ||
           (i.valueVendorName && selectedVendors.includes(i.valueVendorName))),
@@ -89,6 +96,22 @@ const CityMarkets = () => {
     const outlet = newOutlet as SaleOutlet
     setSaleOutlet(outlet)
     localStorage.setItem('torntools:city-markets:sale-outlet:v1', outlet)
+  }
+
+  if (
+    menuItems.length > 0 &&
+    menuItems.find((item) => item.address === '/city-markets')?.requiresLogin &&
+    !dotNetUserDetails
+  ) {
+    return (
+      <Box>
+        <Typography variant="h4" gutterBottom>
+          City Markets
+        </Typography>
+
+        <LoginRequiredForFairness />
+      </Box>
+    )
   }
 
   if (!items) return <Loading message="Loading items..." />
@@ -166,7 +189,7 @@ const CityMarkets = () => {
       </Typography>
 
       <Grid container spacing={2} alignItems="top">
-        <Grid size={{ xs: 12, sm: "auto" }} sx={{ minWidth: '22em' }}>
+        <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: '22em' }}>
           <OptionGroup
             options={marketSaleOutletOptions}
             selectedOption={saleOutlet}
@@ -176,7 +199,7 @@ const CityMarkets = () => {
           />
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6 }} sx={{ mt: "-2px"}}>
+        <Grid size={{ xs: 12, sm: 6 }} sx={{ mt: '-2px' }}>
           <FormGroup>
             <FormControlLabel
               control={
@@ -185,7 +208,10 @@ const CityMarkets = () => {
                   onChange={() => {
                     const next = !showProfitableOnly
                     setShowProfitableOnly(next)
-                    localStorage.setItem('torntools:city-markets:show-profitable-only:v1', String(next))
+                    localStorage.setItem(
+                      'torntools:city-markets:show-profitable-only:v1',
+                      String(next),
+                    )
                   }}
                 />
               }
@@ -196,13 +222,15 @@ const CityMarkets = () => {
       </Grid>
 
       {(saleOutlet === 'market' || saleOutlet === 'anonymousMarket') && (
-        <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
-          Note: sell prices are based on Torn's daily average market price, not the most recent market scan.
+        <Typography variant="body1" sx={{ mt: 1, color: 'text.secondary' }}>
+          Note: sell prices are based on Torn's daily average market price, not the most recent
+          market scan.
         </Typography>
       )}
       {saleOutlet === 'bazaar' && (
-        <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
-          Note: bazaar sell prices show the current cheapest listing from the most recent Weav3r scan. Items with no scan data show no sell price.
+        <Typography variant="body1" sx={{ mt: 1, color: 'text.secondary' }}>
+          Note: bazaar sell prices show the current cheapest listing from the most recent Weav3r
+          scan. Items with no scan data show no sell price.
         </Typography>
       )}
 

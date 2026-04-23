@@ -1,15 +1,3 @@
-import { useState, type MouseEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
-import {
-  AppBar,
-  Toolbar,
-  IconButton,
-  Typography,
-  Box,
-  Menu,
-  MenuItem,
-  Divider,
-} from '@mui/material'
 import {
   AccountCircle,
   AccountCircleOutlined,
@@ -17,11 +5,23 @@ import {
   LightMode,
   Menu as MenuIcon,
 } from '@mui/icons-material'
-import { useUser } from '../hooks/useUser'
+import {
+  AppBar,
+  Box,
+  Divider,
+  IconButton,
+  Menu,
+  MenuItem,
+  Toolbar,
+  Typography,
+} from '@mui/material'
+import { useState, type MouseEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { MAX_CONTENT_WIDTH } from '../constants/uiConstants'
 import { useThemeSettings } from '../hooks/useThemeSettings'
+import { useUser } from '../hooks/useUser'
 import '../index.css'
 import ItemSearch from './ItemSearch'
-import { MAX_CONTENT_WIDTH } from '../constants/uiConstants'
 
 interface TopAppBarProps {
   handleDrawerToggle: () => void
@@ -139,7 +139,7 @@ function TopAppBar({ handleDrawerToggle }: TopAppBarProps) {
                   cursor: 'default',
                 })}
               >
-                <Typography variant="body2">
+                <Typography variant="body1">
                   {dotNetUserDetails.name} [{dotNetUserDetails.id}]
                 </Typography>
               </MenuItem>

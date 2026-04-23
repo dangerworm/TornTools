@@ -1,15 +1,23 @@
-import { Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Link, Typography } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
-import CopyWithSuccess from "./CopyWithSuccess";
+import CloseIcon from '@mui/icons-material/Close'
+import {
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Link,
+  Typography,
+} from '@mui/material'
+import CopyWithSuccess from './CopyWithSuccess'
 
 interface AutoBuyScriptDialogProps {
-  dialogOpen: boolean;
-  setDialogOpen: (open: boolean) => void;
-  autoBuyScript: string | null;
+  dialogOpen: boolean
+  setDialogOpen: (open: boolean) => void
+  autoBuyScript: string | null
   lastClickedRow: {
-    itemId: number;
-    name: string;
-  } | null;
+    itemId: number
+    name: string
+  } | null
 }
 
 export const AutoBuyScriptDialog: React.FC<AutoBuyScriptDialogProps> = ({
@@ -19,12 +27,7 @@ export const AutoBuyScriptDialog: React.FC<AutoBuyScriptDialogProps> = ({
   lastClickedRow,
 }) => {
   return (
-    <Dialog
-      open={dialogOpen}
-      onClose={() => setDialogOpen(false)}
-      fullWidth
-      maxWidth="lg"
-    >
+    <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="lg">
       <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
         Auto-Buy Script
       </DialogTitle>
@@ -32,7 +35,7 @@ export const AutoBuyScriptDialog: React.FC<AutoBuyScriptDialogProps> = ({
         aria-label="close"
         onClick={() => setDialogOpen(false)}
         sx={(theme) => ({
-          position: "absolute",
+          position: 'absolute',
           right: 8,
           top: 8,
           color: theme.palette.grey[500],
@@ -42,21 +45,18 @@ export const AutoBuyScriptDialog: React.FC<AutoBuyScriptDialogProps> = ({
       </IconButton>
       <DialogContent dividers>
         <Typography gutterBottom>
-          <CopyWithSuccess
-            label="Copy script"
-            textToCopy={autoBuyScript || ""}
-          />
+          <CopyWithSuccess label="Copy script" textToCopy={autoBuyScript || ''} />
           <ul>
             <li>Copy the code using the button above</li>
             <li>
-              Open{" "}
+              Open{' '}
               <Link
                 href={`https://www.torn.com/page.php?sid=ItemMarket#/market/view=search&itemID=${lastClickedRow?.itemId}`}
                 target="_blank"
                 rel="noopener"
               >
                 the market
-              </Link>{" "}
+              </Link>{' '}
               for '{lastClickedRow?.name}' (opens in new tab)
             </li>
             <li>Open the developer console</li>
@@ -64,10 +64,10 @@ export const AutoBuyScriptDialog: React.FC<AutoBuyScriptDialogProps> = ({
             <li>Press Enter</li>
           </ul>
         </Typography>
-        <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
+        <Typography variant="body1" sx={{ mt: 2, mb: 1 }}>
           <pre>
             <code>
-              {autoBuyScript?.split("\n").map((line, idx) => (
+              {autoBuyScript?.split('\n').map((line, idx) => (
                 <div key={idx}>{line}</div>
               ))}
             </code>
@@ -75,8 +75,8 @@ export const AutoBuyScriptDialog: React.FC<AutoBuyScriptDialogProps> = ({
         </Typography>
       </DialogContent>
       <DialogActions>
-        <CopyWithSuccess textToCopy={autoBuyScript || ""} />
+        <CopyWithSuccess textToCopy={autoBuyScript || ''} />
       </DialogActions>
     </Dialog>
-  );
-};
+  )
+}

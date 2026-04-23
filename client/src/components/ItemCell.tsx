@@ -26,7 +26,7 @@ const ItemCell = ({ itemId, itemName, rowColour }: ItemCellProps) => {
         }}
       />
       <Typography
-        variant="body2"
+        variant="body1"
         style={{
           color: rowColour ? rgbToHex(rowColour) : 'inherit',
         }}
