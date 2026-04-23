@@ -84,16 +84,6 @@ export const menuItems: MenuItem[] = [
     title: 'Resale',
   },
   {
-    address: '/time',
-    icon: <AccessTimeFilled />,
-    requiresItems: false,
-    requiresLogin: false,
-    showOnHomePage: true,
-    section: 'utilities',
-    subTitle: 'Convert between your local time and Torn City time (TCT).',
-    title: 'Time',
-  },
-  {
     address: '/items',
     icon: <CategoryIcon />,
     requiresItems: true,
@@ -102,6 +92,16 @@ export const menuItems: MenuItem[] = [
     section: 'utilities',
     subTitle: 'Browse every item in the Torn catalogue.',
     title: 'All Items',
+  },
+  {
+    address: '/time',
+    icon: <AccessTimeFilled />,
+    requiresItems: false,
+    requiresLogin: false,
+    showOnHomePage: true,
+    section: 'utilities',
+    subTitle: 'Convert between your local time and Torn City time (TCT).',
+    title: 'Time',
   },
   {
     address: '/favourites',
