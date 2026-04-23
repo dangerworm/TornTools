@@ -21,15 +21,10 @@ const Home = () => {
   const { loading, items } = useItems()
   const { dotNetUserDetails } = useUser()
 
-  const visibleMenuItems = useMemo(
-    () => menuItems.filter((item) => item.showOnHomePage),
-    [items, dotNetUserDetails],
-  )
+  const visibleMenuItems = useMemo(() => menuItems.filter((item) => item.showOnHomePage), [])
 
   const isDisabled = useCallback(
     (menuItem: MenuItem) => {
-      console.log
-
       const needsItems = menuItem.requiresItems && (!items || items.length === 0)
       const needsLogin = menuItem.requiresLogin && !dotNetUserDetails
       const needsAccessLevel =
@@ -39,6 +34,8 @@ const Home = () => {
     },
     [items, dotNetUserDetails],
   )
+
+  const anyHidden = visibleMenuItems.some(isDisabled)
 
   return (
     <>
@@ -69,7 +66,7 @@ const Home = () => {
             Tools
           </Typography>
 
-          {visibleMenuItems.filter(isDisabled).length !== menuItems.length - 1 && (
+          {anyHidden && !dotNetUserDetails && (
             <Alert severity="info" sx={{ mb: 2 }}>
               <AlertTitle>Some tools are hidden</AlertTitle>
               <Typography variant="body1" gutterBottom>

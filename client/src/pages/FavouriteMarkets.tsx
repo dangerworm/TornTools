@@ -22,7 +22,7 @@ const FavouriteMarkets = () => {
     return (
       <Box>
         <Typography variant="h4" gutterBottom>
-          Favourite Markets
+          Favourites
         </Typography>
         <LoginRequired tool="Favourite Markets" requiredLevel="public" />
       </Box>
@@ -35,7 +35,7 @@ const FavouriteMarkets = () => {
     return (
       <Box>
         <Typography variant="h4" gutterBottom>
-          Favourite Markets
+          Favourites
         </Typography>
         <Alert severity="info">
           <AlertTitle>No favourite markets</AlertTitle>
