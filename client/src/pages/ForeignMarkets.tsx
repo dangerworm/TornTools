@@ -7,18 +7,18 @@ import {
   Divider,
   FormControlLabel,
   FormGroup,
-  FormLabel,
   Grid,
-  TextField,
   Typography,
 } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { Fragment, useEffect, useMemo, useState } from 'react'
+import FilterDrawer from '../components/FilterDrawer'
 import ForeignMarketItemsTable from '../components/ForeignMarketItemsTable'
 import Loading from '../components/Loading'
 import LoginRequired from '../components/LoginRequired'
+import MarketToolbar from '../components/MarketToolbar'
 import { menuItems } from '../components/Menu'
-import OptionGroup from '../components/OptionGroup'
+import SectionHeader from '../components/SectionHeader'
 import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
 import { useForeignMarketsScan } from '../hooks/useForeignMarketsScan'
 import { useUser } from '../hooks/useUser'
@@ -28,12 +28,10 @@ import {
   travelDestinationsByCountry,
   type TravelDestination,
 } from '../lib/countries'
-import { saleOutletOptions } from '../types/common'
 import { isForeignStockItemProfitable } from '../types/foreignStockItems'
 import type { SaleOutlet } from '../types/markets'
 
 const itemTypesOfInterest = ['Drug', 'Flower', 'Plushie']
-
 const VALID_FM_SALE_OUTLETS: SaleOutlet[] = ['bazaar', 'market', 'anonymousMarket']
 
 const ForeignMarkets = () => {
@@ -68,25 +66,25 @@ const ForeignMarkets = () => {
 
   const [searchTerm, setSearchTerm] = useState('')
 
-  const foreignSaleOutletOptions = saleOutletOptions.filter((o) => o.value !== 'city')
-
   const handleSaleOutletChange = (_: React.MouseEvent<HTMLElement>, newOutlet: string | number) => {
     const outlet = newOutlet as SaleOutlet
     setSaleOutlet(outlet)
     localStorage.setItem('torntools:foreign-markets:sale-outlet:v1', outlet)
   }
 
+  const handleShowProfitableOnlyChange = (next: boolean) => {
+    setShowProfitableOnly(next)
+    localStorage.setItem('torntools:foreign-markets:show-profitable-only:v1', String(next))
+  }
+
   useEffect(() => {
     if (!apiKey) {
       return
     }
-
-    // Fetch the latest Torn profile data on component mount
     fetchTornProfileAsync(apiKey)
   }, [apiKey, fetchTornProfileAsync])
 
   useEffect(() => {
-    // Reset selected countries if user logs out
     if (!tornUserProfile) {
       return
     }
@@ -192,64 +190,34 @@ const ForeignMarkets = () => {
     )
   }
 
-  return (
+  const saleOutletHint =
+    saleOutlet === 'bazaar'
+      ? 'Bazaar sell prices show the cheapest listing from the most recent Weav3r scan. Items with no scan data show no sell price.'
+      : "Sell prices are based on Torn's daily average market price, not the most recent market scan."
+
+  const activeCount =
+    (selectedItemTypes.length > 0 && selectedItemTypes.length !== itemTypes.length ? 1 : 0) +
+    (showProfitableOnly ? 1 : 0) +
+    (hideOutOfStock ? 1 : 0) +
+    (searchTerm.trim().length > 0 ? 1 : 0)
+
+  const mainContent = (
     <Box>
       <Typography variant="h4" gutterBottom>
         Foreign Markets
       </Typography>
 
-      <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
-        Filters
-      </Typography>
-
-      <FormGroup row sx={{ mb: 2 }}>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={orderByFlightTime}
-              onChange={() => {
-                const next = !orderByFlightTime
-                setOrderByFlightTime(next)
-                localStorage.setItem(
-                  'torntools:foreign-markets:order-by-flight-time:v1',
-                  String(next),
-                )
-              }}
-            />
-          }
-          label="Order by flight time"
-          sx={{ mr: 3 }}
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={showAllCountries}
-              onChange={() => {
-                const next = !showAllCountries
-                setShowAllCountries(next)
-                localStorage.setItem(
-                  'torntools:foreign-markets:show-all-countries:v1',
-                  String(next),
-                )
-              }}
-            />
-          }
-          label="Show all countries in one table"
-        />
-      </FormGroup>
-
       <Box>
-        <Grid container spacing={2}>
+        <Grid container spacing={1}>
           {sortedDestinations.map((destination: TravelDestination) => (
             <Grid key={destination.country} size="auto">
               <Box
-                key={destination.country}
                 sx={{
                   alignItems: 'center',
                   display: 'inline-flex',
                   flexDirection: 'column',
                   minWidth: '4em',
-                  mr: 2,
+                  mr: 1,
                   textAlign: 'center',
                 }}
               >
@@ -287,112 +255,6 @@ const ForeignMarkets = () => {
             </Grid>
           ))}
         </Grid>
-      </Box>
-
-      <Box sx={{ mt: 3 }}>
-        <Chip
-          label="All Item Types"
-          variant={selectedItemTypes.length === 0 ? 'filled' : 'outlined'}
-          onClick={() => setSelectedItemTypes((prev) => (prev.length === 0 ? [...itemTypes] : []))}
-          sx={{ mb: 1, mr: 1 }}
-        />
-        {itemTypes.map((type) => (
-          <Chip
-            key={type}
-            label={type}
-            color={'primary'}
-            variant={selectedItemTypes.includes(type!) ? 'filled' : 'outlined'}
-            onClick={() => {
-              if (!type) return
-              setSelectedItemTypes((prev) =>
-                prev.includes(type!) ? prev.filter((t) => t !== type) : [...prev, type],
-              )
-            }}
-            sx={{ mb: 1, mr: 1 }}
-          />
-        ))}
-      </Box>
-
-      <Divider sx={{ mt: 1, mb: 2 }} />
-
-      <Typography variant="h6" gutterBottom>
-        Options
-      </Typography>
-
-      <Grid container spacing={2} alignItems="center">
-        <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: '22em' }}>
-          <OptionGroup
-            options={foreignSaleOutletOptions}
-            selectedOption={saleOutlet}
-            title={'Sell via'}
-            titleInline={true}
-            handleOptionChange={handleSaleOutletChange}
-          />
-        </Grid>
-
-        <Grid size={{ xs: 12, sm: 6 }} sx={{ mt: '-2px' }}>
-          <FormGroup row>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={showProfitableOnly}
-                  onChange={() => {
-                    const next = !showProfitableOnly
-                    setShowProfitableOnly(next)
-                    localStorage.setItem(
-                      'torntools:foreign-markets:show-profitable-only:v1',
-                      String(next),
-                    )
-                  }}
-                />
-              }
-              label="Show Profitable Items Only"
-              sx={{ mr: 3 }}
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={hideOutOfStock}
-                  onChange={() => {
-                    const next = !hideOutOfStock
-                    setHideOutOfStock(next)
-                    localStorage.setItem(
-                      'torntools:foreign-markets:hide-out-of-stock:v1',
-                      String(next),
-                    )
-                  }}
-                />
-              }
-              label="Hide Out of Stock"
-            />
-          </FormGroup>
-        </Grid>
-      </Grid>
-
-      {saleOutlet === 'bazaar' ? (
-        <Typography variant="body1" sx={{ mt: 1, mb: 2, color: 'text.secondary' }}>
-          Note: bazaar sell prices show the current cheapest listing from the most recent Weav3r
-          scan. Items with no scan data show no sell price.
-        </Typography>
-      ) : (
-        <Typography variant="body1" sx={{ mt: 1, mb: 2, color: 'text.secondary' }}>
-          Note: sell prices are based on Torn's daily average market price, not the most recent
-          market scan.
-        </Typography>
-      )}
-
-      <Box sx={{ my: 2 }}>
-        <FormGroup>
-          <FormLabel sx={{ mb: 1 }}>Search items:</FormLabel>
-          <TextField
-            label="Search"
-            variant="outlined"
-            size="small"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            sx={{ mb: 1, minWidth: 400 }}
-          />
-        </FormGroup>
       </Box>
 
       {showAllCountries
@@ -452,6 +314,107 @@ const ForeignMarkets = () => {
               </Fragment>
             ))}
     </Box>
+  )
+
+  const filterPanel = (
+    <>
+      <MarketToolbar
+        saleOutlet={saleOutlet}
+        onSaleOutletChange={handleSaleOutletChange}
+        showProfitableOnly={showProfitableOnly}
+        onShowProfitableOnlyChange={handleShowProfitableOnlyChange}
+        searchTerm={searchTerm}
+        onSearchTermChange={setSearchTerm}
+        saleOutletHint={saleOutletHint}
+      />
+
+      <Divider sx={{ my: 2 }} />
+
+      <FormGroup>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={hideOutOfStock}
+              onChange={() => {
+                const next = !hideOutOfStock
+                setHideOutOfStock(next)
+                localStorage.setItem('torntools:foreign-markets:hide-out-of-stock:v1', String(next))
+              }}
+            />
+          }
+          label="Hide out of stock"
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={orderByFlightTime}
+              onChange={() => {
+                const next = !orderByFlightTime
+                setOrderByFlightTime(next)
+                localStorage.setItem(
+                  'torntools:foreign-markets:order-by-flight-time:v1',
+                  String(next),
+                )
+              }}
+            />
+          }
+          label="Order by flight time"
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={showAllCountries}
+              onChange={() => {
+                const next = !showAllCountries
+                setShowAllCountries(next)
+                localStorage.setItem(
+                  'torntools:foreign-markets:show-all-countries:v1',
+                  String(next),
+                )
+              }}
+            />
+          }
+          label="Single table"
+        />
+      </FormGroup>
+
+      <Divider sx={{ my: 2 }} />
+
+      <SectionHeader variant="subtitle2" hairline={false}>
+        Item types
+      </SectionHeader>
+      <Box>
+        <Chip
+          label="All"
+          size="small"
+          variant={selectedItemTypes.length === 0 ? 'filled' : 'outlined'}
+          onClick={() => setSelectedItemTypes([])}
+          sx={{ mb: 0.5, mr: 0.5 }}
+        />
+        {itemTypes.map((type) => (
+          <Chip
+            key={type}
+            label={type}
+            size="small"
+            color="primary"
+            variant={selectedItemTypes.includes(type!) ? 'filled' : 'outlined'}
+            onClick={() => {
+              if (!type) return
+              setSelectedItemTypes((prev) =>
+                prev.includes(type!) ? prev.filter((t) => t !== type) : [...prev, type],
+              )
+            }}
+            sx={{ mb: 0.5, mr: 0.5 }}
+          />
+        ))}
+      </Box>
+    </>
+  )
+
+  return (
+    <FilterDrawer activeCount={activeCount} main={mainContent}>
+      {filterPanel}
+    </FilterDrawer>
   )
 }
 
