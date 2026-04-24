@@ -22,6 +22,7 @@ export interface DotNetUserDetails {
 
 const URL_ITEMS = `${API_BASE_URL}/GetItems`
 const URL_ITEM_VOLATILITY = `${API_BASE_URL}/items/volatility`
+const URL_ITEM_UNUSUAL = `${API_BASE_URL}/items/unusual`
 const URL_FOREIGN_STOCK_ITEMS = `${API_BASE_URL}/GetForeignStockItems`
 const URL_PROFITABLE_LISTINGS = `${API_BASE_URL}/GetProfitableListings`
 const URL_BAZAAR_SUMMARIES = `${API_BASE_URL}/GetBazaarSummaries`
@@ -119,6 +120,53 @@ export interface ItemVolatilityStats {
   priceDispersion: number | null
   movePctWindow: number | null
   moveZScore1d: number | null
+}
+
+export type UnusualHorizon = '1h' | '6h' | '24h' | '7d'
+export type UnusualDirection = 'up' | 'down'
+
+export interface UnusualItem {
+  itemId: number
+  source: string
+  computedAt: string
+  baselinePrice: number | null
+  priceDispersion: number | null
+  windowPrice1h: number | null
+  sampleCount1h: number
+  movePct1h: number | null
+  zScore1h: number | null
+  windowPrice6h: number | null
+  sampleCount6h: number
+  movePct6h: number | null
+  zScore6h: number | null
+  windowPrice24h: number | null
+  sampleCount24h: number
+  movePct24h: number | null
+  zScore24h: number | null
+  windowPrice7d: number | null
+  sampleCount7d: number
+  movePct7d: number | null
+  zScore7d: number | null
+  unusualnessScore: number | null
+  dominantHorizon: UnusualHorizon | null
+  direction: UnusualDirection | null
+  // Server-formatted phrasing for the chip — e.g. "↑ 3.4σ in last 24h vs month".
+  whyFlagged: string | null
+}
+
+export async function fetchUnusualItems(params: {
+  source?: 'Torn' | 'Weav3r'
+  limit?: number
+  minScore?: number
+}): Promise<UnusualItem[]> {
+  const qs = new URLSearchParams()
+  if (params.source) qs.set('source', params.source)
+  if (params.limit != null) qs.set('limit', String(params.limit))
+  if (params.minScore != null) qs.set('minScore', String(params.minScore))
+  const url = `${URL_ITEM_UNUSUAL}?${qs.toString()}`
+  const res = await fetch(url, { headers: { accept: 'application/json' } })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
 }
 
 export async function fetchTopVolatileItems(params: {

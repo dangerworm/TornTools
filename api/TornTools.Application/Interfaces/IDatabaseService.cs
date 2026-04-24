@@ -20,6 +20,13 @@ public interface IDatabaseService
       bool ascending,
       CancellationToken stoppingToken);
 
+  Task RebuildUnusualCandidatesAsync(CancellationToken stoppingToken);
+  Task<IEnumerable<ItemUnusualCandidateDto>> GetTopUnusualItemsAsync(
+      Source source,
+      int limit,
+      decimal minScore,
+      CancellationToken stoppingToken);
+
   Task<IEnumerable<ItemDto>> GetAllItemsAsync(CancellationToken stoppingToken);
   Task<int> GetNumberOfItemsAsync(CancellationToken stoppingToken);
   Task UpsertItemsAsync(IEnumerable<ItemDto> items, CancellationToken stoppingToken);
