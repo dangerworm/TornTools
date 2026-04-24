@@ -367,9 +367,14 @@ public class DatabaseService(
     return _userRepository.GetApiKeyCountAsync(stoppingToken);
   }
 
-  public Task<string> GetNextApiKeyAsync(CancellationToken stoppingToken)
+  public Task<ApiKeyLeaseDto> GetNextApiKeyAsync(CancellationToken stoppingToken)
   {
     return _userRepository.GetNextApiKeyAsync(stoppingToken);
+  }
+
+  public Task<string?> GetApiKeyForUserAsync(long userId, CancellationToken stoppingToken)
+  {
+    return _userRepository.GetApiKeyForUserAsync(userId, stoppingToken);
   }
 
   public Task MarkKeyUnavailableAsync(long userId, CancellationToken stoppingToken)
@@ -377,9 +382,9 @@ public class DatabaseService(
     return _userRepository.MarkKeyUnavailableAsync(userId, stoppingToken);
   }
 
-  public Task MarkKeyUnavailableByApiKeyAsync(string apiKey, CancellationToken stoppingToken)
+  public Task<int> BackfillEncryptedApiKeysAsync(CancellationToken stoppingToken)
   {
-    return _userRepository.MarkKeyUnavailableByApiKeyAsync(apiKey, stoppingToken);
+    return _userRepository.BackfillEncryptedApiKeysAsync(stoppingToken);
   }
 
   public Task<UserDto> UpsertUserDetailsAsync(UserDetailsInputModel userDetails, CancellationToken stoppingToken)

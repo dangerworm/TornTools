@@ -15,6 +15,12 @@ public class UserEntity
   [Column("api_key")]
   public required string ApiKey { get; set; }
 
+  // Populated by UpsertUserDetailsAsync via IApiKeyProtector. Reads prefer
+  // this column; the plaintext ApiKey stays as a fallback until the post-
+  // release migration drops it.
+  [Column("api_key_encrypted")]
+  public byte[]? ApiKeyEncrypted { get; set; }
+
   [Column("api_key_last_used")]
   public DateTimeOffset? ApiKeyLastUsed { get; set; }
 
@@ -43,7 +49,10 @@ public class UserEntity
     return new UserDto
     {
       Id = Id,
-      ApiKey = ApiKey,
+      // Plaintext deliberately NOT copied — read-side DTOs must not carry
+      // the Torn API key past the persistence boundary. Write paths that
+      // genuinely need to send a key pass a fresh UserDto with ApiKey set.
+      ApiKey = string.Empty,
       ApiKeyLastUsed = ApiKeyLastUsed,
       KeyAvailable = KeyAvailable,
       Name = Name,

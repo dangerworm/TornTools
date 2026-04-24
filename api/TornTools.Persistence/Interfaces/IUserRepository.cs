@@ -7,9 +7,10 @@ public interface IUserRepository
   Task<UserDto?> GetUserByIdAsync(long userId, CancellationToken stoppingToken);
   Task<List<UserDto>> GetUsersAsync(CancellationToken stoppingToken);
   Task<int> GetApiKeyCountAsync(CancellationToken stoppingToken);
-  Task<string> GetNextApiKeyAsync(CancellationToken stoppingToken);
+  Task<ApiKeyLeaseDto> GetNextApiKeyAsync(CancellationToken stoppingToken);
+  Task<string?> GetApiKeyForUserAsync(long userId, CancellationToken stoppingToken);
   Task MarkKeyUnavailableAsync(long userId, CancellationToken stoppingToken);
-  Task MarkKeyUnavailableByApiKeyAsync(string apiKey, CancellationToken stoppingToken);
+  Task<int> BackfillEncryptedApiKeysAsync(CancellationToken stoppingToken);
   Task<UserDto> UpsertUserDetailsAsync(UserDto userDto, CancellationToken stoppingToken);
   Task<UserDto?> ToggleUserFavourite(long userId, int itemId, bool add, CancellationToken stoppingToken);
 }

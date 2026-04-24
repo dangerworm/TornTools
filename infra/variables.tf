@@ -22,6 +22,18 @@ variable "jwt_secret" {
   sensitive   = true
 }
 
+variable "torn_key_encryption_key_v1" {
+  description = "Base64-encoded 32-byte AES key (v1) used to encrypt stored Torn API keys at rest. Generate with `openssl rand -base64 32`."
+  type        = string
+  sensitive   = true
+}
+
+variable "torn_key_encryption_current_version" {
+  description = "Version of the Torn API key encryption key to use for new writes. Increment after adding a new torn_key_encryption_key_vN variable."
+  type        = string
+  default     = "1"
+}
+
 variable "app_name" {
   description = "Name of the application"
   type        = string
@@ -32,7 +44,7 @@ variable "app_service_outbound_ips" {
   type        = list(string)
 }
 
-variable "db_admin_password" { 
+variable "db_admin_password" {
   description = "Admin password for PostgreSQL"
   type        = string
   sensitive   = true

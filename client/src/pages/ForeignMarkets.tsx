@@ -40,7 +40,7 @@ const ForeignMarkets = () => {
   const { rows, error } = useForeignMarketsScan({ intervalMs: 60000 })
   const loginRequired = useRequiresLogin('/foreign-markets')
 
-  const { apiKey, tornUserProfile, fetchTornProfileAsync } = useUser()
+  const { tornUserProfile } = useUser()
   const { summaries: bazaarSummaries } = useBazaarSummaries()
 
   const [orderByFlightTime, setOrderByFlightTime] = useState(
@@ -77,13 +77,6 @@ const ForeignMarkets = () => {
     setShowProfitableOnly(next)
     localStorage.setItem('torntools:foreign-markets:show-profitable-only:v1', String(next))
   }
-
-  useEffect(() => {
-    if (!apiKey) {
-      return
-    }
-    fetchTornProfileAsync(apiKey)
-  }, [apiKey, fetchTornProfileAsync])
 
   useEffect(() => {
     if (!tornUserProfile) {

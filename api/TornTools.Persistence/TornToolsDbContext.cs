@@ -103,6 +103,7 @@ public class TornToolsDbContext(
     {
       e.HasKey(x => x.Id);
       e.Property(x => x.ApiKey).IsRequired();
+      e.Property(x => x.ApiKeyEncrypted).IsRequired(false);
       e.Property(x => x.ApiKeyLastUsed).IsRequired(false);
       e.Property(x => x.KeyAvailable).IsRequired();
       e.Property(x => x.Name).IsRequired();

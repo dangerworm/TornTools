@@ -30,7 +30,8 @@ import {
 import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
 import { useItems } from '../hooks/useItems'
 import { useUser } from '../hooks/useUser'
-import { fetchTornInventory, type TornInventoryItem } from '../lib/tornapi'
+import { proxyTornUserInventory } from '../lib/dotnetapi'
+import type { TornInventoryItem } from '../lib/tornapi'
 
 interface CategoryState {
   loading: boolean
@@ -75,7 +76,7 @@ const formatRelativeTime = (iso: string): string => {
 }
 
 const BazaarPriceLookup = () => {
-  const { apiKey, dotNetUserDetails } = useUser()
+  const { dotNetUserDetails } = useUser()
   const { itemsById } = useItems()
   const { summaries: bazaarSummaries } = useBazaarSummaries()
 
@@ -84,46 +85,32 @@ const BazaarPriceLookup = () => {
   const [copiedId, setCopiedId] = useState<number | null>(null)
   const [copiedSuggestedId, setCopiedSuggestedId] = useState<number | null>(null)
 
-  const loadCategory = useCallback(
-    async (category: BazaarCategory) => {
-      if (!apiKey) {
-        setByCategory((prev) => ({
-          ...prev,
-          [category.cat]: {
-            loading: false,
-            error: 'No API key available. Please sign out and sign in again.',
-            items: null,
-          },
-        }))
-        return
-      }
+  const loadCategory = useCallback(async (category: BazaarCategory) => {
+    setByCategory((prev) => ({
+      ...prev,
+      [category.cat]: { loading: true, error: null, items: prev[category.cat]?.items ?? null },
+    }))
+    try {
+      const payload = await proxyTornUserInventory(category.cat)
       setByCategory((prev) => ({
         ...prev,
-        [category.cat]: { loading: true, error: null, items: prev[category.cat]?.items ?? null },
+        [category.cat]: {
+          loading: false,
+          error: null,
+          items: payload.inventory?.items ?? [],
+        },
       }))
-      try {
-        const payload = await fetchTornInventory(apiKey, category.cat)
-        setByCategory((prev) => ({
-          ...prev,
-          [category.cat]: {
-            loading: false,
-            error: null,
-            items: payload.inventory?.items ?? [],
-          },
-        }))
-      } catch (e) {
-        setByCategory((prev) => ({
-          ...prev,
-          [category.cat]: {
-            loading: false,
-            error: e instanceof Error ? e.message : 'Failed to load inventory',
-            items: null,
-          },
-        }))
-      }
-    },
-    [apiKey],
-  )
+    } catch (e) {
+      setByCategory((prev) => ({
+        ...prev,
+        [category.cat]: {
+          loading: false,
+          error: e instanceof Error ? e.message : 'Failed to load inventory',
+          items: null,
+        },
+      }))
+    }
+  }, [])
 
   const handleSelect = (category: BazaarCategory) => {
     setSelected(category)

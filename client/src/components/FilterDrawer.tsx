@@ -1,6 +1,6 @@
-import CloseIcon from '@mui/icons-material/Close'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import CloseIcon from '@mui/icons-material/Close'
 import FilterListIcon from '@mui/icons-material/FilterList'
 import { Badge, Box, Drawer, Fab, IconButton, Tooltip, Typography } from '@mui/material'
 import { useEffect, useState, type ReactNode } from 'react'
@@ -8,7 +8,7 @@ import SectionHeader from './SectionHeader'
 
 export const FILTER_DRAWER_WIDTH = 300
 const COLLAPSED_STRIP_WIDTH = 44
-const COLLAPSE_TRANSITION = '900ms cubic-bezier(0.22, 0.61, 0.36, 1)'
+const COLLAPSE_TRANSITION = '500ms cubic-bezier(0.22, 0.61, 0.36, 1)'
 const COLLAPSE_STORAGE_KEY = 'torntools:ui:filter-drawer:collapsed:v1'
 
 interface FilterDrawerProps {
