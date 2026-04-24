@@ -1,10 +1,12 @@
 import { Box, Fade, Tooltip, Typography } from '@mui/material'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useItemPriceHistory } from '../hooks/useItemHistory'
+import type { HistorySource } from '../lib/dotnetapi'
 import { getFormattedText } from '../lib/textFormat'
 
 interface LazyLatestMarketPriceProps {
   itemId: number | undefined
+  source?: HistorySource
 }
 
 const formatRelative = (ms: number): string => {
@@ -20,8 +22,14 @@ const formatRelative = (ms: number): string => {
 
 // Inner component — only mounts when the row is near the viewport, to
 // avoid kicking off N price-history fetches for every favourite up front.
-const LatestMarketPriceInner = ({ itemId }: { itemId: number | undefined }) => {
-  const { data, loading } = useItemPriceHistory(itemId, '1d')
+const LatestMarketPriceInner = ({
+  itemId,
+  source,
+}: {
+  itemId: number | undefined
+  source: HistorySource
+}) => {
+  const { data, loading } = useItemPriceHistory(itemId, '1d', source)
   const latest = useMemo(() => {
     if (!data.length) return null
     return data.reduce((acc, p) => (p.timestamp > acc.timestamp ? p : acc), data[0])
@@ -46,7 +54,7 @@ const LatestMarketPriceInner = ({ itemId }: { itemId: number | undefined }) => {
   )
 }
 
-const LazyLatestMarketPrice = ({ itemId }: LazyLatestMarketPriceProps) => {
+const LazyLatestMarketPrice = ({ itemId, source = 'Torn' }: LazyLatestMarketPriceProps) => {
   const ref = useRef<HTMLDivElement | null>(null)
   const [inView, setInView] = useState(false)
 
@@ -70,7 +78,7 @@ const LazyLatestMarketPrice = ({ itemId }: LazyLatestMarketPriceProps) => {
     <Box ref={ref} sx={{ display: 'inline-block', minWidth: 60 }}>
       <Fade in={inView} timeout={2000}>
         <Box sx={{ display: 'inline-block' }}>
-          {inView ? <LatestMarketPriceInner itemId={itemId} /> : null}
+          {inView ? <LatestMarketPriceInner itemId={itemId} source={source} /> : null}
         </Box>
       </Fade>
     </Box>

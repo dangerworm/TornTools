@@ -1,12 +1,14 @@
 import { useMemo } from 'react'
 import { Box, Typography } from '@mui/material'
 import { useItemPriceHistory } from '../hooks/useItemHistory'
+import type { HistorySource } from '../lib/dotnetapi'
 import type { ItemHistoryPoint } from '../types/history'
 
 interface PriceSparklineProps {
   itemId: number | undefined
   width?: number
   height?: number
+  source?: HistorySource
 }
 
 function buildPolylinePoints(data: ItemHistoryPoint[], width: number, height: number): string {
@@ -24,8 +26,13 @@ function buildPolylinePoints(data: ItemHistoryPoint[], width: number, height: nu
     .join(' ')
 }
 
-export default function PriceSparkline({ itemId, width = 80, height = 28 }: PriceSparklineProps) {
-  const { data, loading } = useItemPriceHistory(itemId, '1w')
+export default function PriceSparkline({
+  itemId,
+  width = 80,
+  height = 28,
+  source = 'Torn',
+}: PriceSparklineProps) {
+  const { data, loading } = useItemPriceHistory(itemId, '1w', source)
 
   const { points, strokeColor } = useMemo(() => {
     if (data.length < 2) return { points: '', strokeColor: '' }

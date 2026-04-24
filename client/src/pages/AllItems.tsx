@@ -19,6 +19,8 @@ import { useMemo, useState } from 'react'
 import { Link as RouterLink } from 'react-router'
 import EmptyState from '../components/EmptyState'
 import FilterDrawer from '../components/FilterDrawer'
+import LazyLatestMarketPrice from '../components/LazyLatestMarketPrice'
+import LazySparkline from '../components/LazySparkline'
 import Loading from '../components/Loading'
 import SectionHeader from '../components/SectionHeader'
 import StatChip from '../components/StatChip'
@@ -30,7 +32,8 @@ import { getFormattedText } from '../lib/textFormat'
 import type { Item } from '../types/items'
 
 // Catalogue item augmented with the latest bazaar summary (min price +
-// timestamp) so the price columns can be sorted and tooltipped.
+// timestamp) so the Bazaar (latest) column can be sorted and tooltipped
+// using data we already have in context.
 type SortableAllItemsItem = Item & {
   bazaarMinPrice: number | null
   bazaarLastUpdated: string | null
@@ -123,7 +126,9 @@ const AllItems = () => {
         All Items
       </Typography>
       <Typography variant="body1" color="text.secondary" gutterBottom>
-        Every item in the Torn catalogue. Click a row to open its full details page.
+        Every item in the Torn catalogue. Click a row to open its full details page. Bazaar prices
+        use the latest Weav3r scan; market prices and trends lazy-load the 1-day history per row as
+        you scroll.
       </Typography>
 
       {sorted.length === 0 ? (
@@ -155,15 +160,6 @@ const AllItems = () => {
                 />
                 <TableSortCell<SortableAllItemsItem>
                   align="right"
-                  columnKey="valueSellPrice"
-                  defaultOrderDirection="desc"
-                  label="City Sell"
-                  orderBy={orderBy}
-                  orderDirection={orderDirection}
-                  handleRequestSort={handleSort}
-                />
-                <TableSortCell<SortableAllItemsItem>
-                  align="right"
                   columnKey="bazaarMinPrice"
                   defaultOrderDirection="desc"
                   label="Bazaar (latest)"
@@ -171,15 +167,21 @@ const AllItems = () => {
                   orderDirection={orderDirection}
                   handleRequestSort={handleSort}
                 />
+                <TableCell align="center" sx={{ width: 100 }}>
+                  Bazaar trend
+                </TableCell>
                 <TableSortCell<SortableAllItemsItem>
                   align="right"
                   columnKey="valueMarketPrice"
                   defaultOrderDirection="desc"
-                  label="Market (avg)"
+                  label="Market (latest)"
                   orderBy={orderBy}
                   orderDirection={orderDirection}
                   handleRequestSort={handleSort}
                 />
+                <TableCell align="center" sx={{ width: 100 }}>
+                  Market trend
+                </TableCell>
                 <TableCell align="center" sx={{ width: 72 }}>
                   Tradable
                 </TableCell>
@@ -223,17 +225,24 @@ const AllItems = () => {
                       </Link>
                     </TableCell>
                     <TableCell>{item.type ?? ''}</TableCell>
-                    <TableCell align="right">{formatPrice(item.valueSellPrice)}</TableCell>
                     <TableCell align="right">
                       {item.bazaarMinPrice != null ? (
                         <Tooltip title={bazaarTooltip} placement="left">
                           <span>{formatPrice(item.bazaarMinPrice)}</span>
                         </Tooltip>
                       ) : (
-                        <span style={{ color: 'var(--mui-palette-text-disabled)' }}>—</span>
+                        <span style={{ opacity: 0.5 }}>—</span>
                       )}
                     </TableCell>
-                    <TableCell align="right">{formatPrice(item.valueMarketPrice)}</TableCell>
+                    <TableCell align="center">
+                      <LazySparkline itemId={item.id} source="Weav3r" />
+                    </TableCell>
+                    <TableCell align="right">
+                      <LazyLatestMarketPrice itemId={item.id} source="Torn" />
+                    </TableCell>
+                    <TableCell align="center">
+                      <LazySparkline itemId={item.id} source="Torn" />
+                    </TableCell>
                     <TableCell align="center">
                       {item.isTradable && <StatChip chipVariant="tradable" label="Yes" />}
                     </TableCell>
