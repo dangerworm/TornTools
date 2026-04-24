@@ -82,6 +82,12 @@
   - **Drop legacy columns** (`current_price`, `price_change_1d`, `price_change_1w`) once nothing
     consumes them as fallbacks. Currently the widget falls through to them; item details may too.
     Audit before dropping.
+  - **Ranking threshold tuning.** The risers/fallers card uses `MinAbsMovePct = 0.10m` and
+    `MinAbsZScore = 1.5m` in `ItemVolatilityStatsRepository.GetTopAsync`; the unusual card uses
+    `DefaultMinScore = 1.5m` in `UnusualController`. If too few items surface in prod, drop
+    toward 1.0σ; if too noisy, push toward 2.0σ. Each is a one-line constant. Same goes for the
+    per-horizon min-sample thresholds (1/3/6/24 buckets) in `RebuildAsync` if any horizon is
+    pruning more than expected.
 - **Cross-item spike correlation / Torn event-calendar analysis** - Scalpel and Chain Whip
   occasionally spike for reasons that aren't obvious. Hypothesis: some spikes correlate with Torn
   in-game events (e.g. Cannabis on 4/20). Would want cross-item price-movement correlation over time
