@@ -20,10 +20,11 @@ public class TornApiMultiKeyCaller(
 
   protected override string ClientName => TornApiConstants.ClientName;
 
-  protected override async Task AddAuthorizationHeader(HttpRequestMessage requestMessage, CancellationToken stoppingToken)
+  protected override async Task<ApiKeyLeaseDto?> AddAuthorizationHeader(HttpRequestMessage requestMessage, CancellationToken stoppingToken)
   {
-    var nextApiKey = await DatabaseService.GetNextApiKeyAsync(stoppingToken);
-    requestMessage.Headers.TryAddWithoutValidation("Authorization", $"ApiKey {nextApiKey}");
+    var lease = await DatabaseService.GetNextApiKeyAsync(stoppingToken);
+    requestMessage.Headers.TryAddWithoutValidation("Authorization", $"ApiKey {lease.ApiKey}");
+    return lease;
   }
 
   Task<bool> IApiCaller.CallAsync(QueueItemDto queueItemDto, IApiCallHandler handler, CancellationToken stoppingToken)

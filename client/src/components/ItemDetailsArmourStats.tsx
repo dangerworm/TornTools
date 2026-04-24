@@ -8,7 +8,6 @@ interface ItemDetailsArmourStatsProps {
 
 const ItemDetailsArmourStats = ({ item }: ItemDetailsArmourStatsProps) => {
   const theme = useTheme()
-  const isDark = theme.palette.mode === 'dark'
 
   return (
     <Box>
@@ -25,20 +24,11 @@ const ItemDetailsArmourStats = ({ item }: ItemDetailsArmourStatsProps) => {
               alignItems: 'center',
               borderRadius: 2,
               display: 'flex',
-              background: isDark
-                ? `linear-gradient(135deg,
+              background: `linear-gradient(135deg,
                 ${alpha(theme.palette.primary.light, 0.25)},
                 ${alpha(theme.palette.background.default, 0.9)}
-              )`
-                : `linear-gradient(135deg,
-                ${alpha(theme.palette.primary.light, 0.12)},
-                ${theme.palette.grey[100]}
-                )`,
-              border: `1px solid ${
-                isDark
-                  ? alpha(theme.palette.primary.main, 0.5)
-                  : alpha(theme.palette.primary.main, 0.3)
-              }`,
+              )`,
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.5)}`,
               gap: 2,
               minHeight: '5em',
               p: 2,
@@ -52,9 +42,7 @@ const ItemDetailsArmourStats = ({ item }: ItemDetailsArmourStatsProps) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: isDark
-                  ? alpha(theme.palette.common.black, 0.5)
-                  : alpha(theme.palette.primary.main, 0.08),
+                backgroundColor: alpha(theme.palette.common.black, 0.5),
               }}
             >
               <ShieldIcon sx={{ fontSize: 28 }} />

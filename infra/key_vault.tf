@@ -36,7 +36,7 @@ resource "azurerm_key_vault" "torntools_keyvault" {
   resource_group_name      = local.resource_group_name
   tenant_id                = data.azurerm_client_config.current.tenant_id
   sku_name                 = "standard"
-  purge_protection_enabled = false
+  purge_protection_enabled = true
 
   tags = {
     environment = var.environment
@@ -58,6 +58,21 @@ resource "azurerm_key_vault_secret" "api_base_url" {
 resource "azurerm_key_vault_secret" "db_password" {
   name         = "db-admin-password"
   value        = var.db_admin_password
+  key_vault_id = azurerm_key_vault.torntools_keyvault.id
+
+  depends_on = [
+    azurerm_key_vault_access_policy.github_actions_user,
+    azurerm_key_vault_access_policy.local_user
+  ]
+}
+
+# At-rest encryption key for stored Torn API keys. Held here as a backup / audit
+# trail; the live value is injected into app_settings via var.torn_key_encryption_key_v1
+# (same pattern as jwt_secret and db_password). Rotation workflow: add a v2
+# variable + secret, bump torn_key_encryption_current_version, deploy.
+resource "azurerm_key_vault_secret" "torn_key_encryption_v1" {
+  name         = "torn-key-encryption-v1"
+  value        = var.torn_key_encryption_key_v1
   key_vault_id = azurerm_key_vault.torntools_keyvault.id
 
   depends_on = [

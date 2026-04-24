@@ -17,11 +17,11 @@ import ForeignMarketItemsTable from '../components/ForeignMarketItemsTable'
 import Loading from '../components/Loading'
 import LoginRequired from '../components/LoginRequired'
 import MarketToolbar from '../components/MarketToolbar'
-import { menuItems } from '../components/Menu'
 import SectionHeader from '../components/SectionHeader'
 import StaleDataBanner from '../components/StaleDataBanner'
 import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
 import { useForeignMarketsScan } from '../hooks/useForeignMarketsScan'
+import { useRequiresLogin } from '../hooks/useRequiresLogin'
 import { useUser } from '../hooks/useUser'
 import {
   prettyPrintFlightTime,
@@ -38,9 +38,9 @@ const VALID_FM_SALE_OUTLETS: SaleOutlet[] = ['bazaar', 'market', 'anonymousMarke
 const ForeignMarkets = () => {
   const theme = useTheme()
   const { rows, error } = useForeignMarketsScan({ intervalMs: 60000 })
-  const { dotNetUserDetails } = useUser()
+  const loginRequired = useRequiresLogin('/foreign-markets')
 
-  const { apiKey, tornUserProfile, fetchTornProfileAsync } = useUser()
+  const { tornUserProfile } = useUser()
   const { summaries: bazaarSummaries } = useBazaarSummaries()
 
   const [orderByFlightTime, setOrderByFlightTime] = useState(
@@ -77,13 +77,6 @@ const ForeignMarkets = () => {
     setShowProfitableOnly(next)
     localStorage.setItem('torntools:foreign-markets:show-profitable-only:v1', String(next))
   }
-
-  useEffect(() => {
-    if (!apiKey) {
-      return
-    }
-    fetchTornProfileAsync(apiKey)
-  }, [apiKey, fetchTornProfileAsync])
 
   useEffect(() => {
     if (!tornUserProfile) {
@@ -164,11 +157,7 @@ const ForeignMarkets = () => {
 
   if (!rows) return <Loading message="Loading foreign markets..." />
 
-  if (
-    menuItems.length > 0 &&
-    menuItems.find((item) => item.address === '/foreign-markets')?.requiresLogin &&
-    !dotNetUserDetails
-  ) {
+  if (loginRequired) {
     return (
       <Box>
         <Typography variant="h4" gutterBottom>

@@ -105,3 +105,27 @@ To check whether embeddings exist, inspect `.gitnexus/meta.json` — the `stats.
 - **Torn API quick reference**: see `context/torn-api.md` for endpoints we use, access levels, the
   bazaar category label→cat map, and rate limits. Full Swagger UI is at
   <https://www.torn.com/swagger.php>.
+
+## `TODO.md` vs. `context/` — two kinds of notes, two owners
+
+`TODO.md` and `context/` serve different purposes. Don't conflate them.
+
+- **`TODO.md` is the durable backlog.** Drew owns it, tracks it, and picks work from it. Any
+  new piece of work surfaced by a discussion, a session, a code review, or a bug report
+  belongs here. A handoff alone is not enough — handoffs get archived into `context/sessions/`
+  and fall out of the default reading path; `TODO.md` outlives them and is the index of what
+  still needs doing.
+- **`context/` is your (Claude's) working memory across sessions.** That includes
+  `session-handoff.md`, `note-to-next-instance.md`, `next-prompt.txt`, and everything under
+  `context/sessions/` and `context/plans/`. Drew does not own these files and will not tell
+  you what to include, exclude, rewrite, or prune. You decide what the next session of you
+  needs. Don't ask permission to reorganise your own notes.
+
+**Rule when a discussion surfaces new work**: write it in **both** `TODO.md` and
+`context/session-handoff.md`. TODO.md captures *that it needs doing* (one line, a pointer if
+needed). The handoff captures *why and with what context* — the reasoning, the artifacts
+observed, the proposed approach — so the next session can pick it up intelligently rather
+than re-deriving it from a one-line TODO entry.
+
+If you find yourself writing something substantive in a handoff and *not* also recording it
+in `TODO.md`, that's the signal to stop and update `TODO.md` too.

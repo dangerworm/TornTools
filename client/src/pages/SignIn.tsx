@@ -17,11 +17,12 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Loading from '../components/Loading'
 import PrivacyNotice from '../components/PrivacyNotice'
 import { useUser } from '../hooks/useUser'
+import { proxyTornKeyValidate, type ValidatedKey } from '../lib/dotnetapi'
 
 const BootstrapDialog = styled(Dialog)(({ theme }) => ({
   '& .MuiDialogContent-root': {
@@ -32,30 +33,28 @@ const BootstrapDialog = styled(Dialog)(({ theme }) => ({
   },
 }))
 
+// How long to wait after the last keystroke before validating against the
+// backend. 16-character Torn keys are usually pasted, not typed — this
+// catches both cases without flooding the proxy on every keystroke.
+const VALIDATE_DEBOUNCE_MS = 400
+
 const SignIn = () => {
-  const {
-    apiKey,
-    setApiKey,
-    tornUserProfile,
-    loadingTornUserProfile,
-    errorTornUserProfile,
-    loadingDotNetUserDetails,
-    errorDotNetUserDetails,
-    confirmApiKeyAsync,
-    dotNetUserDetails,
-  } = useUser()
+  const { loadingDotNetUserDetails, errorDotNetUserDetails, signInAsync, dotNetUserDetails } =
+    useUser()
 
   const navigate = useNavigate()
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [showKey, setShowKey] = useState(false)
-  // Only redirect on successful auth that followed an intentional Sign
-  // in click — not on arrival with an existing session cookie. This
-  // flag flips on via handleSignIn and flips off as soon as the
-  // redirect fires (or the dialog is closed).
+  const [apiKey, setApiKeyInput] = useState('')
+  const [preview, setPreview] = useState<ValidatedKey | null>(null)
+  const [loadingPreview, setLoadingPreview] = useState(false)
+  const [previewError, setPreviewError] = useState<string | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
+  // Only redirect on successful auth that followed an intentional Sign in
+  // click — not on arrival with an existing session cookie.
   const attemptedSignInRef = useRef(false)
 
-  // Redirect when the requested sign-in succeeds.
   useEffect(() => {
     if (attemptedSignInRef.current && dotNetUserDetails) {
       attemptedSignInRef.current = false
@@ -64,34 +63,66 @@ const SignIn = () => {
     }
   }, [dotNetUserDetails, navigate])
 
-  // confirmApiKeyAsync swallows errors into errorDotNetUserDetails
-  // rather than throwing, so the try/catch around the await doesn't
-  // help us know when an attempt failed. Watch the backend error
-  // state instead: if we intended to sign in and the request produced
-  // an error (401, network, etc.), clear the in-flight flag so the
-  // user can edit the key and retry without reloading.
   useEffect(() => {
     if (attemptedSignInRef.current && !loadingDotNetUserDetails && errorDotNetUserDetails) {
       attemptedSignInRef.current = false
     }
   }, [loadingDotNetUserDetails, errorDotNetUserDetails])
 
-  const handleClose = () => {
+  // Debounced validation preview. The plaintext key is held only in this
+  // component's local state — never in context or localStorage.
+  useEffect(() => {
+    if (!apiKey) {
+      setPreview(null)
+      setPreviewError(null)
+      setLoadingPreview(false)
+      return
+    }
+
+    if (abortRef.current) abortRef.current.abort()
+    abortRef.current = new AbortController()
+    const signal = abortRef.current.signal
+
+    const timer = window.setTimeout(() => {
+      setLoadingPreview(true)
+      setPreviewError(null)
+      proxyTornKeyValidate(apiKey, signal)
+        .then((payload) => {
+          setPreview(payload)
+        })
+        .catch((e: unknown) => {
+          if (e instanceof DOMException && e.name === 'AbortError') return
+          setPreview(null)
+          setPreviewError(e instanceof Error ? e.message : 'Unknown error')
+        })
+        .finally(() => {
+          setLoadingPreview(false)
+        })
+    }, VALIDATE_DEBOUNCE_MS)
+
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [apiKey])
+
+  const handleClose = useCallback(() => {
     attemptedSignInRef.current = false
     setDialogOpen(false)
-  }
+    setApiKeyInput('')
+    setPreview(null)
+    setPreviewError(null)
+  }, [])
 
-  const handleSignIn = () => {
+  const handleSignIn = useCallback(() => {
     attemptedSignInRef.current = true
-    void confirmApiKeyAsync()
-  }
+    void signInAsync(apiKey)
+  }, [apiKey, signInAsync])
 
   return (
     <>
       <Box>
         <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
           <Grid size={{ xs: 6 }}>
-            {/* Only set gutterBottom on screens which are MUI size lg or larger */}
             <Typography variant="h4">Sign In</Typography>
           </Grid>
           <Grid size={{ xs: 6 }} sx={{ textAlign: 'right' }}>
@@ -135,10 +166,10 @@ const SignIn = () => {
           <CloseIcon />
         </IconButton>
 
-        <DialogContent dividers sx={{}}>
-          {apiKey && !loadingTornUserProfile && errorTornUserProfile && (
+        <DialogContent dividers>
+          {apiKey && !loadingPreview && previewError && (
             <Box sx={{ mb: 2 }}>
-              <Alert severity="error">{errorTornUserProfile}</Alert>
+              <Alert severity="error">{previewError}</Alert>
             </Box>
           )}
 
@@ -185,8 +216,8 @@ const SignIn = () => {
           <TextField
             label="Torn API Key"
             variant="outlined"
-            value={apiKey || ''}
-            onChange={(e) => setApiKey(e.target.value || null)}
+            value={apiKey}
+            onChange={(e) => setApiKeyInput(e.target.value)}
             sx={{ mt: 2 }}
             type={showKey ? 'text' : 'password'}
             slotProps={{
@@ -206,13 +237,13 @@ const SignIn = () => {
             }}
           />
 
-          {loadingTornUserProfile && (
+          {loadingPreview && (
             <Box sx={{ mt: 2 }}>
               <Loading message="Loading profile..." />
             </Box>
           )}
 
-          {apiKey && !loadingTornUserProfile && !errorTornUserProfile && tornUserProfile && (
+          {apiKey && !loadingPreview && !previewError && preview && (
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Alert severity="success" sx={{ mt: 2, py: 2 }}>
@@ -223,25 +254,19 @@ const SignIn = () => {
                 <Alert
                   severity="info"
                   sx={{
-                    mb: {
-                      xs: 0,
-                      sm: 0,
-                    },
-                    mt: {
-                      xs: 0,
-                      sm: 2,
-                    },
+                    mb: { xs: 0, sm: 0 },
+                    mt: { xs: 0, sm: 2 },
                   }}
                 >
-                  {tornUserProfile.name} [{tornUserProfile.id}]
+                  {preview.profile.name} [{preview.profile.id}]
                   <br />
-                  {tornUserProfile.gender}, level {tornUserProfile.level}
+                  {preview.profile.gender}, level {preview.profile.level}
                 </Alert>
               </Grid>
             </Grid>
           )}
 
-          {apiKey && !loadingTornUserProfile && !errorTornUserProfile && tornUserProfile && (
+          {apiKey && !loadingPreview && !previewError && preview && (
             <Box>
               <Divider sx={{ mt: 2, mb: 3 }} />
               <Typography variant="body1" gutterBottom>

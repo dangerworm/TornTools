@@ -30,13 +30,15 @@ resource "azurerm_linux_web_app" "backend_api" {
       var.environment,
       "Development"
     )
-    "ConnectionStrings__PostgresConnection"       = "Host=${azurerm_postgresql_flexible_server.db_server.fqdn};Database=${azurerm_postgresql_flexible_server_database.postgres_db.name};Username=${azurerm_postgresql_flexible_server.db_server.administrator_login};Password=${azurerm_key_vault_secret.db_password.value};Ssl Mode=Require"
-    "EnvironmentConfiguration__EnvironmentName"   = "${var.environment}"
-    "EnvironmentConfiguration__PopulateQueue"     = "true"
-    "EnvironmentConfiguration__RunQueueProcessor" = "true"
-    "CorsAllowedOrigins"                              = var.custom_domains_enabled ? "https://${var.frontend_hostname}" : trimsuffix(azurerm_storage_account.frontend_sa.primary_web_endpoint, "/")
-    "JwtConfiguration__Secret"                        = var.jwt_secret
-    "TornMarketsProcessorConfiguration__WorkerCount"  = "1"
+    "ConnectionStrings__PostgresConnection"            = "Host=${azurerm_postgresql_flexible_server.db_server.fqdn};Database=${azurerm_postgresql_flexible_server_database.postgres_db.name};Username=${azurerm_postgresql_flexible_server.db_server.administrator_login};Password=${azurerm_key_vault_secret.db_password.value};Ssl Mode=Require"
+    "EnvironmentConfiguration__EnvironmentName"        = "${var.environment}"
+    "EnvironmentConfiguration__PopulateQueue"          = "true"
+    "EnvironmentConfiguration__RunQueueProcessor"      = "true"
+    "CorsAllowedOrigins"                               = var.custom_domains_enabled ? "https://${var.frontend_hostname}" : trimsuffix(azurerm_storage_account.frontend_sa.primary_web_endpoint, "/")
+    "JwtConfiguration__Secret"                         = var.jwt_secret
+    "TornKeyEncryption__CurrentVersion"                = var.torn_key_encryption_current_version
+    "TornKeyEncryption__Keys__1"                       = var.torn_key_encryption_key_v1
+    "TornMarketsProcessorConfiguration__WorkerCount"   = "1"
     "Weav3rBazaarsProcessorConfiguration__WorkerCount" = "1"
   }
 

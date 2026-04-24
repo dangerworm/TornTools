@@ -10,29 +10,32 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import Loading from '../components/Loading'
 import { useUser } from '../hooks/useUser'
+import { proxyTornKeyValidate, type ValidatedKey } from '../lib/dotnetapi'
+
+const VALIDATE_DEBOUNCE_MS = 400
 
 const UserSettings = () => {
   const {
-    apiKey,
-    setApiKey,
-    tornUserProfile,
-    loadingTornUserProfile,
     loadingDotNetUserDetails,
-    errorTornUserProfile,
     errorDotNetUserDetails,
-    confirmApiKeyAsync,
+    signInAsync,
     dotNetUserDetails,
     sessionChecking,
   } = useUser()
 
   const navigate = useNavigate()
   const [showKey, setShowKey] = useState(false)
+  const [apiKey, setApiKeyInput] = useState('')
+  const [preview, setPreview] = useState<ValidatedKey | null>(null)
+  const [loadingPreview, setLoadingPreview] = useState(false)
+  const [previewError, setPreviewError] = useState<string | null>(null)
   const [saveInFlight, setSaveInFlight] = useState(false)
   const [justSaved, setJustSaved] = useState(false)
+  const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     if (saveInFlight && !loadingDotNetUserDetails) {
@@ -50,6 +53,41 @@ const UserSettings = () => {
     }
   }, [justSaved, navigate])
 
+  // Debounced preview validation. Local-only plaintext; never persisted.
+  useEffect(() => {
+    if (!apiKey) {
+      setPreview(null)
+      setPreviewError(null)
+      setLoadingPreview(false)
+      return
+    }
+
+    if (abortRef.current) abortRef.current.abort()
+    abortRef.current = new AbortController()
+    const signal = abortRef.current.signal
+
+    const timer = window.setTimeout(() => {
+      setLoadingPreview(true)
+      setPreviewError(null)
+      proxyTornKeyValidate(apiKey, signal)
+        .then((payload) => {
+          setPreview(payload)
+        })
+        .catch((e: unknown) => {
+          if (e instanceof DOMException && e.name === 'AbortError') return
+          setPreview(null)
+          setPreviewError(e instanceof Error ? e.message : 'Unknown error')
+        })
+        .finally(() => {
+          setLoadingPreview(false)
+        })
+    }, VALIDATE_DEBOUNCE_MS)
+
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [apiKey])
+
   // getMe() is still in flight — don't redirect yet; a valid session
   // cookie could resolve any moment and land us here legitimately.
   if (sessionChecking) {
@@ -64,14 +102,14 @@ const UserSettings = () => {
   }
 
   if (!dotNetUserDetails) {
-    // Session check completed without producing a user — send them to sign in.
     return <Navigate to="/signin" replace />
   }
 
   const handleSave = async () => {
+    if (!apiKey) return
     setSaveInFlight(true)
     try {
-      await confirmApiKeyAsync()
+      await signInAsync(apiKey)
     } catch {
       setSaveInFlight(false)
     }
@@ -94,8 +132,8 @@ const UserSettings = () => {
           <TextField
             label="Torn API Key"
             variant="outlined"
-            value={apiKey || ''}
-            onChange={(e) => setApiKey(e.target.value || null)}
+            value={apiKey}
+            onChange={(e) => setApiKeyInput(e.target.value)}
             type={showKey ? 'text' : 'password'}
             fullWidth
             slotProps={{
@@ -114,12 +152,12 @@ const UserSettings = () => {
               },
             }}
           />
-          {loadingTornUserProfile && <Loading message="Checking API key..." />}
-          {errorTornUserProfile && <Alert severity="error">{errorTornUserProfile}</Alert>}
+          {loadingPreview && <Loading message="Checking API key..." />}
+          {previewError && <Alert severity="error">{previewError}</Alert>}
           {errorDotNetUserDetails && <Alert severity="error">{errorDotNetUserDetails}</Alert>}
-          {tornUserProfile && !justSaved && (
+          {preview && !justSaved && (
             <Alert severity="success">
-              Loaded profile: {tornUserProfile.name} [{tornUserProfile.id}]
+              Loaded profile: {preview.profile.name} [{preview.profile.id}]
             </Alert>
           )}
           {justSaved && <Alert severity="success">Saved. Redirecting…</Alert>}
@@ -127,7 +165,7 @@ const UserSettings = () => {
             <Button
               variant="contained"
               onClick={handleSave}
-              disabled={!apiKey || loadingTornUserProfile || saveInFlight}
+              disabled={!apiKey || loadingPreview || saveInFlight || !preview}
             >
               Save API key
             </Button>

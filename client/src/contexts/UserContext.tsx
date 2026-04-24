@@ -6,23 +6,25 @@ import {
   logout,
   postAddUserFavourite,
   postRemoveUserFavourite,
+  proxyTornUserBasic,
   type DotNetUserDetails,
 } from '../lib/dotnetapi'
-import { fetchTornKeyInfo, fetchTornUserDetails, type TornUserProfile } from '../lib/tornapi'
+import type { TornUserProfile } from '../lib/tornapi'
 
-const LOCAL_STORAGE_KEY_TORN_API_KEY = 'torntools:user:torn:apiKey:v1'
-const LOCAL_STORAGE_KEY_TORN_USER_DETAILS = 'torntools:user:torn:details:v1'
-const LOCAL_STORAGE_KEY_USER_CACHE_TS = 'torntools:user:cache:ts:v1'
-
-const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000
+// Legacy localStorage keys from the pre-Phase-2 design (when the plaintext
+// API key was cached in the browser). Cleaned on first load so returning
+// users don't keep a stale plaintext copy on their device.
+const LEGACY_STORAGE_KEYS = [
+  'torntools:user:torn:apiKey:v1',
+  'torntools:user:torn:details:v1',
+  'torntools:user:cache:ts:v1',
+]
 
 type UserProviderProps = {
   children: ReactNode
-  ttlMs?: number
 }
 
-export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderProps) => {
-  const [apiKey, setApiKeyState] = useState<string | null>(null)
+export const UserProvider = ({ children }: UserProviderProps) => {
   const [tornUserProfile, setTornUserProfile] = useState<TornUserProfile | null>(null)
   const [dotNetUserDetails, setDotNetUserDetails] = useState<DotNetUserDetails | null>(null)
 
@@ -32,18 +34,14 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
   const [loadingDotNetUserDetails, setLoadingDotNetUserDetails] = useState(false)
   const [errorDotNetUserDetails, setErrorDotNetUserDetails] = useState<string | null>(null)
   // Tracks whether the initial getMe() call is still in flight. Separate
-  // from loadingDotNetUserDetails (which covers login/save attempts) so
-  // pages can distinguish "checking if you're signed in" from "attempting
-  // to sign in".
+  // from loadingDotNetUserDetails (which covers sign-in attempts) so pages
+  // can distinguish "checking if you're signed in" from "attempting to
+  // sign in".
   const [sessionChecking, setSessionChecking] = useState(true)
 
   const abortRef = useRef<AbortController | null>(null)
 
   // --- helpers ---
-
-  const updateCacheTimestamp = useCallback(() => {
-    localStorage.setItem(LOCAL_STORAGE_KEY_USER_CACHE_TS, Date.now().toString())
-  }, [])
 
   const clearAllUserData = useCallback(() => {
     if (abortRef.current) {
@@ -51,11 +49,6 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
       abortRef.current = null
     }
 
-    localStorage.removeItem(LOCAL_STORAGE_KEY_TORN_API_KEY)
-    localStorage.removeItem(LOCAL_STORAGE_KEY_TORN_USER_DETAILS)
-    localStorage.removeItem(LOCAL_STORAGE_KEY_USER_CACHE_TS)
-
-    setApiKeyState(null)
     setTornUserProfile(null)
     setDotNetUserDetails(null)
     setLoadingTornUserProfile(false)
@@ -77,85 +70,19 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
     setDotNetUserDetails(details)
   }, [])
 
-  // --- Torn profile fetch (used for signin preview and ForeignMarkets) ---
+  // --- sign-in flow ---
 
-  const fetchTornProfileAsync = useCallback(
-    async (key: string) => {
-      setLoadingTornUserProfile(true)
-      setErrorTornUserProfile(null)
-
-      if (abortRef.current) abortRef.current.abort()
-      abortRef.current = new AbortController()
-
-      try {
-        await fetchTornKeyInfo(key, abortRef.current.signal)
-      } catch (e: unknown) {
-        if (e instanceof Error) {
-          setErrorTornUserProfile(e.message)
-        }
-        return
-      } finally {
-        setLoadingTornUserProfile(false)
-      }
-
-      try {
-        const tornUserDetails = await fetchTornUserDetails(key, abortRef.current.signal)
-
-        const profile = tornUserDetails.profile ?? null
-
-        setTornUserProfile(profile)
-        localStorage.setItem(LOCAL_STORAGE_KEY_TORN_USER_DETAILS, JSON.stringify(profile))
-        updateCacheTimestamp()
-      } catch (e) {
-        if (e instanceof DOMException && e.name === 'AbortError') {
-          return
-        }
-        if (e instanceof Error) {
-          setErrorTornUserProfile(e.message)
-        } else {
-          setErrorTornUserProfile('Unknown error')
-        }
-      } finally {
-        setLoadingTornUserProfile(false)
-      }
-    },
-    [updateCacheTimestamp],
-  )
-
-  // --- public setter for API key (called from UI when user types/pastes key) ---
-
-  const setApiKey = useCallback(
-    async (key: string | null) => {
-      if (!key) {
-        await logoutAsync()
-        return
-      }
-
-      setApiKeyState(key)
-      localStorage.setItem(LOCAL_STORAGE_KEY_TORN_API_KEY, key)
-      setDotNetUserDetails(null)
-      updateCacheTimestamp()
-
-      await fetchTornProfileAsync(key)
-    },
-    [logoutAsync, fetchTornProfileAsync, updateCacheTimestamp],
-  )
-
-  // --- "I agree to add this API key" flow ---
-
-  const confirmApiKeyAsync = useCallback(async () => {
-    if (!apiKey) {
-      setErrorDotNetUserDetails('No API key set.')
-      return
-    }
-
+  // The only path that carries a plaintext key from browser to backend.
+  // On success, the backend sets the session cookie and we pick up the
+  // user details in the response. The key is never stored on the client.
+  const signInAsync = useCallback(async (apiKey: string) => {
     setLoadingDotNetUserDetails(true)
     setErrorDotNetUserDetails(null)
 
     try {
       const userData = await login(apiKey)
       if (userData) {
-        updateDotNetUserDetails(userData)
+        setDotNetUserDetails(userData)
       } else {
         setErrorDotNetUserDetails('Invalid API key or login failed.')
       }
@@ -168,7 +95,7 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
     } finally {
       setLoadingDotNetUserDetails(false)
     }
-  }, [apiKey, updateDotNetUserDetails])
+  }, [])
 
   // --- favourites toggle ---
 
@@ -178,8 +105,8 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
         return
       }
 
-      const favourites = new Set(dotNetUserDetails.favouriteItems ?? [])
       let userData: DotNetUserDetails | null = null
+      const favourites = new Set(dotNetUserDetails.favouriteItems ?? [])
 
       try {
         if (favourites.has(itemId)) {
@@ -193,16 +120,21 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
       }
 
       if (userData) {
-        updateDotNetUserDetails(userData)
+        setDotNetUserDetails(userData)
       }
     },
-    [dotNetUserDetails, updateDotNetUserDetails],
+    [dotNetUserDetails],
   )
 
-  // --- initial load ---
+  // --- initial session check + legacy storage cleanup ---
 
   useEffect(() => {
-    // Always check if the JWT cookie is still valid
+    // Drop any lingering plaintext API key caches from the pre-Phase-2
+    // client. Safe to run every mount — it's idempotent.
+    for (const key of LEGACY_STORAGE_KEYS) {
+      localStorage.removeItem(key)
+    }
+
     setSessionChecking(true)
     getMe()
       .then((userData) => {
@@ -214,58 +146,58 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
       .finally(() => {
         setSessionChecking(false)
       })
+  }, [])
 
-    // Restore apiKey and tornProfile from localStorage (used for ForeignMarkets etc.)
-    const tsRaw = localStorage.getItem(LOCAL_STORAGE_KEY_USER_CACHE_TS)
-    const ts = tsRaw ? Number(tsRaw) : 0
-    const age = ts ? Date.now() - ts : Infinity
+  // --- Torn profile auto-load for signed-in users ---
 
-    if (!ts || age > ttlMs) {
-      localStorage.removeItem(LOCAL_STORAGE_KEY_TORN_API_KEY)
-      localStorage.removeItem(LOCAL_STORAGE_KEY_TORN_USER_DETAILS)
+  useEffect(() => {
+    if (!dotNetUserDetails) {
+      setTornUserProfile(null)
       return
     }
 
-    const cachedApiKey = localStorage.getItem(LOCAL_STORAGE_KEY_TORN_API_KEY)
-    const cachedTornProfile = localStorage.getItem(LOCAL_STORAGE_KEY_TORN_USER_DETAILS)
+    if (abortRef.current) abortRef.current.abort()
+    abortRef.current = new AbortController()
+    const signal = abortRef.current.signal
 
-    if (cachedApiKey) {
-      setApiKeyState(cachedApiKey)
-    }
+    setLoadingTornUserProfile(true)
+    setErrorTornUserProfile(null)
 
-    if (cachedTornProfile) {
-      try {
-        setTornUserProfile(JSON.parse(cachedTornProfile))
-      } catch {
-        // Cached value is unparseable - leave tornUserProfile as null
-      }
-    }
-  }, [ttlMs])
+    proxyTornUserBasic(signal)
+      .then((payload) => {
+        setTornUserProfile(payload.profile ?? null)
+      })
+      .catch((e: unknown) => {
+        if (e instanceof DOMException && e.name === 'AbortError') return
+        if (e instanceof Error) {
+          setErrorTornUserProfile(e.message)
+        } else {
+          setErrorTornUserProfile('Unknown error')
+        }
+      })
+      .finally(() => {
+        setLoadingTornUserProfile(false)
+      })
+  }, [dotNetUserDetails])
 
-  const contextValue = useMemo(
-    () =>
-      ({
-        apiKey,
-        tornUserProfile,
-        dotNetUserDetails,
+  const contextValue = useMemo<UserContextModel>(
+    () => ({
+      tornUserProfile,
+      dotNetUserDetails,
 
-        loadingTornUserProfile,
-        errorTornUserProfile,
-        loadingDotNetUserDetails,
-        errorDotNetUserDetails,
-        sessionChecking,
+      loadingTornUserProfile,
+      errorTornUserProfile,
+      loadingDotNetUserDetails,
+      errorDotNetUserDetails,
+      sessionChecking,
 
-        fetchTornProfileAsync,
+      signInAsync,
+      toggleFavouriteItemAsync,
 
-        setApiKey,
-        confirmApiKeyAsync,
-        toggleFavouriteItemAsync,
-
-        logoutAsync,
-        updateDotNetUserDetails,
-      }) as UserContextModel,
+      logoutAsync,
+      updateDotNetUserDetails,
+    }),
     [
-      apiKey,
       tornUserProfile,
       dotNetUserDetails,
       loadingTornUserProfile,
@@ -273,9 +205,7 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
       loadingDotNetUserDetails,
       errorDotNetUserDetails,
       sessionChecking,
-      fetchTornProfileAsync,
-      setApiKey,
-      confirmApiKeyAsync,
+      signInAsync,
       toggleFavouriteItemAsync,
       logoutAsync,
       updateDotNetUserDetails,

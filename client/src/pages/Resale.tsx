@@ -10,14 +10,13 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import Loading from '../components/Loading'
 import LoginRequired from '../components/LoginRequired'
-import { menuItems } from '../components/Menu'
 import OptionGroup from '../components/OptionGroup'
 import ResaleItemsTable from '../components/ResaleItemsTable'
 import StaleDataBanner from '../components/StaleDataBanner'
 import SteppedSlider from '../components/SteppedSlider'
 import { useItems } from '../hooks/useItems'
+import { useRequiresLogin } from '../hooks/useRequiresLogin'
 import { useResaleScan } from '../hooks/useResaleScan'
-import { useUser } from '../hooks/useUser'
 import { getTotalProfit } from '../lib/profitCalculations'
 import { purchaseOutletOptions, saleOutletOptions } from '../types/common'
 import type { PurchaseOutlet, SaleOutlet } from '../types/markets'
@@ -78,7 +77,7 @@ const canBuyInBulk = (type: string | undefined, subType: string | undefined): bo
 
 const Resale = () => {
   const { rows, error, lastFetched } = useResaleScan({ intervalMs: 5000 })
-  const { dotNetUserDetails } = useUser()
+  const loginRequired = useRequiresLogin('/resale')
   const { itemsById } = useItems()
 
   // useMemo with [] ensures localStorage is read once on mount, not on every render.
@@ -158,11 +157,7 @@ const Resale = () => {
     })
   }, [rows, hideNonBulk, itemsById, purchaseOutlet, saleOutlet])
 
-  if (
-    menuItems.length > 0 &&
-    menuItems.find((item) => item.address === '/resale')?.requiresLogin &&
-    !dotNetUserDetails
-  ) {
+  if (loginRequired) {
     return (
       <Box>
         <Typography variant="h4" gutterBottom>

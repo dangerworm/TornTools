@@ -5,6 +5,7 @@ using TornTools.Application.Interfaces;
 using TornTools.Application.Resolvers;
 using TornTools.Application.Services;
 using TornTools.Core.Constants;
+using TornTools.Core.Interfaces;
 
 namespace TornTools.Application;
 
@@ -44,6 +45,8 @@ public static class ServiceCollectionExtensions
     services.AddScoped<IApiCallHandlerResolver, ApiCallHandlerResolver>();
 
     services.AddScoped<IDatabaseService, DatabaseService>();
+
+    services.AddSingleton<IApiKeyProtector, ApiKeyProtector>();
 
     services.AddSingleton<Weav3rPythonServer>();
 

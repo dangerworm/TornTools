@@ -30,9 +30,12 @@ public abstract class ApiCaller<TCaller>(
         queueItem.EndpointUrl
     );
 
+    // Track which key (and therefore which user) this request is using, so a
+    // TornKeyUnavailableException can be attributed to the right owner.
+    ApiKeyLeaseDto? lease = null;
     if (queueItem.HeadersJson is null || !queueItem.HeadersJson.ContainsKey("Authorization"))
     {
-      await AddAuthorizationHeader(requestMessage, stoppingToken);
+      lease = await AddAuthorizationHeader(requestMessage, stoppingToken);
     }
 
     await AddQueueItemHeaders(requestMessage, queueItem, stoppingToken);
@@ -59,24 +62,20 @@ public abstract class ApiCaller<TCaller>(
     }
     catch (Exception ex)
     {
-      requestMessage.Headers.TryGetValues("Authorization", out var authHeaders);
-      var authHeader = authHeaders?.FirstOrDefault();
+      var apiKeyHint = lease is null
+          ? "no-key call"
+          : lease.ApiKey.Length > 4
+              ? $"user {lease.UserId} key {lease.ApiKey[..4]}****"
+              : $"user {lease.UserId}";
 
-      var rawKey = authHeader?.StartsWith("ApiKey ", StringComparison.OrdinalIgnoreCase) == true
-          ? authHeader["ApiKey ".Length..].Trim()
-          : null;
-      var apiKeyHint = rawKey?.Length > 4
-          ? $"key {rawKey[..4]}****"
-          : "unknown key";
-
-      if (ex is TornKeyUnavailableException exception && rawKey is not null)
+      if (ex is TornKeyUnavailableException exception && lease is not null)
       {
         Logger.LogWarning(
-            "API key {ApiKeyHint} is unavailable (code {ErrorCode}). Marking as unavailable.",
+            "API key for {ApiKeyHint} is unavailable (code {ErrorCode}). Marking as unavailable.",
             apiKeyHint,
             exception.ErrorCode
         );
-        await DatabaseService.MarkKeyUnavailableByApiKeyAsync(rawKey, stoppingToken);
+        await DatabaseService.MarkKeyUnavailableAsync(lease.UserId, stoppingToken);
         return false;
       }
 
@@ -92,9 +91,12 @@ public abstract class ApiCaller<TCaller>(
     }
   }
 
-  protected virtual Task AddAuthorizationHeader(HttpRequestMessage requestMessage, CancellationToken stoppingToken)
+  // Subclasses that use an authenticated key return the lease so the base
+  // class can attribute failures back to the right user. Callers that don't
+  // need a key inherit the default (no-op, null lease).
+  protected virtual Task<ApiKeyLeaseDto?> AddAuthorizationHeader(HttpRequestMessage requestMessage, CancellationToken stoppingToken)
   {
-    return Task.CompletedTask;
+    return Task.FromResult<ApiKeyLeaseDto?>(null);
   }
 
   protected virtual Task AddQueueItemHeaders(HttpRequestMessage requestMessage, QueueItemDto queueItem, CancellationToken stoppingToken)

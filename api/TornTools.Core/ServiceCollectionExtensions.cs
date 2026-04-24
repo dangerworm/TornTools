@@ -13,6 +13,7 @@ public static class ServiceCollectionExtensions
         .AddLocalConfiguration(configuration)
         .AddJwtConfiguration(configuration)
         .AddTornApiCallerConfiguration(configuration)
+        .AddTornKeyEncryptionConfiguration(configuration)
         .AddWeav3rApiCallerConfiguration(configuration)
         .AddTornMarketsProcessorConfiguration(configuration)
         .AddWeav3rBazaarsProcessorConfiguration(configuration);
@@ -48,6 +49,22 @@ public static class ServiceCollectionExtensions
 
     services.AddSingleton(sp =>
         sp.GetRequiredService<IOptions<TornApiCallerConfiguration>>().Value
+    );
+
+    return services;
+  }
+
+  private static IServiceCollection AddTornKeyEncryptionConfiguration(this IServiceCollection services, IConfiguration configuration)
+  {
+    // Section name matches the TornKeyEncryption__* app_settings keys (shorter
+    // than the class name for ergonomics in Terraform / env vars). Use GetSection
+    // (not GetRequiredSection) so dev without user-secrets boots — the protector
+    // throws with a clear error on first use when Keys is empty.
+    services.Configure<TornKeyEncryptionConfiguration>(
+        configuration.GetSection("TornKeyEncryption"));
+
+    services.AddSingleton(sp =>
+        sp.GetRequiredService<IOptions<TornKeyEncryptionConfiguration>>().Value
     );
 
     return services;

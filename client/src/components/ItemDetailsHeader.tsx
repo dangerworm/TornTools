@@ -1,11 +1,15 @@
 import Favorite from '@mui/icons-material/Favorite'
 import FavoriteBorder from '@mui/icons-material/FavoriteBorder'
-import { Chip, Grid, Typography } from '@mui/material'
+import Storefront from '@mui/icons-material/Storefront'
+import { Chip, Grid, Tooltip, Typography } from '@mui/material'
 import { useUser } from '../hooks/useUser'
 import { type Item } from '../types/items'
 
 import { getFormattedText } from '../lib/textFormat'
 import StatChip from './StatChip'
+
+const tornMarketUrl = (itemId: number) =>
+  `https://www.torn.com/page.php?sid=ItemMarket#/market/view=search&itemID=${itemId}&sortField=price&sortOrder=ASC`
 
 interface ItemDetailsHeaderProps {
   item: Item
@@ -50,6 +54,20 @@ const ItemDetailsHeader = ({ item, inlineView = false }: ItemDetailsHeaderProps)
       <Grid size={{ xs: 12, md: 4 }} sx={{ textAlign: 'right' }}>
         <>
           {item?.isTradable && <StatChip chipVariant="tradable" label="Tradable" sx={{ mr: 1 }} />}
+
+          <Tooltip title="Open this item on the Torn market">
+            <Chip
+              component="a"
+              href={tornMarketUrl(item.id)}
+              target="_blank"
+              rel="noopener noreferrer"
+              label="Torn market"
+              icon={<Storefront sx={{ color: 'text.secondary' }} />}
+              variant="outlined"
+              clickable
+              sx={{ mr: 1, pl: 0.5 }}
+            />
+          </Tooltip>
 
           {dotNetUserDetails && (
             <Chip
