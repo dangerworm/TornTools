@@ -13,8 +13,8 @@ import {
   Typography,
 } from '@mui/material'
 
-const dataStorageColor = (theme: { palette: { mode: string } }) => ({
-  color: theme.palette.mode === 'dark' ? 'red' : 'darkred',
+const dataStorageColor = (theme: { palette: { warning: { main: string } } }) => ({
+  color: theme.palette.warning.main,
 })
 
 export default function PrivacyNotice() {
@@ -26,18 +26,17 @@ export default function PrivacyNotice() {
 
       <Alert severity="info" sx={{ mb: 2 }}>
         <AlertTitle>Why sign in?</AlertTitle>
-        <Typography variant="body2" gutterBottom>
-          Signing in gives you access to additional features like favourite markets, resale
-          listings, saved theme preferences, and others. It also powers features tailored to your
-          personal Torn profile such as automatic country selection when travelling, and in the
-          future (when I get around to it) personalised alerts and notifications based on your
-          actions here as well as in-game activities.
+        <Typography variant="body1" gutterBottom>
+          Signing in unlocks features like favourite markets and resale listings, and powers things
+          tailored to your personal Torn profile such as automatic country selection when
+          travelling. In future it will also support personalised alerts and notifications based on
+          your actions here as well as in-game activities.
         </Typography>
       </Alert>
 
       <Alert severity="warning" sx={{ mb: 2 }}>
         <AlertTitle>API key sharing notice</AlertTitle>
-        <Typography variant="body2" gutterBottom>
+        <Typography variant="body1" gutterBottom>
           Signing in requires you to share your API key. It will be added to a pool of keys used to
           fetch data from Torn. This will increase the number of calls made to Torn using your API
           key and will count towards the limit of 100 calls per minute dictated by the{' '}
@@ -54,7 +53,7 @@ export default function PrivacyNotice() {
 
       <Alert severity="success" sx={{ mb: 2 }}>
         <AlertTitle>Benefits of sharing your API key</AlertTitle>
-        <Typography variant="body2" gutterBottom>
+        <Typography variant="body1" gutterBottom>
           Adding your key helps to populate market data faster and reduces the load on all users'
           API limits. This ensures that data is fetched more efficiently for everyone.
         </Typography>
@@ -64,7 +63,7 @@ export default function PrivacyNotice() {
         Choosing your key access level
       </Typography>
 
-      <Typography variant="body2" gutterBottom>
+      <Typography variant="body1" gutterBottom>
         Torn keys come in four access levels: <strong>Public</strong>, <strong>Minimal</strong>,{' '}
         <strong>Limited</strong>, and <strong>Full</strong>. This site only uses the selections it
         needs to deliver the features you choose to use. The choice of level is yours.
@@ -84,8 +83,7 @@ export default function PrivacyNotice() {
                 <strong>Public</strong>
               </TableCell>
               <TableCell>
-                Sign in, favourite items, theme preferences, Resale, and all other shared market
-                features.
+                Sign in, favourite items, Resale, and all other shared market features.
               </TableCell>
             </TableRow>
             <TableRow>

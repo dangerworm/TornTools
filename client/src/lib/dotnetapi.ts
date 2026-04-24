@@ -4,7 +4,6 @@ import type { Item } from "../types/items";
 import type { HistoryResult, HistoryWindow } from "../types/history";
 import type { BazaarSummary } from "../types/bazaarSummaries";
 import type { ProfitableListing } from "../types/profitableListings";
-import type { ThemeDefinition, ThemeInput } from "../types/themes";
 
 export interface DotNetUserDetails {
   id: number;
@@ -13,8 +12,6 @@ export interface DotNetUserDetails {
   accessLevel: number;
   gender: string;
   favouriteItems: number[];
-  preferredThemeId?: number | null;
-  preferredTheme?: ThemeDefinition | null;
 }
 
 const URL_ITEMS = `${API_BASE_URL}/GetItems`;
@@ -23,9 +20,6 @@ const URL_PROFITABLE_LISTINGS = `${API_BASE_URL}/GetProfitableListings`;
 const URL_BAZAAR_SUMMARIES = `${API_BASE_URL}/GetBazaarSummaries`;
 const URL_POST_WEAV3R_LISTINGS = `${API_BASE_URL}/PostWeav3rListings`;
 const URL_POST_TOGGLE_USER_FAVOURITE = `${API_BASE_URL}/PostToggleUserFavourite`;
-const URL_GET_THEMES = `${API_BASE_URL}/GetThemes`;
-const URL_POST_THEME = `${API_BASE_URL}/PostTheme`;
-const URL_POST_USER_THEME_SELECTION = `${API_BASE_URL}/PostUserThemeSelection`;
 const URL_ITEM_HISTORY_BASE = `${API_BASE_URL}/items`;
 const URL_AUTH_LOGIN = `${API_BASE_URL.replace(/\/api$/, '')}/auth/login`;
 const URL_AUTH_ME = `${API_BASE_URL.replace(/\/api$/, '')}/auth/me`;
@@ -65,11 +59,14 @@ export async function fetchItems(): Promise<Item[]> {
   return res.json();
 }
 
+export type HistorySource = "Torn" | "Weav3r";
+
 export async function fetchItemPriceHistory(
   itemId: number,
-  window: HistoryWindow
+  window: HistoryWindow,
+  source: HistorySource = "Torn"
 ): Promise<HistoryResult[]> {
-  const url = `${URL_ITEM_HISTORY_BASE}/${itemId}/history/price?window=${encodeURIComponent(window)}`;
+  const url = `${URL_ITEM_HISTORY_BASE}/${itemId}/history/price?window=${encodeURIComponent(window)}&source=${source}`;
   const res = await fetch(url, { headers: { accept: "application/json" } });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
@@ -77,9 +74,10 @@ export async function fetchItemPriceHistory(
 
 export async function fetchItemVelocityHistory(
   itemId: number,
-  window: HistoryWindow
+  window: HistoryWindow,
+  source: HistorySource = "Torn"
 ): Promise<HistoryResult[]> {
-  const url = `${URL_ITEM_HISTORY_BASE}/${itemId}/history/velocity?window=${encodeURIComponent(window)}`;
+  const url = `${URL_ITEM_HISTORY_BASE}/${itemId}/history/velocity?window=${encodeURIComponent(window)}&source=${source}`;
   const res = await fetch(url, { headers: { accept: "application/json" } });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
@@ -143,40 +141,3 @@ async function postToggleUserFavourite(
   return res.json();
 }
 
-export async function fetchThemes(
-  userId?: number | null
-): Promise<ThemeDefinition[]> {
-  const url = userId
-    ? `${URL_GET_THEMES}?userId=${encodeURIComponent(userId)}`
-    : URL_GET_THEMES;
-  const res = await fetch(url, { headers: { accept: "application/json" } });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-
-export async function postThemeDefinition(
-  themeInput: ThemeInput
-): Promise<ThemeDefinition | null> {
-  const res = await fetch(URL_POST_THEME, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(themeInput),
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-
-export async function postUserThemeSelection(
-  userId: number,
-  themeId: number | null
-): Promise<DotNetUserDetails | null> {
-  const res = await fetch(URL_POST_USER_THEME_SELECTION, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, themeId }),
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}

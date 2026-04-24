@@ -1,6 +1,7 @@
 import {
   fetchItemPriceHistory,
   fetchItemVelocityHistory,
+  type HistorySource,
 } from "../lib/dotnetapi";
 import type { HistoryWindow, ItemHistoryPoint } from "../types/history";
 import { useState, useCallback, useEffect } from "react";
@@ -20,7 +21,8 @@ interface HistoryResult {
 
 type HistoryFetcher = (
   itemId: number,
-  window: HistoryWindow
+  window: HistoryWindow,
+  source: HistorySource
 ) => Promise<HistoryResult[]>;
 
 const getErrorMessage = (error: unknown) => {
@@ -42,6 +44,7 @@ const useHistoryQuery = (
   fetcher: HistoryFetcher,
   itemId: number | undefined,
   window: HistoryWindow,
+  source: HistorySource,
   includeZeroValues: boolean
 ): ItemHistoryState => {
   const [data, setData] = useState<ItemHistoryPoint[]>([]);
@@ -58,7 +61,7 @@ const useHistoryQuery = (
     setError(null);
 
     try {
-      const result = await fetcher(itemId, window);
+      const result = await fetcher(itemId, window, source);
       setData(mapResult(result, includeZeroValues));
     } catch (e) {
       if (e instanceof Error) {
@@ -69,7 +72,7 @@ const useHistoryQuery = (
     } finally {
       setLoading(false);
     }
-  }, [fetcher, itemId, window, includeZeroValues]);
+  }, [fetcher, itemId, window, source, includeZeroValues]);
 
   useEffect(() => {
     void load();
@@ -80,10 +83,12 @@ const useHistoryQuery = (
 
 export const useItemPriceHistory = (
   itemId: number | undefined,
-  window: HistoryWindow
-) => useHistoryQuery(fetchItemPriceHistory, itemId, window, false);
+  window: HistoryWindow,
+  source: HistorySource = "Torn"
+) => useHistoryQuery(fetchItemPriceHistory, itemId, window, source, false);
 
 export const useItemVelocityHistory = (
   itemId: number | undefined,
-  window: HistoryWindow
-) => useHistoryQuery(fetchItemVelocityHistory, itemId, window, true);
+  window: HistoryWindow,
+  source: HistorySource = "Torn"
+) => useHistoryQuery(fetchItemVelocityHistory, itemId, window, source, true);

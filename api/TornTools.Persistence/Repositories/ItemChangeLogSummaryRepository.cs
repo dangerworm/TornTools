@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using TornTools.Core.DataTransferObjects;
+using TornTools.Core.Enums;
 using TornTools.Persistence.Entities;
 using TornTools.Persistence.Interfaces;
 
@@ -47,6 +48,7 @@ public class ItemChangeLogSummaryRepository(
       SUM(change_count)::int AS "Count"
     FROM public.item_change_log_summaries
     WHERE item_id     = @itemId
+      AND source      = @source
       AND bucket_start >= @windowStart
       AND bucket_start <  @windowEnd
     GROUP BY
@@ -71,9 +73,9 @@ public class ItemChangeLogSummaryRepository(
         .MaxAsync(s => (DateTimeOffset?)s.BucketStart, stoppingToken);
   }
 
-  public async Task<IEnumerable<ItemHistoryPointDto>> GetPriceHistoryAsync(int itemId, DateTimeOffset from, DateTimeOffset to, double aggregateBucketSeconds, CancellationToken stoppingToken)
+  public async Task<IEnumerable<ItemHistoryPointDto>> GetPriceHistoryAsync(int itemId, Source source, DateTimeOffset from, DateTimeOffset to, double aggregateBucketSeconds, CancellationToken stoppingToken)
   {
-    var buckets = await GetSummaryHistoryAsync(itemId, from, to, aggregateBucketSeconds, stoppingToken);
+    var buckets = await GetSummaryHistoryAsync(itemId, source, from, to, aggregateBucketSeconds, stoppingToken);
 
     return [.. buckets.Select(b => new ItemHistoryPointDto
     {
@@ -82,9 +84,9 @@ public class ItemChangeLogSummaryRepository(
     })];
   }
 
-  public async Task<IEnumerable<ItemHistoryPointDto>> GetVelocityHistoryAsync(int itemId, DateTimeOffset from, DateTimeOffset to, double aggregateBucketSeconds, CancellationToken stoppingToken)
+  public async Task<IEnumerable<ItemHistoryPointDto>> GetVelocityHistoryAsync(int itemId, Source source, DateTimeOffset from, DateTimeOffset to, double aggregateBucketSeconds, CancellationToken stoppingToken)
   {
-    var buckets = await GetSummaryHistoryAsync(itemId, from, to, aggregateBucketSeconds, stoppingToken);
+    var buckets = await GetSummaryHistoryAsync(itemId, source, from, to, aggregateBucketSeconds, stoppingToken);
 
     return [.. buckets.Select(b => new ItemHistoryPointDto
     {
@@ -93,13 +95,14 @@ public class ItemChangeLogSummaryRepository(
     })];
   }
 
-  private async Task<IEnumerable<ItemMarketHistoryPointEntity>> GetSummaryHistoryAsync(int itemId, DateTimeOffset from, DateTimeOffset to, double aggregateBucketSeconds, CancellationToken stoppingToken)
+  private async Task<IEnumerable<ItemMarketHistoryPointEntity>> GetSummaryHistoryAsync(int itemId, Source source, DateTimeOffset from, DateTimeOffset to, double aggregateBucketSeconds, CancellationToken stoppingToken)
   {
     var history = await DbContext.Set<ItemMarketHistoryPointEntity>()
         .FromSqlRaw(
             SummaryHistoryQuery,
             new NpgsqlParameter("bucket", aggregateBucketSeconds),
             new NpgsqlParameter("itemId", itemId),
+            new NpgsqlParameter("source", source.ToString()),
             new NpgsqlParameter("windowStart", from),
             new NpgsqlParameter("windowEnd", to)
         )

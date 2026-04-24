@@ -174,12 +174,16 @@ You need to tell Terraform about your environment. Edit the file
 a sample:
 
 ```hcl
-add_name                     = "app-name"
+app_name                     = "torntools"
+app_service_outbound_ips     = ["<outbound-ip-1>", "<outbound-ip-2>"]  # populate after first deploy from App Service → Properties
+custom_domains_enabled       = false  # flip to true once DNS CNAMEs are in place
 db_admin_password            = "<choose-a-strong-password>"
+developer_ip                 = "<your-public-ip>"  # for local DB access firewall rule
 enable_local_user_access     = true
 environment                  = "dev"  # or test, staging, prod, etc.
-github_actions_object_id     = "<the-object-id-from-step-2c>"
+github_actions_object_id     = "<the-object-id-from-step-2f>"
 github_actions_tenant_id     = "<the-tenant-id-from-github_sp_credentials.json>"
+jwt_secret                   = "<a-long-random-string-for-signing-JWTs>"
 local_user_object_id         = "<your-user-object-id-in-azure>"
 local_user_tenant_id         = "<the-tenant-id-from-github_sp_credentials.json>"
 location                     = "uksouth"
@@ -188,6 +192,9 @@ tfstate_storage_account_name = "torntoolsstoretfstate"  # shared for all environ
 ```
 
 - Use the values you obtained in the previous steps.
+- `app_service_outbound_ips` can be left as a single placeholder IP for the first deploy; after
+  Terraform creates the App Service you can copy the real list from the Azure Portal
+  (**App Service → Properties → Outbound IP addresses**) and run `deploy` again.
 - Save the file.
 
 ---
@@ -328,7 +335,7 @@ To remove everything (be careful!):
 
 ```powershell
 cd infra/scripts
-./destroy.ps1
+./destroy.ps1 -Environment dev   # or staging, prod, etc.
 ```
 
 You'll be asked to confirm before anything is deleted.
@@ -355,28 +362,36 @@ for completeness:
   - For example, 'Test', 'Staging', 'Production', etc.
 - Go to Settings -> Secrets and variables -> Actions
 - Create the Environment secrets for your new environment
-  - AZURE_CLIENT_ID
-  - AZURE_CLIENT_SECRET
-  - AZURE_SUBSCRIPTION_ID
-  - AZURE_TENANT_ID
+  - AZURE_CREDENTIALS
   - DB_USER
+  - JWT_SECRET
+  - TF_VAR_APP_SERVICE_OUTBOUND_IPS
+  - TF_VAR_CUSTOM_DOMAINS_ENABLED _(optional; defaults to `false`)_
   - TF_VAR_DB_ADMIN_PASSWORD
+  - TF_VAR_DEVELOPER_IP
   - TF_VAR_GITHUB_ACTIONS_OBJECT_ID
   - TF_VAR_GITHUB_ACTIONS_TENANT_ID
-- Populate the AZURE\_... secrets with the corresponding values from the
-  `github_sp_credentials.json` file you created in step 4.
-- Populate DB_USER with `pgadmin`
-- Populate TF_VAR_DB_ADMIN_PASSWORD with the password you chose earlier
-- Populate TF_VAR_GITHUB_ACTIONS_OBJECT_ID with the value from `terraform.<env>.tfvars`
-- Populate TF_VAR_GITHUB_ACTIONS_TENANT_ID with the value from `terraform.<env>.tfvars`
-- Run the 'Deploy Full Stack' pipeline
+  - TF_VAR_SUBSCRIPTION_ID
+- Populate AZURE_CREDENTIALS with the **entire contents** of `github_sp_credentials.json` (it's a
+  JSON blob; the workflow parses the individual fields from it).
+- Populate DB_USER with `pgadmin`.
+- Populate JWT_SECRET with a long random string (used to sign auth JWTs).
+- Populate TF_VAR_APP_SERVICE_OUTBOUND_IPS with a JSON array of outbound IPs, e.g.
+  `["1.2.3.4", "5.6.7.8"]`.
+- Populate TF_VAR_DB_ADMIN_PASSWORD with the password you chose earlier.
+- Populate TF_VAR_DEVELOPER_IP with your public IP (for the DB firewall rule).
+- Populate TF_VAR_GITHUB_ACTIONS_OBJECT_ID / TF_VAR_GITHUB_ACTIONS_TENANT_ID / TF_VAR_SUBSCRIPTION_ID
+  with the matching values from `terraform.<env>.tfvars`.
+- Run the 'Deploy Full Stack' pipeline.
 
 ### b. Configure the GitHub Workflow
 
-A workflow file (`.github/workflows/deploy-infra.yml`) is already set up to:
+A workflow file (`.github/workflows/deploy-all.yml`, pipeline name **Deploy Full Stack**) is already
+set up to:
 
-- Authenticate to Azure using your secret
-- Run `terraform init`, `plan`, and `apply` on pushes to the `main` branch or on demand
+- Authenticate to Azure using your `AZURE_CREDENTIALS` secret
+- Run `terraform init`, `plan`, and `apply`, deploy the API and frontend, and run Flyway migrations
+  on pushes to the `main` branch or on demand
 
 If you want to run the workflow manually, make sure you **select the GitHub environment name at
 workflow dispatch:**.
@@ -393,12 +408,12 @@ If you get errors about accessing secrets, run:
 
 ```powershell
 cd infra/scripts
-./bootstrap.ps1
+./grant-local-keyvault-access.ps1 -Environment dev   # or staging, prod, etc.
 ```
 
-This grants your currently logged-in Azure identity the necessary permissions to manage secrets in
-the Key Vault. If using multiple Azure accounts, double-check which one is active with
-`az account show`.
+This grants your currently logged-in Azure identity the necessary permissions to get, set, list, and
+delete secrets in the Key Vault for the chosen environment. If using multiple Azure accounts,
+double-check which one is active with `az account show`.
 
 ### b. Remote State Access
 

@@ -82,7 +82,7 @@ const ResaleItemsTable = ({
     return (
       <Alert severity="error" sx={{ mb: 2 }}>
         <AlertTitle>Error</AlertTitle>
-        <Typography variant="body2" gutterBottom>
+        <Typography variant="body1" gutterBottom>
           {error}
         </Typography>
       </Alert>

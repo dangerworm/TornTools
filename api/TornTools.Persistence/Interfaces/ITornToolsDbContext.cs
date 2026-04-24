@@ -12,7 +12,6 @@ public interface ITornToolsDbContext
   DbSet<ListingEntity> Listings { get; set; }
   DbSet<ProfitableListingView> ProfitableListings { get; set; }
   DbSet<QueueItemEntity> QueueItems { get; set; }
-  DbSet<ThemeEntity> Themes { get; set; }
   DbSet<UserFavouriteItemEntity> UserFavourites { get; set; }
   DbSet<UserEntity> Users { get; set; }
 }

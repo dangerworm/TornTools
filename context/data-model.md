@@ -50,18 +50,11 @@ Composite PK: `(item_id, country)` Columns: `item_name`, `quantity`, `cost`, `la
 Authenticated TornTools users.
 
 Columns: `id` (long - Torn user ID), `api_key`, `name`, `level`, `gender`, `key_available`,
-`api_key_last_used`, `preferred_theme_id` FK → themes (nullable)
+`api_key_last_used`, `access_level`
 
 ### `user_favourites`
 
 Composite PK: `(user_id, item_id)` - simple many-to-many join table.
-
-### `themes`
-
-Built-in and user-created UI themes.
-
-Columns: `id`, `name`, `mode` (light/dark), `primary_color`, `secondary_color`, `user_id` FK
-(nullable for built-in themes)
 
 ### `queue_items`
 

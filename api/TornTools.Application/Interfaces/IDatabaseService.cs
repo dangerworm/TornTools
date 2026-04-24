@@ -16,8 +16,8 @@ public interface IDatabaseService
   Task<IEnumerable<ItemDto>> GetAllItemsAsync(CancellationToken stoppingToken);
   Task<int> GetNumberOfItemsAsync(CancellationToken stoppingToken);
   Task UpsertItemsAsync(IEnumerable<ItemDto> items, CancellationToken stoppingToken);
-  Task<IEnumerable<ItemHistoryPointDto>> GetItemPriceHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken);
-  Task<IEnumerable<ItemHistoryPointDto>> GetItemVelocityHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken);
+  Task<IEnumerable<ItemHistoryPointDto>> GetItemPriceHistoryAsync(int itemId, HistoryWindow window, Source source, CancellationToken stoppingToken);
+  Task<IEnumerable<ItemHistoryPointDto>> GetItemVelocityHistoryAsync(int itemId, HistoryWindow window, Source source, CancellationToken stoppingToken);
 
   Task CreateListingsAsync(IEnumerable<ListingDto> listings, CancellationToken stoppingToken);
   Task<IEnumerable<ListingDto>> GetListingsBySourceAndItemIdAsync(Source source, int itemId, CancellationToken stoppingToken);
@@ -51,7 +51,4 @@ public interface IDatabaseService
   Task<List<UserDto>> GetUsersAsync(CancellationToken stoppingToken);
   Task<UserDto> UpsertUserDetailsAsync(UserDetailsInputModel userDetails, CancellationToken stoppingToken);
   Task<UserDto?> ToggleUserFavourite(UserFavouriteInputModel userFavouriteModel, CancellationToken stoppingToken);
-  Task<IEnumerable<ThemeDto>> GetThemesAsync(long? userId, CancellationToken stoppingToken);
-  Task<ThemeDto> UpsertThemeAsync(ThemeInputModel themeInputModel, CancellationToken stoppingToken);
-  Task<UserDto?> UpdateUserPreferredThemeAsync(UserThemeSelectionInputModel inputModel, CancellationToken stoppingToken);
 }

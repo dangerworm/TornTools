@@ -9,6 +9,10 @@ export interface MarketAdvice {
   activityLevel: ActivityLevel
   isSaturated: boolean
   currentPrice: number | null
+  // ISO timestamp of the last scan that produced a non-zero price point
+  // in the 1d window. Callers use this to show "x mins ago" next to
+  // currentPrice when surfacing the latest market scan.
+  currentPriceTimestamp: string | null
   weeklyAvgPrice: number | null
   changesLast24h: number | null
   dailyAvgChanges7d: number | null
@@ -28,6 +32,7 @@ export function useItemMarketAdvice(itemId: number | undefined): MarketAdvice {
     activityLevel: 'unknown',
     isSaturated: false,
     currentPrice: null,
+    currentPriceTimestamp: null,
     weeklyAvgPrice: null,
     changesLast24h: null,
     dailyAvgChanges7d: null,
@@ -51,8 +56,10 @@ export function useItemMarketAdvice(itemId: number | undefined): MarketAdvice {
       ])
 
       const pricePoints1d = price1d.filter((p) => (p.price ?? 0) > 0)
-      const currentPrice =
-        pricePoints1d.length > 0 ? pricePoints1d[pricePoints1d.length - 1].price! : null
+      const latestPricePoint =
+        pricePoints1d.length > 0 ? pricePoints1d[pricePoints1d.length - 1] : null
+      const currentPrice = latestPricePoint?.price ?? null
+      const currentPriceTimestamp = latestPricePoint?.timestamp ?? null
 
       const pricePoints1w = price1w.filter((p) => (p.price ?? 0) > 0)
       const weeklyAvgPrice =
@@ -73,7 +80,8 @@ export function useItemMarketAdvice(itemId: number | undefined): MarketAdvice {
         avgChangesPerHour >= SATURATION_AVG_PER_HOUR
 
       let priceTrend: PriceTrend = 'unknown'
-      const referencePrice = weeklyAvgPrice ?? (pricePoints1d.length >= 4 ? pricePoints1d[0].price! : null)
+      const referencePrice =
+        weeklyAvgPrice ?? (pricePoints1d.length >= 4 ? pricePoints1d[0].price! : null)
       if (currentPrice !== null && referencePrice !== null && referencePrice > 0) {
         const ratio = currentPrice / referencePrice
         if (ratio > 1 + TREND_THRESHOLD) priceTrend = 'climbing'
@@ -92,6 +100,7 @@ export function useItemMarketAdvice(itemId: number | undefined): MarketAdvice {
         activityLevel,
         isSaturated,
         currentPrice,
+        currentPriceTimestamp,
         weeklyAvgPrice,
         changesLast24h,
         dailyAvgChanges7d,

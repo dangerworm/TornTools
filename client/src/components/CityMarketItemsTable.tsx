@@ -106,15 +106,12 @@ const CityMarketItemsTable = ({
           item.valueVendorName?.toLowerCase().includes(lowerSearchTerm),
       )
       .map((item) => {
-        const sellPrice = (() => {
-          if (saleOutlet === 'bazaar') {
-            const s = bazaarSummaries[item.id]
-            return s ? s.minPrice : null
-          }
-          return item.valueMarketPrice
-            ? Math.floor(item.valueMarketPrice * (1 - SALE_TAX[saleOutlet]))
-            : null
-        })()
+        const grossSellPrice =
+          saleOutlet === 'bazaar'
+            ? (bazaarSummaries[item.id]?.minPrice ?? null)
+            : (item.valueMarketPrice ?? null)
+        const sellPrice =
+          grossSellPrice != null ? Math.floor(grossSellPrice * (1 - SALE_TAX[saleOutlet])) : null
         const profit =
           showCityPrice && item.valueBuyPrice && sellPrice !== null
             ? sellPrice - item.valueBuyPrice
@@ -123,7 +120,7 @@ const CityMarketItemsTable = ({
           showCityPrice && item.valueBuyPrice && profit !== null
             ? profit / item.valueBuyPrice
             : null
-        return { ...item, sellPrice, profit, profitPerCost } as SortableItem
+        return { ...item, sellPrice, grossSellPrice, profit, profitPerCost } as SortableItem
       })
   }, [items, searchTerm, saleOutlet, showCityPrice, bazaarSummaries])
 
@@ -245,6 +242,7 @@ const CityMarketItemsTable = ({
                 item={item}
                 showVendor={showVendor}
                 showCityPrice={showCityPrice}
+                saleOutlet={saleOutlet}
               />
             ))}
             <TableRow>

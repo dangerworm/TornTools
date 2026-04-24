@@ -1,7 +1,7 @@
-import { Alert, AlertTitle, Box, Divider, Grid, Typography } from '@mui/material'
+import { Box, Divider, Grid, Typography } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router'
 import Loading from '../components/Loading'
+import LoginRequired from '../components/LoginRequired'
 import { menuItems } from '../components/Menu'
 import OptionGroup from '../components/OptionGroup'
 import ResaleItemsTable from '../components/ResaleItemsTable'
@@ -129,8 +129,6 @@ const Resale = () => {
     [rows, purchaseOutlet, saleOutlet],
   )
 
-  if (!rows) return <Loading message="Loading resale opportunities..." />
-
   if (
     menuItems.length > 0 &&
     menuItems.find((item) => item.address === '/resale')?.requiresLogin &&
@@ -142,29 +140,12 @@ const Resale = () => {
           Resale Opportunities
         </Typography>
 
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          <AlertTitle>Login required</AlertTitle>
-          <Typography variant="body2" gutterBottom>
-            You must be logged in to access the resale opportunities tool.{' '}
-            <Link to="/signin">Sign in here</Link>.
-          </Typography>
-        </Alert>
-        <Alert severity="info" sx={{ mb: 2 }}>
-          <AlertTitle>Why is login required?</AlertTitle>
-          <Typography variant="body2" gutterBottom>
-            This tool requires access to Torn's market data, and to get that I have to scan the
-            markets periodically. This uses up the limited number of API calls available per user,
-            and the more users there are, the faster those calls get used up.
-          </Typography>
-          <Typography variant="body2" gutterBottom>
-            Since this page uses that scanned data, it's only fair that it's only made available to
-            those users who have contributed their API key to the pool. This way, the number of
-            calls made per user is reduced, which is more fair for everyone.
-          </Typography>
-        </Alert>
+        <LoginRequired tool="Resale Opportunities" requiredLevel="public" />
       </Box>
     )
   }
+
+  if (!rows) return <Loading message="Loading resale opportunities..." />
 
   return (
     <Box>
@@ -178,7 +159,7 @@ const Resale = () => {
       </Typography>
 
       {secondsSinceUpdate !== null && (
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
           Last updated {secondsSinceUpdate}s ago
         </Typography>
       )}

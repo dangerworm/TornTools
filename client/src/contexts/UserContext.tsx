@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { UserContext, type UserContextModel } from '../hooks/useUser'
-import { fetchTornKeyInfo, fetchTornUserDetails, type TornUserProfile } from '../lib/tornapi'
 import {
   getMe,
   login,
@@ -9,6 +8,7 @@ import {
   postRemoveUserFavourite,
   type DotNetUserDetails,
 } from '../lib/dotnetapi'
+import { fetchTornKeyInfo, fetchTornUserDetails, type TornUserProfile } from '../lib/tornapi'
 
 const LOCAL_STORAGE_KEY_TORN_API_KEY = 'torntools:user:torn:apiKey:v1'
 const LOCAL_STORAGE_KEY_TORN_USER_DETAILS = 'torntools:user:torn:details:v1'
@@ -31,6 +31,11 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
 
   const [loadingDotNetUserDetails, setLoadingDotNetUserDetails] = useState(false)
   const [errorDotNetUserDetails, setErrorDotNetUserDetails] = useState<string | null>(null)
+  // Tracks whether the initial getMe() call is still in flight. Separate
+  // from loadingDotNetUserDetails (which covers login/save attempts) so
+  // pages can distinguish "checking if you're signed in" from "attempting
+  // to sign in".
+  const [sessionChecking, setSessionChecking] = useState(true)
 
   const abortRef = useRef<AbortController | null>(null)
 
@@ -198,12 +203,16 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
 
   useEffect(() => {
     // Always check if the JWT cookie is still valid
+    setSessionChecking(true)
     getMe()
       .then((userData) => {
         if (userData) setDotNetUserDetails(userData)
       })
       .catch(() => {
-        /* not logged in */
+        /* not signed in */
+      })
+      .finally(() => {
+        setSessionChecking(false)
       })
 
     // Restore apiKey and tornProfile from localStorage (used for ForeignMarkets etc.)
@@ -244,6 +253,7 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
         errorTornUserProfile,
         loadingDotNetUserDetails,
         errorDotNetUserDetails,
+        sessionChecking,
 
         fetchTornProfileAsync,
 
@@ -262,6 +272,7 @@ export const UserProvider = ({ children, ttlMs = DEFAULT_TTL_MS }: UserProviderP
       errorTornUserProfile,
       loadingDotNetUserDetails,
       errorDotNetUserDetails,
+      sessionChecking,
       fetchTornProfileAsync,
       setApiKey,
       confirmApiKeyAsync,

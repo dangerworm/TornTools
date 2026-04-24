@@ -45,8 +45,9 @@ TornTools/
 
 ```txt
 client/src/
-├── contexts/      # React Context providers (UserContext, ItemsContext, ThemeContext)
-├── hooks/         # useUser, useItems, useThemeSettings (wrappers around contexts)
+├── contexts/      # React Context providers (UserContext, ItemsContext, BazaarSummariesContext)
+├── hooks/         # useUser, useItems, useBazaarSummaries (wrappers around contexts)
+├── theme/         # appTheme.ts — single dark MUI theme applied at the root
 ├── pages/         # Route components (10 pages)
 ├── components/    # 30+ reusable UI components
 ├── lib/           # API wrappers (dotnetapi.ts, tornapi.ts, weav3rapi.ts), utilities

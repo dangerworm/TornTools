@@ -21,6 +21,7 @@ import {
 import { useCallback, useMemo, useState } from 'react'
 import { Link as RouterLink } from 'react-router'
 import Loading from '../components/Loading'
+import LoginRequired from '../components/LoginRequired'
 import {
   BAZAAR_CATEGORIES,
   BAZAAR_MIN_ACCESS_LEVEL,
@@ -163,56 +164,14 @@ const BazaarPriceLookup = () => {
     [currentState],
   )
 
-  // Login guard
-  if (!dotNetUserDetails) {
+  // Sign-in / access-level guard
+  if (!dotNetUserDetails || (dotNetUserDetails.accessLevel ?? 1) < BAZAAR_MIN_ACCESS_LEVEL) {
     return (
       <Box>
         <Typography variant="h4" gutterBottom>
           Bazaar Price Lookup
         </Typography>
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          <AlertTitle>Login required</AlertTitle>
-          <Typography variant="body2" gutterBottom>
-            You must be logged in to use the Bazaar Price Lookup tool.{' '}
-            <Link component={RouterLink} to="/signin">
-              Sign in here
-            </Link>
-            .
-          </Typography>
-        </Alert>
-      </Box>
-    )
-  }
-
-  // Access-level guard
-  if ((dotNetUserDetails.accessLevel ?? 1) < BAZAAR_MIN_ACCESS_LEVEL) {
-    return (
-      <Box>
-        <Typography variant="h4" gutterBottom>
-          Bazaar Price Lookup
-        </Typography>
-        <Alert severity="info" sx={{ mb: 2 }}>
-          <AlertTitle>Minimal access required</AlertTitle>
-          <Typography variant="body2" gutterBottom>
-            This page reads your personal Torn inventory, which requires a key with at least
-            <strong> Minimal</strong> access. Your current key is Public-only.
-          </Typography>
-          <Typography variant="body2" gutterBottom>
-            To upgrade, generate a new Minimal-access key on your{' '}
-            <Link
-              href="https://www.torn.com/preferences.php#tab=api"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Torn API preferences page
-            </Link>{' '}
-            and{' '}
-            <Link component={RouterLink} to="/signin">
-              sign in again
-            </Link>{' '}
-            with it.
-          </Typography>
-        </Alert>
+        <LoginRequired tool="Bazaar Price Lookup" requiredLevel="minimal" />
       </Box>
     )
   }
@@ -253,7 +212,7 @@ const BazaarPriceLookup = () => {
       {selected && currentState?.error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           <AlertTitle>Couldn't load inventory</AlertTitle>
-          <Typography variant="body2">{currentState.error}</Typography>
+          <Typography variant="body1">{currentState.error}</Typography>
         </Alert>
       )}
 
@@ -318,7 +277,7 @@ const BazaarPriceLookup = () => {
                             </Tooltip>
                           ) : (
                             <Typography
-                              variant="body2"
+                              variant="body1"
                               sx={{ color: 'text.disabled', fontStyle: 'italic' }}
                             >
                               No bazaar data
@@ -344,7 +303,7 @@ const BazaarPriceLookup = () => {
                             </Tooltip>
                           ) : (
                             <Typography
-                              variant="body2"
+                              variant="body1"
                               sx={{ color: 'text.disabled', fontStyle: 'italic' }}
                             >
                               No bazaar data
@@ -353,11 +312,11 @@ const BazaarPriceLookup = () => {
                         </TableCell>
                         <TableCell>
                           {summary ? (
-                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
                               {formatRelativeTime(summary.lastUpdated)}
                             </Typography>
                           ) : (
-                            <Typography variant="body2" sx={{ color: 'text.disabled' }}>
+                            <Typography variant="body1" sx={{ color: 'text.disabled' }}>
                               -
                             </Typography>
                           )}
