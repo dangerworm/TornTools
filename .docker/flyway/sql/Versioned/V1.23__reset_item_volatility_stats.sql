@@ -1,0 +1,26 @@
+-- Codex P1 follow-up to V1.22. The previous migration truncated
+-- item_change_log_summaries (resizing buckets from 6h to 1h), but the
+-- *derived* item_volatility_stats rows were left in place — still
+-- holding rankings computed from the old 6h-bucket data.
+--
+-- RebuildVolatilityStats can't recover this on its own:
+--   1. Its `counts` CTE filters bucket_start >= NOW() - 7d, so during
+--      the post-V1.22 backfill window the source data is empty and the
+--      job upserts nothing. Existing stale rows are not touched.
+--   2. GetTopAsync reads whatever is in the table, so until the
+--      summariser AND volatility rebuild both catch up, the API serves
+--      6h-bucket-derived rankings against a 1h-bucket world.
+--
+-- Truncating here makes the cutover atomic: V1.22 + V1.23 together
+-- empty both source and derived tables. The frontend already handles
+-- "no data yet" (noData check in TopMovers.tsx), so the user sees an
+-- honest "still warming up" state rather than misleading stale rows.
+--
+-- Repopulation flow after deploy:
+--   1. SummariseChangeLogsAsync backfills item_change_log_summaries
+--      from raw item_change_logs (one-time long; trigger via /hangfire).
+--   2. RebuildVolatilityStats rebuilds item_volatility_stats from the
+--      now-1h-bucketed summaries. Self-heals on its 6-hourly schedule;
+--      manual trigger faster.
+
+TRUNCATE TABLE public.item_volatility_stats;
