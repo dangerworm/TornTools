@@ -18,15 +18,8 @@
   ([Trello](https://trello.com/c/02MvgY6i))
 - **Improve Markets page UI** - clearer than YATA competitors
   ([Trello](https://trello.com/c/VkQsEZOC))
-- **Persist slider values between page loads** - done for Resale (min profit, max buy price, max
-  updated time now saved to localStorage as values, restored via index lookup on load). Outlet and
-  checkbox toggles were already done. City Markets and Foreign Markets have no sliders.
-  ([Trello](https://trello.com/c/96CIJE0B))
 - **Remove deleted keys** - if the API returns an error saying the key no longer exists
   ([Trello](https://trello.com/c/QGYI5sPx))
-- **Add armour** - done; `ItemDetailsArmourStats` component exists, `DetailsBaseStatsArmor` is in
-  `ItemEntity` and `ItemDto`, `GetMarketItemsAsync` has no type filter so armour is scanned and
-  appears in profitable listings. ([Trello](https://trello.com/c/PRmX5Ped))
 - **Show all navigation links** - let's have the Bazaar link and the Resale link appear in the
   navigation bar at all times. We can hopefully drive more people to add their keys by letting them
   click on them but them then seeing the warnings about it being locked until the add a key. I think
@@ -35,9 +28,6 @@
 
 ### Resale Page
 
-- **Live "last updated" counter** - done; `useResaleScan` now exposes `lastFetched` (set on each
-  successful fetch); `Resale.tsx` runs a 1s interval effect to display "Last updated Xs ago" below
-  the page description. (Nov 29 email, Peter Sheppard)
 - **Profit per click efficiency metric** - derive a "profit per click" score: baseline 3 clicks per
   listing (+2 per additional line, +2 per unit for non-stacking items). Show as a sortable column
   with a user-configurable minimum profit/click threshold (like the min profit slider). Lets users
@@ -66,8 +56,6 @@
 - **"Item is heating up" volatility trend indicator** ([Trello](https://trello.com/c/mtc0N6ab))
 - **Global high-volatility items list** - cross-item comparison
   ([Trello](https://trello.com/c/qELgIPtT))
-- **Include armour data across the stack** - done; see "Add armour" in Core Product Improvements.
-  ([Trello](https://trello.com/c/ZV5xipM0))
 
 ### Item Quality
 
@@ -95,13 +83,6 @@
 
 ### Foreign Markets
 
-- **Single ungrouped table option** - done; "Show all countries in one table" checkbox added
-  (persisted), renders flat table with Country column (flag + name, sortable).
-  ([Trello](https://trello.com/c/IX5d3Suy))
-- **Column sorting** - done; `ForeignMarketItemsTable` has full `TableSortCell` headers including a
-  Country column (rendered when `showCountry` is true, covering the ungrouped view).
-- **Don't show out of stock** - done; "Hide Out of Stock" checkbox added (default on), persisted.
-  ([Trello](https://trello.com/c/jEhH3v6x))
 - **Add stock refill times** ([Trello](https://trello.com/c/6RIEi31r))
 - **Different flight times by transport mode** - is that overkill?
   ([Trello](https://trello.com/c/4vSsfOrH))
@@ -261,6 +242,3 @@ demand.
 - `SameSite=None` on the auth cookie requires `Secure=true` (which is set), but means the cookie
   won't work over plain HTTP - no local dev without HTTPS or a proxy.
 - `torn-war-checker.html` in the repo root appears to be an unrelated standalone utility.
-- **Volatility chart Y-axis units** - done; the "Changes Over Time" bar chart in `ItemDetails.tsx`
-  passes `yAxisLabel="Number of changes"` to the `Chart` component, which renders an angled label on
-  the Y-axis. (Nov 29 email, Peter Sheppard)
