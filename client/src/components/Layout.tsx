@@ -135,8 +135,7 @@ export default function Layout() {
   return (
     <Box
       sx={{
-        backgroundColor: (theme) =>
-          theme.palette.mode === 'light' ? theme.palette.grey[100] : theme.palette.grey[900],
+        backgroundColor: 'grey.900',
         display: 'flex',
         flexDirection: 'column',
         height: '100vh',

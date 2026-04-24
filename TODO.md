@@ -11,7 +11,8 @@
 - **Home page: interesting items table** - the "Top Movers" widget shipped (Most active, Top
   risers, Top fallers over 24h, powered by `item_volatility_stats`). Still open: a richer
   "interesting items" page that cross-references volatility with profitability and bazaar gaps.
-  ([Trello](https://trello.com/c/hYOe6Kej))
+  **Note**: the widget's current ranking is unreliable — see the Top Movers redesign below
+  before building anything on top of it. ([Trello](https://trello.com/c/hYOe6Kej))
 - **Document and display price source** - City vs Item Market vs Weav3r
   ([Trello](https://trello.com/c/GU1LDPMz))
 - **Alerts and notifications** - e.g. for rare high-value bargains
@@ -28,6 +29,13 @@
 
 ### Resale Page
 
+- **Drawer conversion** - CityMarkets and ForeignMarkets adopted the shared `FilterDrawer`
+  pattern in the UI overhaul; Resale was deferred because its sliders / outlet pair need a
+  tighter layout than the drawer currently assumes. Follow-up from the UI overhaul handoff.
+- **`PriceWithTax` in `ResaleItemsTableRow`** - City + Foreign tables now render gross + "after
+  tax" via the shared primitive; Resale still uses `getSellRevenue()` which returns net, and
+  there's no gross counterpart in `ProfitableListing`. Pattern for later: add a `marketPrice`
+  passthrough and adapt the revenue cell.
 - **Profit per click efficiency metric** - derive a "profit per click" score: baseline 3 clicks per
   listing (+2 per additional line, +2 per unit for non-stacking items). Show as a sortable column
   with a user-configurable minimum profit/click threshold (like the min profit slider). Lets users
@@ -51,8 +59,32 @@
   ([Trello](https://trello.com/c/mtc0N6ab))
 - **Global high-volatility items list** - cross-item comparison. The `/api/items/volatility`
   endpoint returns the ranked data; needs a dedicated page (e.g. `/volatility`) with a sortable
-  table + slider filters rather than just the Top Movers widget on Home.
+  table + slider filters rather than just the Top Movers widget on Home. Worth waiting on the
+  Top Movers redesign below so the ranking is honest before we give it a whole page.
   ([Trello](https://trello.com/c/qELgIPtT))
+- **Top Movers redesign** *(urgent — widget currently misleads users)* - the volatility job's
+  single-bucket latest/baseline means single-listing outliers (e.g. Ski Mask at $800M) and
+  reversions from intraday spikes (Scalpel, Edomondo Localé, Rope) show as "movers", and the
+  "Most active" count saturates at the polling ceiling so ranking past ~353 chg is arbitrary.
+  Full diagnosis, artifacts, and six-item priority list in
+  `context/session-handoff.md` § "Top Movers review (2026-04-24)". Recommended first slice:
+  (1) median-window latest/baseline with min-sample filtering + (2) stored per-item dispersion
+  measure used to z-score the ranked move. That alone fixes ~80% of the visible weirdness and
+  sets up the schema for (3)–(5) without another migration.
+- **Cross-item spike correlation / Torn event-calendar analysis** - Scalpel and Chain Whip
+  occasionally spike for reasons that aren't obvious. Hypothesis: some spikes correlate with
+  Torn in-game events (e.g. Cannabis on 4/20). Would want cross-item price-movement correlation
+  over time windows plus a seeded event calendar. Best as a separate analysis tool (not a page
+  on the site) to avoid hammering the production DB. Dependent on "Read-only prod DB access"
+  below.
+- **Read-only prod DB access for offline analysis** - needed to do data science without
+  running heavy queries against the live site. Options discussed with Drew (hosting choice
+  drives the call): read-only Postgres role on the primary (cheapest, but queries hit live
+  DB), read-only role on a read replica (better, isolates load), or nightly logical dump into
+  a DuckDB file (cheapest if day-stale data is fine, and ideal for ad-hoc exploration).
+- **Market Overview follow-ups** - once the "Experimental" chip has earned its removal through
+  usage, drop it. Separately, consider adding bazaar scan count as a proxy for supply depth so
+  the advice can factor inventory as well as velocity.
 
 ### Item Quality
 
@@ -74,7 +106,12 @@
 
 ### Item Details Page
 
-- **Add link to market and shop** where applicable ([Trello](https://trello.com/c/32izh7of))
+- **Add link to a shop** where applicable — still open for items available from a city shop
+  (a Storefront chip could link to the correct shop page alongside the existing "Torn market"
+  chip in the header). ([Trello](https://trello.com/c/32izh7of))
+- **`PriceWithTax` in `InfoCard`** - the info cards still render their own inline after-tax
+  line. Could migrate to the shared primitive for consistency; InfoCard's centred layout is
+  different enough that the primitive may need a small tweak.
 
 ### Foreign Markets
 
@@ -96,17 +133,18 @@
 
 ### UI / UX Enhancements
 
-- **Column sorting on all tables** - `CityMarketItemsTable` and `ForeignMarketItemsTable` are fully
-  sortable; `ResaleItemsTable`, `FavouriteMarketsTable`, and `Weav3rListingTable` have no sortable
-  headers. `ResaleItemsTable` is the trickiest since sort currently lives in `Resale.tsx`; the
-  others are straightforward - define a sort key type, add state + `stableSort`, swap plain
-  `TableCell` headers for `TableSortCell`.
+- **Column sorting on `ResaleItemsTable`** - `CityMarketItemsTable`, `ForeignMarketItemsTable`,
+  `FavouriteMarketsTable`, and `Weav3rListingTable` are all sortable now. `ResaleItemsTable`
+  is the remaining holdout; sort currently lives in `Resale.tsx` so the refactor is trickier
+  than the others were.
 - **Bazaar sell calculator modal** - on any item row, open a small modal where the user enters their
   intended bazaar price and sees: estimated profit, how it compares to the current cheapest bazaar
   listing, and a likelihood-of-sale indicator based on historical velocity. Deferred from Resale /
   City Markets / Foreign Markets profit chip work.
-- **Persist user settings locally** - sliders, filters, favourites
-  ([Trello](https://trello.com/c/FIGyufMq))
+- **Persist user settings locally** - Resale sliders (min profit, max buy price, max updated
+  time) and the purchase/sale outlet toggles now persist to `localStorage` with `:v1` keys.
+  Still open: item-type chip selections (CM / FM / AllItems filter drawers), sort preferences
+  on sortable tables, favourites default view. ([Trello](https://trello.com/c/FIGyufMq))
 - **Add expected time-to-sell estimate** using historical data
   ([Trello](https://trello.com/c/YVhtTymK))
 - **Add indicators on Resale page** - slow-moving, volatile, big price change
@@ -118,9 +156,15 @@
   enum-driven rendering and tooltips ([Trello](https://trello.com/c/bxICmwfU))
 - **Wording and grouping** - verb-based section names ("Find Profitable Resells"), one-sentence page
   explainers, group niche features under "Advanced" ([Trello](https://trello.com/c/RnVlN93g))
-- **Update site description** - candidate: "Tools for serious Torn traders: find arbitrage, track
-  volatility, and squeeze more profit out of weapons, armour, and bazaar pricing."
-  ([Trello](https://trello.com/c/4QTLy4dG))
+- **`EmptyState` adoption in `FavouriteMarkets`** - the shared primitive is used on AllItems
+  when filters match nothing; FavouriteMarkets still renders an info-alert empty state.
+  Migrate when section 6 of the UI overhaul (favourites review) is actioned.
+- **Vendor icons + item-type glyphs** (UI overhaul §10) - every Torn vendor has a recognisable
+  sprite in-game; adding a small vendor avatar on `CityMarketItemsTableRow` would echo the
+  country-flag pattern. Similarly, item-type chip filters would scan faster with a 16px glyph
+  before the label. Requires an icon set / asset sourcing decision first.
+- **Sparkline width on wider screens** - the 80×28px default in `PriceSparkline` reads well on
+  the Bazaar Price Lookup page but may be tight on 1440p+. Bump if it's hard to read.
 
 ---
 
@@ -161,6 +205,18 @@ JS on the page. A server-side proxy for key validation would prevent exposure.
 Produces RPC-style URLs like `/api/GetItems`, `/api/PostToggleUserFavourite`. Method names are
 coupled to routes. A conventional REST design (`GET /api/items`, `POST /api/users/{id}/favourites`)
 would be more cacheable and easier to evolve.
+
+### Project-local `.venv` for Python dependencies
+
+**File:** `api/TornTools.Api/Weav3rPython/`
+
+`bazaar_server.py` requires `curl_cffi` (`impersonate="chrome124"` is necessary for Weav3r
+anti-bot; no .NET equivalent exists). Missing-dep log-spam was worked around on Drew's machine
+by `pip install --user`, which violates the global Python-env-hygiene rule. Fix properly by
+giving the Weav3r Python component its own `.venv` with a committed `requirements.txt`,
+following the pattern in `~/.claude/rules/python-env.md`. The deployed artefact already uses
+PyInstaller so only local dev needs this.
+
 
 ---
 
@@ -231,9 +287,6 @@ demand.
 
 ## Minor / Cosmetic
 
-- The `*` catch-all route renders a bare `<h1>Not Found</h1>` with no layout or styling.
-- `menuItems` config is checked inside `Resale.tsx` to determine if login is required - business
-  logic in a display component. Should live in a hook or route guard.
 - `SameSite=None` on the auth cookie requires `Secure=true` (which is set), but means the cookie
   won't work over plain HTTP - no local dev without HTTPS or a proxy.
 - `torn-war-checker.html` in the repo root appears to be an unrelated standalone utility.

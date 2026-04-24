@@ -12,6 +12,7 @@ import AllItems from './pages/AllItems'
 import CityMarkets from './pages/CityMarkets'
 import ForeignMarkets from './pages/ForeignMarkets'
 import ItemDetails from './pages/ItemDetails'
+import NotFound from './pages/NotFound'
 import Resale from './pages/Resale'
 import BazaarPriceLookup from './pages/BazaarPriceLookup'
 import Time from './pages/Time'
@@ -32,7 +33,7 @@ function App() {
         <Route path="/time" element={<Time />} />
         <Route path="/items" element={<AllItems />} />
 
-        <Route path="*" element={<h1>Not Found</h1>} />
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   )

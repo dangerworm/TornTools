@@ -5,12 +5,11 @@ import FilterDrawer from '../components/FilterDrawer'
 import Loading from '../components/Loading'
 import LoginRequired from '../components/LoginRequired'
 import MarketToolbar from '../components/MarketToolbar'
-import { menuItems } from '../components/Menu'
 import SectionHeader from '../components/SectionHeader'
 import StaleDataBanner from '../components/StaleDataBanner'
 import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
 import { useItems } from '../hooks/useItems'
-import { useUser } from '../hooks/useUser'
+import { useRequiresLogin } from '../hooks/useRequiresLogin'
 import { isItemProfitableOnMarket } from '../types/items'
 import type { SaleOutlet } from '../types/markets'
 
@@ -18,7 +17,7 @@ const VALID_CM_SALE_OUTLETS: SaleOutlet[] = ['bazaar', 'market', 'anonymousMarke
 
 const CityMarkets = () => {
   const { items, refresh } = useItems()
-  const { dotNetUserDetails } = useUser()
+  const loginRequired = useRequiresLogin('/city-markets')
   const { summaries: bazaarSummaries } = useBazaarSummaries()
 
   const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>([])
@@ -92,11 +91,7 @@ const CityMarkets = () => {
     localStorage.setItem('torntools:city-markets:show-profitable-only:v1', String(next))
   }
 
-  if (
-    menuItems.length > 0 &&
-    menuItems.find((item) => item.address === '/city-markets')?.requiresLogin &&
-    !dotNetUserDetails
-  ) {
+  if (loginRequired) {
     return (
       <Box>
         <Typography variant="h4" gutterBottom>

@@ -4,7 +4,6 @@ import {
   Paper,
   Table,
   TableBody,
-  TableCell,
   TableContainer,
   TableHead,
   TablePagination,
@@ -14,7 +13,9 @@ import {
   styled,
   useMediaQuery,
 } from '@mui/material'
-import type { Weav3rMarketplacePayload } from '../types/weav3r'
+import { getComparator, stableSort, type SortOrder } from '../lib/comparisons'
+import type { Weav3rMarketplaceListing, Weav3rMarketplacePayload } from '../types/weav3r'
+import TableSortCell from './TableSortCell'
 import Weav3rListingTableRow from './Weav3rListingTableRow'
 
 const CustomTablePagination = styled(TablePagination)`
@@ -60,6 +61,18 @@ const Weav3rMarketTable = ({ payload }: Weav3rMarketTableProps) => {
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [searchTerm, setSearchTerm] = useState('')
+  const [orderBy, setOrderBy] = useState<keyof Weav3rMarketplaceListing>('price')
+  const [orderDirection, setOrderDirection] = useState<SortOrder>('asc')
+
+  const handleRequestSort = (
+    property: keyof Weav3rMarketplaceListing,
+    defaultOrderDirection: SortOrder,
+  ) => {
+    const isSelected = orderBy === property
+    const isAsc = orderDirection === 'asc'
+    setOrderDirection(isSelected && isAsc ? 'desc' : !isSelected ? defaultOrderDirection : 'asc')
+    setOrderBy(property)
+  }
 
   const filteredItems = useMemo(() => {
     const lowerSearchTerm = searchTerm.toLowerCase()
@@ -84,9 +97,14 @@ const Weav3rMarketTable = ({ payload }: Weav3rMarketTableProps) => {
     )
   }, [payload, searchTerm])
 
+  const sortedItems = useMemo(
+    () => stableSort(filteredItems, getComparator(orderDirection, orderBy)),
+    [filteredItems, orderDirection, orderBy],
+  )
+
   const pagedItems = useMemo(
-    () => filteredItems.slice(page * rowsPerPage, (page + 1) * rowsPerPage),
-    [filteredItems, page, rowsPerPage],
+    () => sortedItems.slice(page * rowsPerPage, (page + 1) * rowsPerPage),
+    [sortedItems, page, rowsPerPage],
   )
 
   useEffect(() => {
@@ -116,11 +134,48 @@ const Weav3rMarketTable = ({ payload }: Weav3rMarketTableProps) => {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell align="left">Player</TableCell>
-                <TableCell align="right">Quantity</TableCell>
-                <TableCell align="right">Price</TableCell>
-                <TableCell align="right">Last Checked</TableCell>
-                <TableCell align="right">Last Updated</TableCell>
+                <TableSortCell<Weav3rMarketplaceListing>
+                  columnKey="player_name"
+                  label="Player"
+                  orderBy={orderBy}
+                  orderDirection={orderDirection}
+                  handleRequestSort={handleRequestSort}
+                />
+                <TableSortCell<Weav3rMarketplaceListing>
+                  align="right"
+                  columnKey="quantity"
+                  defaultOrderDirection="desc"
+                  label="Quantity"
+                  orderBy={orderBy}
+                  orderDirection={orderDirection}
+                  handleRequestSort={handleRequestSort}
+                />
+                <TableSortCell<Weav3rMarketplaceListing>
+                  align="right"
+                  columnKey="price"
+                  label="Price"
+                  orderBy={orderBy}
+                  orderDirection={orderDirection}
+                  handleRequestSort={handleRequestSort}
+                />
+                <TableSortCell<Weav3rMarketplaceListing>
+                  align="right"
+                  columnKey="last_checked"
+                  defaultOrderDirection="desc"
+                  label="Last Checked"
+                  orderBy={orderBy}
+                  orderDirection={orderDirection}
+                  handleRequestSort={handleRequestSort}
+                />
+                <TableSortCell<Weav3rMarketplaceListing>
+                  align="right"
+                  columnKey="content_updated"
+                  defaultOrderDirection="desc"
+                  label="Last Updated"
+                  orderBy={orderBy}
+                  orderDirection={orderDirection}
+                  handleRequestSort={handleRequestSort}
+                />
               </TableRow>
             </TableHead>
             <TableBody>

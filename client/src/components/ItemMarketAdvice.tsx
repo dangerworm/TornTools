@@ -8,6 +8,7 @@ import {
   Box,
   Typography,
 } from '@mui/material'
+import SectionHeader from './SectionHeader'
 import StatChip from './StatChip'
 import {
   useItemMarketAdvice,
@@ -82,7 +83,9 @@ const ItemMarketAdvice = ({
     <Accordion defaultExpanded={defaultExpanded} variant="outlined" sx={{ my: 2 }}>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Typography variant="h5">Market Overview</Typography>
+          <SectionHeader variant="h5" hairline={false} sx={{ mb: 0, justifyContent: 'flex-start' }}>
+            Market Overview
+          </SectionHeader>
           <StatChip
             chipVariant="experimental"
             icon={<ScienceIcon sx={{ fontSize: '0.85rem' }} />}

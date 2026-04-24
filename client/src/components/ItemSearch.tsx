@@ -43,11 +43,11 @@ const ItemSearch = () => {
           }),
         },
       }}
-      sx={(theme) => ({
+      sx={{
         borderRadius: 1,
-        backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff',
+        backgroundColor: 'background.paper',
         maxWidth: { xs: 450 },
-      })}
+      }}
       renderInput={(params) => (
         <TextField {...params} placeholder="Search items..." size="small" variant="outlined" />
       )}

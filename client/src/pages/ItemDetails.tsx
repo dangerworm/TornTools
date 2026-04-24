@@ -18,6 +18,7 @@ import ItemDetailsInfoCards from '../components/ItemDetailsInfoCards'
 import ItemDetailsWeaponStats from '../components/ItemDetailsWeaponStats'
 import ItemMarketAdvice from '../components/ItemMarketAdvice'
 import Loading from '../components/Loading'
+import SectionHeader from '../components/SectionHeader'
 import Weav3rMarketTable from '../components/Weav3rListingTable'
 import { useItemMarketAdvice } from '../hooks/useItemMarketAdvice'
 import { useItemPriceHistory, useItemVelocityHistory } from '../hooks/useItemHistory'
@@ -119,7 +120,9 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
 
       <Accordion defaultExpanded={!inlineView} variant="outlined" sx={{ my: 2 }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h5">Historical Data</Typography>
+          <SectionHeader variant="h5" hairline={false} sx={{ mb: 0 }}>
+            Historical Data
+          </SectionHeader>
         </AccordionSummary>
         <AccordionDetails>
           <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -162,7 +165,9 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
 
       <Accordion defaultExpanded={!inlineView} variant="outlined" sx={{ my: 2 }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h5">Bazaar Listings</Typography>
+          <SectionHeader variant="h5" hairline={false} sx={{ mb: 0 }}>
+            Bazaar Listings
+          </SectionHeader>
         </AccordionSummary>
         <AccordionDetails>
           {!data ? (

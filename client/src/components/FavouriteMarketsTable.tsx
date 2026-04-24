@@ -8,16 +8,57 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material'
+import { useMemo, useState } from 'react'
+import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
+import { useUser } from '../hooks/useUser'
+import { getComparator, stableSort, type SortOrder } from '../lib/comparisons'
 import { type Item } from '../types/items'
 import FavouriteItemsTableRow from './FavouriteMarketsTableRow'
-import { useUser } from '../hooks/useUser'
+import TableSortCell from './TableSortCell'
 
 interface FavouriteItemsTableProps {
   items: Item[]
 }
 
+interface SortableFavouriteItem {
+  item: Item
+  itemName: string
+  itemType: string
+  bazaarPrice: number | null
+}
+
 const FavouriteMarketsTable = ({ items }: FavouriteItemsTableProps) => {
   const { dotNetUserDetails } = useUser()
+  const { summaries: bazaarSummaries } = useBazaarSummaries()
+
+  const [orderBy, setOrderBy] = useState<keyof SortableFavouriteItem>('itemName')
+  const [orderDirection, setOrderDirection] = useState<SortOrder>('asc')
+
+  const handleRequestSort = (
+    property: keyof SortableFavouriteItem,
+    defaultOrderDirection: SortOrder,
+  ) => {
+    const isSelected = orderBy === property
+    const isAsc = orderDirection === 'asc'
+    setOrderDirection(isSelected && isAsc ? 'desc' : !isSelected ? defaultOrderDirection : 'asc')
+    setOrderBy(property)
+  }
+
+  const sortableItems = useMemo<SortableFavouriteItem[]>(
+    () =>
+      items.map((item) => ({
+        item,
+        itemName: item.name ?? '',
+        itemType: item.type ?? '',
+        bazaarPrice: bazaarSummaries[item.id]?.minPrice ?? null,
+      })),
+    [items, bazaarSummaries],
+  )
+
+  const sortedItems = useMemo(
+    () => stableSort(sortableItems, getComparator(orderDirection, orderBy)),
+    [sortableItems, orderDirection, orderBy],
+  )
 
   return (
     <Box>
@@ -33,9 +74,29 @@ const FavouriteMarketsTable = ({ items }: FavouriteItemsTableProps) => {
                   Fav
                 </TableCell>
               )}
-              <TableCell align="left">Item</TableCell>
-              <TableCell align="left">Type</TableCell>
-              <TableCell align="right">Bazaar (latest)</TableCell>
+              <TableSortCell<SortableFavouriteItem>
+                columnKey="itemName"
+                label="Item"
+                orderBy={orderBy}
+                orderDirection={orderDirection}
+                handleRequestSort={handleRequestSort}
+              />
+              <TableSortCell<SortableFavouriteItem>
+                columnKey="itemType"
+                label="Type"
+                orderBy={orderBy}
+                orderDirection={orderDirection}
+                handleRequestSort={handleRequestSort}
+              />
+              <TableSortCell<SortableFavouriteItem>
+                align="right"
+                columnKey="bazaarPrice"
+                defaultOrderDirection="desc"
+                label="Bazaar (latest)"
+                orderBy={orderBy}
+                orderDirection={orderDirection}
+                handleRequestSort={handleRequestSort}
+              />
               <TableCell align="center" sx={{ width: 100 }}>
                 Bazaar trend
               </TableCell>
@@ -52,7 +113,7 @@ const FavouriteMarketsTable = ({ items }: FavouriteItemsTableProps) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {items.map((item) => (
+            {sortedItems.map(({ item }) => (
               <FavouriteItemsTableRow key={item.id} item={item} />
             ))}
           </TableBody>
