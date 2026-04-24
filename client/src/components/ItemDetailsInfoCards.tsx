@@ -78,11 +78,18 @@ const ItemDetailsInfoCards = ({
       ? `Latest scan: ${firstBazaarListing.last_checked_relative}`
       : null
 
+  // "Torn" items are bought in Torn City — default heading needs no qualifier.
+  // Foreign items show the country in the header so you don't have to remember
+  // where a given item sits on the travel map.
+  const buyCountry = item?.valueVendorCountry
+  const buyPriceHeading =
+    buyCountry && buyCountry !== 'Torn' ? `Buy Price (${buyCountry})` : 'Buy Price'
+
   return (
     <Box sx={{ mt: inlineView ? 2 : 0 }}>
       <Grid container spacing={2}>
         <Grid size={{ xs: 6, md: bazaarDataAvailable ? 3 : 4 }}>
-          <InfoCard heading="City Buy Price" isCurrency={true} value={item?.valueBuyPrice} />
+          <InfoCard heading={buyPriceHeading} isCurrency={true} value={item?.valueBuyPrice} />
         </Grid>
 
         <Grid size={{ xs: 6, md: bazaarDataAvailable ? 3 : 4 }}>

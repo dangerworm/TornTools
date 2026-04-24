@@ -15,6 +15,7 @@ export interface DotNetUserDetails {
 }
 
 const URL_ITEMS = `${API_BASE_URL}/GetItems`;
+const URL_ITEM_VOLATILITY = `${API_BASE_URL}/items/volatility`;
 const URL_FOREIGN_STOCK_ITEMS = `${API_BASE_URL}/GetForeignStockItems`;
 const URL_PROFITABLE_LISTINGS = `${API_BASE_URL}/GetProfitableListings`;
 const URL_BAZAAR_SUMMARIES = `${API_BASE_URL}/GetBazaarSummaries`;
@@ -78,6 +79,40 @@ export async function fetchItemVelocityHistory(
   source: HistorySource = "Torn"
 ): Promise<HistoryResult[]> {
   const url = `${URL_ITEM_HISTORY_BASE}/${itemId}/history/velocity?window=${encodeURIComponent(window)}&source=${source}`;
+  const res = await fetch(url, { headers: { accept: "application/json" } });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+export type VolatilitySortKey =
+  | "changes_1d"
+  | "changes_1w"
+  | "price_change_1d"
+  | "price_change_1w";
+
+export interface ItemVolatilityStats {
+  itemId: number;
+  source: string;
+  computedAt: string;
+  changes1d: number;
+  changes1w: number;
+  currentPrice: number | null;
+  priceChange1d: number | null;
+  priceChange1w: number | null;
+}
+
+export async function fetchTopVolatileItems(params: {
+  source?: "Torn" | "Weav3r";
+  sort?: VolatilitySortKey;
+  limit?: number;
+  ascending?: boolean;
+}): Promise<ItemVolatilityStats[]> {
+  const qs = new URLSearchParams();
+  if (params.source) qs.set("source", params.source);
+  if (params.sort) qs.set("sort", params.sort);
+  if (params.limit != null) qs.set("limit", String(params.limit));
+  if (params.ascending != null) qs.set("ascending", String(params.ascending));
+  const url = `${URL_ITEM_VOLATILITY}?${qs.toString()}`;
   const res = await fetch(url, { headers: { accept: "application/json" } });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();

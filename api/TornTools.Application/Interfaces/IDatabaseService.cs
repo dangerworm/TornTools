@@ -12,6 +12,13 @@ public interface IDatabaseService
 
   Task CreateItemChangeLogAsync(ItemChangeLogDto changeLogDto, CancellationToken stoppingToken);
   Task SummariseChangeLogsAsync(CancellationToken stoppingToken);
+  Task RebuildVolatilityStatsAsync(CancellationToken stoppingToken);
+  Task<IEnumerable<ItemVolatilityStatsDto>> GetTopVolatileItemsAsync(
+      Source source,
+      TornTools.Persistence.Interfaces.VolatilitySortKey sortKey,
+      int limit,
+      bool ascending,
+      CancellationToken stoppingToken);
 
   Task<IEnumerable<ItemDto>> GetAllItemsAsync(CancellationToken stoppingToken);
   Task<int> GetNumberOfItemsAsync(CancellationToken stoppingToken);

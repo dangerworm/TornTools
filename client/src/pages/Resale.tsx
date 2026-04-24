@@ -1,11 +1,21 @@
-import { Box, Divider, Grid, Typography } from '@mui/material'
+import {
+  Box,
+  Checkbox,
+  Divider,
+  FormControlLabel,
+  FormGroup,
+  Grid,
+  Typography,
+} from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
 import Loading from '../components/Loading'
 import LoginRequired from '../components/LoginRequired'
 import { menuItems } from '../components/Menu'
 import OptionGroup from '../components/OptionGroup'
 import ResaleItemsTable from '../components/ResaleItemsTable'
+import StaleDataBanner from '../components/StaleDataBanner'
 import SteppedSlider from '../components/SteppedSlider'
+import { useItems } from '../hooks/useItems'
 import { useResaleScan } from '../hooks/useResaleScan'
 import { useUser } from '../hooks/useUser'
 import { getTotalProfit } from '../lib/profitCalculations'
@@ -54,9 +64,22 @@ const loadOutlets = (): { purchaseOutlet: PurchaseOutlet; saleOutlet: SaleOutlet
   return { purchaseOutlet: purchase, saleOutlet: sale }
 }
 
+// Items Torn sells one at a time in their vendors: weapons (except Temporary,
+// which are boxes you buy stacks of) and armour. Everything else can be
+// scooped up in bulk, which is the only realistic path for high-volume
+// resale flips. Drew's request: hide the non-bulk rows by default when the
+// checkbox is on.
+const canBuyInBulk = (type: string | undefined, subType: string | undefined): boolean => {
+  if (!type) return true
+  if (type === 'Armor') return false
+  if (type === 'Weapon' && subType !== 'Temporary') return false
+  return true
+}
+
 const Resale = () => {
   const { rows, error, lastFetched } = useResaleScan({ intervalMs: 5000 })
   const { dotNetUserDetails } = useUser()
+  const { itemsById } = useItems()
 
   // useMemo with [] ensures localStorage is read once on mount, not on every render.
   // The indices are also passed as initialValueIndex props to SteppedSlider (mount-only).
@@ -94,6 +117,9 @@ const Resale = () => {
     () => loadOutlets().purchaseOutlet,
   )
   const [saleOutlet, setSaleOutlet] = useState<SaleOutlet>(() => loadOutlets().saleOutlet)
+  const [hideNonBulk, setHideNonBulk] = useState(
+    () => localStorage.getItem('resale:hideNonBulk:v1') === 'true',
+  )
 
   const handlePurchaseOutletChange = (
     _: React.MouseEvent<HTMLElement>,
@@ -117,17 +143,20 @@ const Resale = () => {
     localStorage.setItem('resale:saleOutlet:v1', newOutlet as string)
   }
 
-  const sortedRows = useMemo(
-    () =>
-      rows
-        ? [...rows].sort((a, b) => {
-            const profitA = getTotalProfit(a, purchaseOutlet, saleOutlet) ?? -Infinity
-            const profitB = getTotalProfit(b, purchaseOutlet, saleOutlet) ?? -Infinity
-            return profitB - profitA
-          })
-        : [],
-    [rows, purchaseOutlet, saleOutlet],
-  )
+  const sortedRows = useMemo(() => {
+    if (!rows) return []
+    const filtered = hideNonBulk
+      ? rows.filter((r) => {
+          const item = itemsById[r.itemId]
+          return canBuyInBulk(item?.type, item?.subType)
+        })
+      : rows
+    return [...filtered].sort((a, b) => {
+      const profitA = getTotalProfit(a, purchaseOutlet, saleOutlet) ?? -Infinity
+      const profitB = getTotalProfit(b, purchaseOutlet, saleOutlet) ?? -Infinity
+      return profitB - profitA
+    })
+  }, [rows, hideNonBulk, itemsById, purchaseOutlet, saleOutlet])
 
   if (
     menuItems.length > 0 &&
@@ -157,6 +186,8 @@ const Resale = () => {
         This tool scans the market for profitable resale listings. It looks for items being sold
         below the sell price in the city, allowing you to buy low and sell high.
       </Typography>
+
+      <StaleDataBanner surface="bazaar scan" />
 
       {secondsSinceUpdate !== null && (
         <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
@@ -210,7 +241,7 @@ const Resale = () => {
         Options
       </Typography>
 
-      <Grid container spacing={2} alignItems="center">
+      <Grid container spacing={2} alignItems="flex-start">
         <Grid size={{ xs: 12, sm: 4, md: 3 }} sx={{ minWidth: '14em' }}>
           <OptionGroup
             options={purchaseOutletOptions}
@@ -229,6 +260,22 @@ const Resale = () => {
           />
         </Grid>
       </Grid>
+
+      <FormGroup sx={{ mt: 2 }}>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={hideNonBulk}
+              onChange={(e) => {
+                const next = e.target.checked
+                setHideNonBulk(next)
+                localStorage.setItem('resale:hideNonBulk:v1', String(next))
+              }}
+            />
+          }
+          label="Hide non-bulk markets (armour + non-Temporary weapons)"
+        />
+      </FormGroup>
 
       <Divider sx={{ my: 2 }} />
 

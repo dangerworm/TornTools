@@ -51,6 +51,14 @@ public class ApiJobScheduler(
     );
 
     RecurringJob.AddOrUpdate(
+        nameof(RebuildVolatilityStats),
+        () => RebuildVolatilityStats(),
+        "30 */6 * * *" // 30 minutes past every 6 hours, so it runs after
+                       // SummariseChangeLogs has refreshed the summary
+                       // buckets that feed it.
+    );
+
+    RecurringJob.AddOrUpdate(
     nameof(UpdateForeignStock),
         () => UpdateForeignStock(),
         "0/10 * * * *" // At every 10th minute from 0 through 59.
@@ -80,6 +88,13 @@ public class ApiJobScheduler(
   {
     _logger.LogInformation("Running Hangfire job {JobName}", nameof(SummariseChangeLogs));
     await _databaseService.SummariseChangeLogsAsync(stoppingToken: CancellationToken.None);
+  }
+
+  [DisplayName("Rebuild volatility stats")]
+  public async Task RebuildVolatilityStats()
+  {
+    _logger.LogInformation("Running Hangfire job {JobName}", nameof(RebuildVolatilityStats));
+    await _databaseService.RebuildVolatilityStatsAsync(stoppingToken: CancellationToken.None);
   }
 
   [DisplayName("Foreign stock update")]

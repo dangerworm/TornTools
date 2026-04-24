@@ -14,6 +14,7 @@ import { useCallback, useMemo } from 'react'
 import { Link } from 'react-router'
 import Loading from '../components/Loading'
 import { menuItems, type MenuItem } from '../components/Menu'
+import TopMovers from '../components/TopMovers'
 import { useItems } from '../hooks/useItems'
 import { useUser } from '../hooks/useUser'
 
@@ -125,6 +126,15 @@ const Home = () => {
               )
             })}
           </Grid>
+
+          <Typography gutterBottom sx={{ mt: 4 }} variant="h5">
+            Today's movers
+          </Typography>
+          <Typography variant="body2" color="text.secondary" gutterBottom>
+            Most-traded items in the last 24 hours, and which prices moved the most. Refreshed
+            every six hours from the scanned Torn market history.
+          </Typography>
+          <TopMovers limit={5} />
         </>
       )}
     </>
