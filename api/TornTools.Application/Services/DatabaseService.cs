@@ -69,6 +69,15 @@ public class DatabaseService(
     return _itemVolatilityStatsRepository.GetTopAsync(source, sortKey, limit, ascending, stoppingToken);
   }
 
+  // Chunk size for the backfill loop. The post-V1.22 cold-start needs
+  // to summarise ~5 months of change_logs into 1h buckets, which is
+  // millions of source rows aggregating into ~8M summary rows. Doing
+  // it in one query exceeds the Npgsql command timeout on a B1ms.
+  // 7-day chunks each finish in seconds and are checkpointed by the
+  // GetLatestBucketStartAsync read on the next iteration — a Hangfire
+  // retry resumes from the last completed chunk rather than restarting.
+  private static readonly TimeSpan SummariseChunk = TimeSpan.FromDays(7);
+
   public async Task SummariseChangeLogsAsync(CancellationToken stoppingToken)
   {
     var latestBucketStart = await _itemChangeLogSummaryRepository.GetLatestBucketStartAsync(stoppingToken);
@@ -88,7 +97,28 @@ public class DatabaseService(
     var currentBucketStart = AlignToBucketBoundary(DateTimeOffset.UtcNow, SummaryBucketSeconds);
     if (fromBucket >= currentBucketStart) return;
 
-    await _itemChangeLogSummaryRepository.BuildSummariesAsync(fromBucket, currentBucketStart, SummaryBucketSeconds, stoppingToken);
+    var totalSpan = currentBucketStart - fromBucket;
+    if (totalSpan > SummariseChunk)
+    {
+      _logger.LogInformation(
+          "Backfilling change-log summaries from {From:O} to {To:O} ({Days:F1} days) in {Chunk:F1}-day chunks.",
+          fromBucket, currentBucketStart, totalSpan.TotalDays, SummariseChunk.TotalDays);
+    }
+
+    var chunkStart = fromBucket;
+    while (chunkStart < currentBucketStart && !stoppingToken.IsCancellationRequested)
+    {
+      var chunkEnd = chunkStart + SummariseChunk;
+      if (chunkEnd > currentBucketStart) chunkEnd = currentBucketStart;
+
+      await _itemChangeLogSummaryRepository.BuildSummariesAsync(chunkStart, chunkEnd, SummaryBucketSeconds, stoppingToken);
+
+      _logger.LogInformation(
+          "Summarised change logs for window [{Start:O} .. {End:O}).",
+          chunkStart, chunkEnd);
+
+      chunkStart = chunkEnd;
+    }
   }
 
   public Task<IEnumerable<ItemDto>> GetAllItemsAsync(CancellationToken stoppingToken)
