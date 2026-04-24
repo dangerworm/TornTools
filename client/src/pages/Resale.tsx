@@ -241,7 +241,7 @@ const Resale = () => {
         Options
       </Typography>
 
-      <Grid container spacing={2} alignItems="center">
+      <Grid container spacing={2} alignItems="flex-start">
         <Grid size={{ xs: 12, sm: 4, md: 3 }} sx={{ minWidth: '14em' }}>
           <OptionGroup
             options={purchaseOutletOptions}
@@ -259,24 +259,23 @@ const Resale = () => {
             handleOptionChange={handleSaleOutletChange}
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 'auto' }}>
-          <FormGroup>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={hideNonBulk}
-                  onChange={(e) => {
-                    const next = e.target.checked
-                    setHideNonBulk(next)
-                    localStorage.setItem('resale:hideNonBulk:v1', String(next))
-                  }}
-                />
-              }
-              label="Hide non-bulk markets"
-            />
-          </FormGroup>
-        </Grid>
       </Grid>
+
+      <FormGroup sx={{ mt: 2 }}>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={hideNonBulk}
+              onChange={(e) => {
+                const next = e.target.checked
+                setHideNonBulk(next)
+                localStorage.setItem('resale:hideNonBulk:v1', String(next))
+              }}
+            />
+          }
+          label="Hide non-bulk markets (armour + non-Temporary weapons)"
+        />
+      </FormGroup>
 
       <Divider sx={{ my: 2 }} />
 
