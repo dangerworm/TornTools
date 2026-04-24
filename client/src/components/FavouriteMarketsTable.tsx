@@ -18,7 +18,6 @@ interface FavouriteItemsTableProps {
 
 const FavouriteMarketsTable = ({ items }: FavouriteItemsTableProps) => {
   const { dotNetUserDetails } = useUser()
-  const hasSubtype = items.some((item) => !!item.subType)
 
   return (
     <Box>
@@ -36,7 +35,8 @@ const FavouriteMarketsTable = ({ items }: FavouriteItemsTableProps) => {
               )}
               <TableCell align="left">Item</TableCell>
               <TableCell align="left">Type</TableCell>
-              {hasSubtype && <TableCell align="left">Subtype</TableCell>}
+              <TableCell align="left">Sub-type</TableCell>
+              <TableCell align="right">Market (latest)</TableCell>
               <TableCell align="center" sx={{ width: 110 }}>
                 Trend (1w)
               </TableCell>
@@ -50,7 +50,7 @@ const FavouriteMarketsTable = ({ items }: FavouriteItemsTableProps) => {
           </TableHead>
           <TableBody>
             {items.map((item) => (
-              <FavouriteItemsTableRow key={item.id} item={item} showSubtype={hasSubtype} />
+              <FavouriteItemsTableRow key={item.id} item={item} />
             ))}
           </TableBody>
         </Table>

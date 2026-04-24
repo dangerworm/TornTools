@@ -13,6 +13,7 @@ import { useUser } from '../hooks/useUser'
 import ItemDetails from '../pages/ItemDetails'
 import { type Item } from '../types/items'
 import ItemCell from './ItemCell'
+import LazyLatestMarketPrice from './LazyLatestMarketPrice'
 import LazySparkline from './LazySparkline'
 
 const openTornMarketPage = (itemId: number) => {
@@ -24,16 +25,17 @@ const openTornMarketPage = (itemId: number) => {
 
 interface FavouriteItemsTableRowProps {
   item: Item
-  showSubtype: boolean
 }
 
-const FavouriteItemsTableRow = ({ item, showSubtype }: FavouriteItemsTableRowProps) => {
+const FavouriteItemsTableRow = ({ item }: FavouriteItemsTableRowProps) => {
   const navigate = useNavigate()
   const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser()
 
   const [open, setOpen] = useState(false)
   const isFavourite = dotNetUserDetails?.favouriteItems?.includes(item.id) ?? false
-  const expandedColSpan = 5 + (dotNetUserDetails ? 1 : 0) + (showSubtype ? 1 : 0) + 1
+  // 7 base columns (Info, Item, Type, Sub-type, Market, Trend, Item Page, Torn)
+  // minus 1 if signed-out (no Fav column)
+  const expandedColSpan = 8 + (dotNetUserDetails ? 1 : 0)
 
   return (
     <>
@@ -60,7 +62,11 @@ const FavouriteItemsTableRow = ({ item, showSubtype }: FavouriteItemsTableRowPro
 
         <TableCell>{item.type}</TableCell>
 
-        {showSubtype && <TableCell>{item.subType ?? ''}</TableCell>}
+        <TableCell>{item.subType ?? <span style={{ opacity: 0.4 }}>&mdash;</span>}</TableCell>
+
+        <TableCell align="right">
+          <LazyLatestMarketPrice itemId={item.id} />
+        </TableCell>
 
         <TableCell align="center">
           <LazySparkline itemId={item.id} />
