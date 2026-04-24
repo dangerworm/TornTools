@@ -1,5 +1,9 @@
 Hi Claude. Read context/session-handoff.md and context/note-to-next-instance.md before doing anything.
 
-Last session added three front-end features: Market Overview on item detail pages (experimental market analysis with price trend + activity + advice), link colour fixes + footer moved into the sidebar, and sparkline + suggested price columns on the Bazaar Price Lookup page. Build is clean; nothing is committed yet. Drew said "I'll deploy it" — he likely wants to commit and push, or may have already done so by the time you read this.
+Since the last handoff was written, `feat/todo-data-signals` has been merged into `development` (tip `fd41075`). Drew then reviewed the new Top Movers widget on the Home page and we found that the data is unreliable enough to be misleading — the ranking promotes single-listing outliers (Ski Mask at $800M) and reversions from spikes (Edomondo Localé, Rope, Scalpel) as "movers", and the "Most active" counts saturate at the polling ceiling so they're indistinguishable past 353 changes/day.
 
-Don't take action until Drew tells you what he wants to do.
+The handoff contains a full "Top Movers review (2026-04-24)" section with the diagnosis, the six-item priority list, and a recommended first-session scope: (1) median-window latest/baseline with min sample count + (2) a stored per-item dispersion measure used to z-score the ranked move. That's the likely next piece of work.
+
+One small parallel piece: the item details page is missing a "View on Torn market" link — Drew flagged it while reviewing. Independent of the redesign.
+
+Don't start coding the redesign without a plan. It touches the Flyway schema, the rebuild query, the API, and the widget.
