@@ -101,55 +101,48 @@ something to render. Manual trigger available at `/hangfire` if Drew doesn't wan
 
 ## Current state
 
-| Branch                   | Where it sits                                                                                                                        |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `main`                   | `ui/new-design` merged. Up to date with origin.                                                                                      |
-| `development`            | `ui/new-design` + `feat/todo-data-signals` both merged. Phase 1+2 API key security + TODO quick-wins sweep committed locally on top. |
-| `feat/todo-data-signals` | Merged; safe to delete locally when you're done with it.                                                                             |
+| Branch                          | Where it sits                                                                                                                                  |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `main`                          | All work from this session shipped: UI overhaul, feat/todo-data-signals, TODO quick-wins, API key security Phase 1+2+3. Up to date with origin. |
+| `development`                   | Same as main. Tip is `90f0234` (Codex P1 fix on phase 3 cleanup).                                                                              |
+| `feat/todo-data-signals`        | Merged; safe to delete locally.                                                                                                                |
+| `chore/drop-plaintext-api-key`  | Merged; safe to delete locally.                                                                                                                |
 
-Local uncommitted state: API key security Phase 1+2 changes (all tasks 11–23 landed in this
-session); this handoff file updated in the same working tree.
+Local uncommitted state: none (this handoff update is the only thing in flight).
 
 Build state:
 
 - `npx tsc --noEmit` — clean.
-- `npm run build` — clean (6.78s, 500kB chunk warning is pre-existing).
-- `dotnet build` — clean when the dev API isn't running (file-locks aside).
-- Dev Vite server and .NET API still running on `localhost:5173` / `https://localhost:7012`.
+- `npm run build` — clean (7.11s, 500kB chunk warning is pre-existing).
+- `dotnet build` — clean (6 projects, 0 errors, 0 warnings).
 
 ---
 
 ## Blockers / outstanding
 
-- Backend needs a restart to apply V1.18 and register the volatility job (if it hasn't already been
-  restarted since the merge). The run-time log-spam bug from the missing `curl_cffi` is fixed for
-  Drew's machine (system `pip install`) but the project-local `.venv` pattern to fix that properly
-  remains a follow-up.
 - **Top Movers widget shows unreliable data** — see the "Top Movers review" section below for the
   diagnosis and proposed redesign. The job runs and the widget populates, but many of the listed
-  movers are outliers or reversions rather than durable moves.
+  movers are outliers or reversions rather than durable moves. This is the next priority work.
+- Project-local `.venv` pattern for `curl_cffi` — workaround (system `pip install`) is in place
+  for Drew's machine; proper fix deferred.
 - Some UI items deliberately deferred:
   - Vendor icons / item-type glyphs (section 10 of the UI plan).
   - Resale page drawer conversion.
-  - A few `StatChip` migrations in market table rows (hearts are brass; the OOS/N-A chips in
-    ResaleItemsTableRow and ForeignMarketItemsTableRow still use raw `Chip`).
-  - Favourites seed + observe / screenshots — actually DONE mid-session.
 
 ---
 
 ## Next action
 
-- Top Movers redesign — see the section below. Likely first-session scope: **(1) + (2)** from the
-  proposal together, i.e. median-window latest/baseline with a minimum sample count, plus a stored
-  per-item volatility measure used to z-score the ranked move. That alone fixes the Ski Mask /
-  Scalpel / Edomondo / Rope artifacts and lays the table structure for the rest.
-- Small parallel win: add a "View on Torn market" link on the item details page — Drew flagged this
-  as missing while reviewing the widget. Not dependent on the redesign.
+- **Top Movers redesign** — see the section below. Likely first-session scope: **(1) + (2)** from
+  the proposal together, i.e. median-window latest/baseline with a minimum sample count, plus a
+  stored per-item volatility measure used to z-score the ranked move. That alone fixes the Ski
+  Mask / Scalpel / Edomondo / Rope artifacts and lays the table structure for the rest. Touches
+  Flyway schema + the rebuild query + the API + the widget — plan before editing.
 - Parked for later (Drew has context; don't action without asking):
   - Read-only prod DB access for offline data analysis. Options discussed: read-only Postgres role
     on a replica, or nightly logical dump into DuckDB. Hosting shape drives the choice.
-  - Cross-item spike correlation analysis (is-this-a-Torn-event-day?). Separate analytics tool, not
-    a page on the site.
+  - Cross-item spike correlation analysis (is-this-a-Torn-event-day?). Separate analytics tool,
+    not a page on the site.
 - Follow-ups already noted in `TODO.md`:
   - "Item is heating up" UI badge (data now available — but will become more honest after the
     redesign above, so probably worth waiting).
@@ -234,11 +227,17 @@ records the sample counts used for latest/baseline so (5) can be added cheaply l
 
 ---
 
-## API key security — Phase 1 + Phase 2 (2026-04-24)
+## API key security — Phase 1 + 2 + 3 (2026-04-24, all shipped)
 
-Shipped in one session per Drew's ask. Plaintext Torn API keys no longer appear at rest in the DB,
-and no longer appear in the browser after sign-in. Plan document lived in this chat; no separate
-plan file was written.
+Shipped end-to-end in this session. Plaintext Torn API keys no longer appear at rest in the DB,
+no longer appear in the browser after sign-in, and the transitional plaintext column + scaffolding
+are gone. Plan document lived in this chat; no separate plan file was written.
+
+**Deploy order that actually happened**: Phase 1+2 committed as `b19421c` → Drew deployed → prod
+verified (every user row had `api_key_encrypted` populated via the startup backfill) →
+`chore/drop-plaintext-api-key` branch with Phase 3 → Codex PR review flagged two P1s (unreadable-
+ciphertext throwing on sign-in; V1.20 missing a runtime guard) → both fixed in `90f0234` →
+Drew deployed again → prod clean.
 
 ### What landed
 
@@ -316,42 +315,39 @@ plan file was written.
 - `useUser` hook shape updated (no `apiKey`, no `setApiKey`, no `fetchTornProfileAsync`, no
   `confirmApiKeyAsync`; adds `signInAsync`).
 
-**Left in place for post-release tidy** (Drew's explicit scoping):
+**Phase 3 follow-ups (shipped as `11cb3fd` + Codex-P1 fix `90f0234`)**
 
-- `client/src/lib/tornapi.ts` still exists with the three `fetchTorn*` functions; no page imports
-  them any more, but the types are re-used from `dotnetapi.ts`. Delete in the second-shot cleanup.
-- `users.api_key` column still populated via dual-write. Drop in `V1.20` once every row has
-  `api_key_encrypted IS NOT NULL`.
-- `UserRepository.UpsertUserDetailsAsync` dual-write — remove when the plaintext column goes.
-- `Program.cs` startup backfill — remove when the plaintext column goes.
-- `UserDto.ApiKey` write-only convention — consider splitting read/write DTOs once the dual-write is
-  gone.
+- **Flyway V1.20** `ALTER TABLE users DROP COLUMN api_key`. Self-gating: a plpgsql `DO` block at
+  the top counts rows with `api_key_encrypted IS NULL AND api_key IS NOT NULL AND api_key <> ''`
+  and `RAISE EXCEPTION` if non-zero. CI can't accidentally drop the column on a half-backfilled
+  table.
+- `UserEntity.ApiKey` property + EF mapping removed.
+- `UserRepository.UpsertUserDetailsAsync` change-detection now decrypts the existing ciphertext
+  to compare, but wraps `Unprotect` in a try/catch on `CryptographicException` — a decrypt
+  failure logs a warning and falls through to the key-change branch, letting the user re-sign
+  in with a fresh key to overwrite the unreadable row. (This was the first Codex P1; the naive
+  version I shipped in `11cb3fd` would have thrown a 500 on `/auth/login` for any row with
+  corrupted/retired ciphertext.)
+- `UserRepository.BackfillEncryptedApiKeysAsync` + its `IDatabaseService` / `DatabaseService`
+  shims + the `Program.cs` startup call — all removed. Nothing left to backfill.
+- `client/src/lib/tornapi.ts` deleted; types moved to `client/src/types/torn.ts`. Three import
+  sites updated.
 
-### Deploy order — CRITICAL
+**Left for a quieter future session** (deferred, not blockers):
 
-**Drew must do these in order**, or the API will fail to start:
+- `UserContext.tsx` has a legacy-localStorage cleanup that removes pre-Phase-2 keys on mount.
+  Safe to remove once real time has passed and no returning user could still have the stale
+  cache. No urgency.
+- `UserDto.ApiKey` is a write-only-by-convention field (write paths populate it; read paths
+  leave it empty). A proper read/write DTO split would remove the asymmetry.
 
-1. **Set the GitHub secret `TORN_KEY_ENCRYPTION_KEY_V1`** before merging to `main`:
-   ```bash
-   openssl rand -base64 32
-   ```
-   Copy the output into the GitHub repo secret. Also paste into `infra/terraform.dev.tfvars` as
-   `torn_key_encryption_key_v1 = "..."` for local runs.
-2. Merge / push as normal. The `deploy-all.yml` workflow runs Terraform apply first (adds the KV
-   secret + app_settings), then Flyway migrate (adds the column), then the API deploy. The API
-   startup backfill encrypts any pre-existing plaintext rows on first boot.
-3. Smoke: sign in as an existing user → confirm still works; check DB that
-   `api_key_encrypted IS NOT NULL` for that row; Bazaar Price Lookup loads inventory for one
-   category; Foreign Markets shows travel state.
-4. Second release (the "second shot" Drew will queue up): runs the post-release tidy listed above.
-
-### Build state at commit
+### Build state at end of session
 
 - `dotnet build` clean (6 projects, 0 errors, 0 warnings).
 - `npx tsc --noEmit` clean.
-- `npm run build` clean (7.50s, pre-existing 500kB chunk warning only).
-- Local functional smoke NOT performed — dev backend wasn't running during the session. Drew to
-  smoke after deploying to dev.
+- `npm run build` clean (7.11s, pre-existing 500kB chunk warning only).
+- Prod smoke: Drew confirmed sign-in still works, `api_key_encrypted` populated for every row,
+  Phase 3 drop + cleanup deployed with no issues.
 
 ### Notes for the next session
 

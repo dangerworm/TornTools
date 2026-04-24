@@ -1,32 +1,33 @@
 Hi Claude. Read context/session-handoff.md and context/note-to-next-instance.md before doing anything.
 
-This session shipped two rounds on top of development:
+Everything from the previous session is shipped to main: the TODO quick-wins sweep (e5df589),
+API key security phase 1+2 (b19421c), phase 3 cleanup (11cb3fd), and the Codex P1 fix on phase 3
+(90f0234). Development and main are in sync.
 
-1. **TODO quick-wins sweep** (commit e5df589) — Torn market link on item details, dead dark-mode
-branches removed, SectionHeader adoption, sortable FavouriteMarkets + Weav3r tables, useRequiresLogin
-hook, site description, polished 404.
+**Next priority: Top Movers redesign.**
 
-2. **API key security — Phase 1 + 2** (uncommitted at time of handoff) — at-rest AES-GCM encryption
-via a KV-held base64 key (dual-write with plaintext column during the transition), and a server-side
-/api/torn proxy so the browser never holds a Torn API key after sign-in. Full details in the
-"API key security — Phase 1 + Phase 2" section of session-handoff.md.
+The widget on the home page currently misleads users — single-listing outliers (e.g. Ski Mask at
+$800M) and reversions from intraday spikes (Scalpel, Edomondo Localé, Rope) show as "movers", and
+"Most active" counts saturate at the polling ceiling so anything above ~353 chg/24h is
+indistinguishable. Full diagnosis, artifacts, and six-item priority list in the "Top Movers review
+(2026-04-24)" section of session-handoff.md.
 
-**Before Drew can deploy**, he MUST set the GitHub secret `TORN_KEY_ENCRYPTION_KEY_V1` (generate with
-`openssl rand -base64 32`) and add it to `infra/terraform.dev.tfvars` for local runs. Without this,
-the API will crash on startup with "TornKeyEncryption:Keys is empty". This is called out in the
-handoff's "Deploy order — CRITICAL" subsection.
+Recommended first slice: (1) median-window latest/baseline with a minimum sample count +
+(2) stored per-item dispersion measure (MAD of log returns or CV of daily medians, over ~30d)
+used to z-score the ranked move. That alone fixes ~80% of the visible weirdness and lays the
+schema for (3)–(5) without another migration.
 
-**Next session priorities in order**:
+Do not start coding without a plan. The change touches the Flyway schema, the `ItemVolatilityStatsRepository`
+rebuild query, the /api/items/volatility endpoint, and the Home page TopMovers widget. Use /plan.
 
-1. **Post-release tidy** ("second shot" Drew planned): drop the plaintext `api_key` column via
-Flyway V1.20, delete `client/src/lib/tornapi.ts`, remove the dual-write from UserRepository, strip
-the startup backfill. Only do this after confirming every prod user row has `api_key_encrypted
-IS NOT NULL` (SQL check first). Full list in TODO.md's Security section.
+Parked items (don't action without asking):
+- Read-only prod DB access for offline data science. Options discussed: read-only Postgres role
+  on a replica, or nightly DuckDB dump. Hosting shape drives the choice.
+- Cross-item spike / event-calendar correlation tool. Separate analytics tool, not a page on the site.
 
-2. **Top Movers redesign** — still the urgent item. The widget currently misleads users; diagnosis
-and six-item priority list in the "Top Movers review (2026-04-24)" section of session-handoff.md.
-Recommended first slice: (1) median-window latest/baseline with min sample count + (2) stored
-per-item dispersion measure used to z-score the ranked move. Touches Flyway + the rebuild query +
-the API + the widget; plan before editing.
-
-Don't start (2) without a plan. (1) is mechanical once the prod DB confirms readiness.
+Smaller deferred items sitting in TODO.md:
+- Project-local .venv for curl_cffi (Python dep hygiene).
+- Resale page drawer conversion.
+- Vendor icons / item-type glyphs (UI plan §10).
+- EmptyState migration in FavouriteMarkets.
+- PriceWithTax in InfoCard and ResaleItemsTableRow.
