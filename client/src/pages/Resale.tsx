@@ -1,7 +1,7 @@
 import { Box, Divider, Grid, Typography } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
 import Loading from '../components/Loading'
-import LoginRequiredForFairness from '../components/LoginRequiredForFairness'
+import LoginRequired from '../components/LoginRequired'
 import { menuItems } from '../components/Menu'
 import OptionGroup from '../components/OptionGroup'
 import ResaleItemsTable from '../components/ResaleItemsTable'
@@ -140,7 +140,7 @@ const Resale = () => {
           Resale Opportunities
         </Typography>
 
-        <LoginRequiredForFairness />
+        <LoginRequired tool="Resale Opportunities" requiredLevel="public" />
       </Box>
     )
   }

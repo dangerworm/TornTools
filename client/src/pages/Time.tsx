@@ -41,7 +41,7 @@ const Time = () => {
   return (
     <>
       <Typography variant="h4" gutterBottom>
-        Time Conversion
+        Time
       </Typography>
 
       <Typography variant="body1" gutterBottom>

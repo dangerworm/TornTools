@@ -84,28 +84,28 @@ public class DatabaseService(
     return _itemRepository.UpsertItemsAsync(items, stoppingToken);
   }
 
-  public async Task<IEnumerable<ItemHistoryPointDto>> GetItemPriceHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken)
+  public async Task<IEnumerable<ItemHistoryPointDto>> GetItemPriceHistoryAsync(int itemId, HistoryWindow window, Source source, CancellationToken stoppingToken)
   {
     if (window >= HistoryWindow.Month1)
     {
       var (range, bucket) = window.ToWindowConfiguration();
       var now = DateTimeOffset.UtcNow;
-      var summary = await _itemChangeLogSummaryRepository.GetPriceHistoryAsync(itemId, now.Subtract(range), now, bucket.TotalSeconds, stoppingToken);
+      var summary = await _itemChangeLogSummaryRepository.GetPriceHistoryAsync(itemId, source, now.Subtract(range), now, bucket.TotalSeconds, stoppingToken);
       if (summary.Any()) return summary;
     }
-    return await _itemChangeLogRepository.GetItemPriceHistoryAsync(itemId, window, stoppingToken);
+    return await _itemChangeLogRepository.GetItemPriceHistoryAsync(itemId, window, source, stoppingToken);
   }
 
-  public async Task<IEnumerable<ItemHistoryPointDto>> GetItemVelocityHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken)
+  public async Task<IEnumerable<ItemHistoryPointDto>> GetItemVelocityHistoryAsync(int itemId, HistoryWindow window, Source source, CancellationToken stoppingToken)
   {
     if (window >= HistoryWindow.Month1)
     {
       var (range, bucket) = window.ToWindowConfiguration();
       var now = DateTimeOffset.UtcNow;
-      var summary = await _itemChangeLogSummaryRepository.GetVelocityHistoryAsync(itemId, now.Subtract(range), now, bucket.TotalSeconds, stoppingToken);
+      var summary = await _itemChangeLogSummaryRepository.GetVelocityHistoryAsync(itemId, source, now.Subtract(range), now, bucket.TotalSeconds, stoppingToken);
       if (summary.Any()) return summary;
     }
-    return await _itemChangeLogRepository.GetItemVelocityHistoryAsync(itemId, window, stoppingToken);
+    return await _itemChangeLogRepository.GetItemVelocityHistoryAsync(itemId, window, source, stoppingToken);
   }
 
   private static DateTimeOffset AlignToBucketBoundary(DateTimeOffset time, double bucketSeconds)

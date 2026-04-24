@@ -10,6 +10,11 @@ export interface UserContextModel {
   dotNetUserDetails: DotNetUserDetails | null;
   loadingDotNetUserDetails: boolean;
   errorDotNetUserDetails: string | null;
+  // True until the initial getMe() cookie check resolves. Pages that
+  // redirect unauthenticated users should wait for this to become false
+  // before doing so — otherwise a valid session cookie loses a race
+  // against the first paint.
+  sessionChecking: boolean;
   fetchTornProfileAsync: (key: string) => Promise<void>;
   setApiKey: (key: string | null) => void;
   confirmApiKeyAsync: () => Promise<void>;

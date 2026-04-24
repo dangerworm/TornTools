@@ -5,6 +5,7 @@ import { useUser } from '../hooks/useUser'
 import { type Item } from '../types/items'
 
 import { getFormattedText } from '../lib/textFormat'
+import StatChip from './StatChip'
 
 interface ItemDetailsHeaderProps {
   item: Item
@@ -48,7 +49,7 @@ const ItemDetailsHeader = ({ item, inlineView = false }: ItemDetailsHeaderProps)
       </Grid>
       <Grid size={{ xs: 12, md: 4 }} sx={{ textAlign: 'right' }}>
         <>
-          {item?.isTradable && <Chip label="Tradable" color="primary" sx={{ mr: 1 }} />}
+          {item?.isTradable && <StatChip chipVariant="tradable" label="Tradable" sx={{ mr: 1 }} />}
 
           {dotNetUserDetails && (
             <Chip
@@ -57,12 +58,12 @@ const ItemDetailsHeader = ({ item, inlineView = false }: ItemDetailsHeaderProps)
               }
               icon={
                 dotNetUserDetails.favouriteItems?.includes(item.id) ? (
-                  <Favorite sx={{ cursor: 'pointer', color: 'red' }} />
+                  <Favorite sx={{ cursor: 'pointer', color: 'primary.main' }} />
                 ) : (
-                  <FavoriteBorder sx={{ cursor: 'pointer', color: 'gray' }} />
+                  <FavoriteBorder sx={{ cursor: 'pointer', color: 'text.secondary' }} />
                 )
               }
-              color={dotNetUserDetails.favouriteItems?.includes(item.id) ? 'secondary' : 'default'}
+              variant={dotNetUserDetails.favouriteItems?.includes(item.id) ? 'filled' : 'outlined'}
               onClick={() => toggleFavouriteItemAsync(item.id)}
               sx={{ pl: 0.5 }}
             />

@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import {
   Accordion,
   AccordionDetails,
@@ -9,20 +8,23 @@ import {
   Typography,
   useTheme,
 } from '@mui/material'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import { useEffect, useMemo, useState } from 'react'
+import { useParams } from 'react-router-dom'
+import Chart, { type ChartSeries } from '../components/Chart'
+import ItemDetailsArmourStats from '../components/ItemDetailsArmourStats'
+import ItemDetailsDescription from '../components/ItemDetailsDescription'
+import ItemDetailsHeader from '../components/ItemDetailsHeader'
+import ItemDetailsInfoCards from '../components/ItemDetailsInfoCards'
+import ItemDetailsWeaponStats from '../components/ItemDetailsWeaponStats'
+import ItemMarketAdvice from '../components/ItemMarketAdvice'
 import Loading from '../components/Loading'
+import Weav3rMarketTable from '../components/Weav3rListingTable'
+import { useItemMarketAdvice } from '../hooks/useItemMarketAdvice'
 import { useItemPriceHistory, useItemVelocityHistory } from '../hooks/useItemHistory'
 import { useItems } from '../hooks/useItems'
 import { useWeav3rMarketplaceQuery } from '../hooks/useWeav3rListings'
-import Chart from '../components/Chart'
-import ItemDetailsHeader from '../components/ItemDetailsHeader'
-import ItemDetailsWeaponStats from '../components/ItemDetailsWeaponStats'
-import ItemDetailsDescription from '../components/ItemDetailsDescription'
-import ItemDetailsInfoCards from '../components/ItemDetailsInfoCards'
-import Weav3rMarketTable from '../components/Weav3rListingTable'
+import type { HistoryWindow } from '../types/history'
 import { type Item } from '../types/items'
-import ItemDetailsArmourStats from '../components/ItemDetailsArmourStats'
-import ItemMarketAdvice from '../components/ItemMarketAdvice'
 
 interface ItemDetailsProps {
   inputItem?: Item
@@ -39,7 +41,19 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
     inputItem ? inputItem.id : urlItemId ? parseInt(urlItemId, 10) : undefined,
   )
 
+  const [priceWindow, setPriceWindow] = useState<HistoryWindow>('1w')
+  const [velocityWindow, setVelocityWindow] = useState<HistoryWindow>('1w')
+
   const { data } = useWeav3rMarketplaceQuery(itemId)
+  const advice = useItemMarketAdvice(itemId)
+
+  // Two price series: Torn market + Weav3r bazaar, overlaid on the same axes.
+  const priceTorn = useItemPriceHistory(itemId, priceWindow, 'Torn')
+  const priceBazaar = useItemPriceHistory(itemId, priceWindow, 'Weav3r')
+
+  // Velocity is market-only — bazaar velocity is dominated by idle
+  // re-scans rather than actual listing changes.
+  const velocity = useItemVelocityHistory(itemId, velocityWindow, 'Torn')
 
   const bazaarDataAvailable = data?.listings && data.listings.length > 0 && data.listings[0]
 
@@ -62,6 +76,23 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
     }
   }, [itemId, itemsById])
 
+  const priceSeries: ChartSeries[] = useMemo(
+    () => [
+      { name: 'Market', color: theme.palette.primary.main, data: priceTorn.data },
+      {
+        name: 'Bazaar',
+        color: theme.palette.info?.main ?? '#6ab0de',
+        data: priceBazaar.data,
+      },
+    ],
+    [priceTorn.data, priceBazaar.data, theme],
+  )
+
+  const velocitySeries: ChartSeries[] = useMemo(
+    () => [{ name: 'Changes', color: theme.palette.secondary.main, data: velocity.data }],
+    [velocity.data, theme],
+  )
+
   if (!itemsById || !item) return <Loading message="Loading items..." />
 
   return (
@@ -81,9 +112,10 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
         item={item}
         inlineView={inlineView}
         firstBazaarListing={bazaarDataAvailable ? data.listings[0] : undefined}
+        advice={advice}
       />
 
-      <ItemMarketAdvice itemId={itemId} defaultExpanded={!inlineView} />
+      <ItemMarketAdvice itemId={itemId} defaultExpanded={!inlineView} advice={advice} />
 
       <Accordion defaultExpanded={!inlineView} variant="outlined" sx={{ my: 2 }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -98,9 +130,11 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
 
               <Chart
                 chartType="area"
-                dataColour={theme.palette.primary.main}
-                dataFunction={useItemPriceHistory}
-                itemId={itemId}
+                series={priceSeries}
+                loading={priceTorn.loading || priceBazaar.loading}
+                error={priceTorn.error ?? priceBazaar.error}
+                timeWindow={priceWindow}
+                onTimeWindowChange={setPriceWindow}
                 valueLabel="Price"
                 valuePrefix="$"
               />
@@ -113,9 +147,11 @@ const ItemDetails = ({ inputItem, inlineView = false }: ItemDetailsProps) => {
 
               <Chart
                 chartType="bar"
-                dataColour={theme.palette.secondary.main}
-                dataFunction={useItemVelocityHistory}
-                itemId={itemId}
+                series={velocitySeries}
+                loading={velocity.loading}
+                error={velocity.error}
+                timeWindow={velocityWindow}
+                onTimeWindowChange={setVelocityWindow}
                 valueLabel="Changes"
                 yAxisLabel="Number of changes"
               />

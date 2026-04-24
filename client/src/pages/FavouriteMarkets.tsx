@@ -2,7 +2,7 @@ import { Alert, AlertTitle, Box, Typography } from '@mui/material'
 import { useEffect, useRef } from 'react'
 import FavouriteMarketsTable from '../components/FavouriteMarketsTable'
 import Loading from '../components/Loading'
-import LoginRequiredForToken from '../components/LoginRequiredForToken'
+import LoginRequired from '../components/LoginRequired'
 import { useItems } from '../hooks/useItems'
 import { useUser } from '../hooks/useUser'
 
@@ -22,9 +22,9 @@ const FavouriteMarkets = () => {
     return (
       <Box>
         <Typography variant="h4" gutterBottom>
-          Favourite Markets
+          Favourites
         </Typography>
-        <LoginRequiredForToken />
+        <LoginRequired tool="Favourite Markets" requiredLevel="public" />
       </Box>
     )
   }
@@ -35,7 +35,7 @@ const FavouriteMarkets = () => {
     return (
       <Box>
         <Typography variant="h4" gutterBottom>
-          Favourite Markets
+          Favourites
         </Typography>
         <Alert severity="info">
           <AlertTitle>No favourite markets</AlertTitle>
@@ -51,7 +51,7 @@ const FavouriteMarkets = () => {
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
-        Favourite Markets
+        Favourites
       </Typography>
       <Typography variant="body1" gutterBottom>
         Quickly jump back to the items you follow the most.

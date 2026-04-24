@@ -10,12 +10,15 @@ import {
 } from '@mui/material'
 import { type Item } from '../types/items'
 import FavouriteItemsTableRow from './FavouriteMarketsTableRow'
+import { useUser } from '../hooks/useUser'
 
 interface FavouriteItemsTableProps {
   items: Item[]
 }
 
 const FavouriteMarketsTable = ({ items }: FavouriteItemsTableProps) => {
+  const { dotNetUserDetails } = useUser()
+
   return (
     <Box>
       <TableContainer component={Paper} sx={{ mt: 2 }}>
@@ -25,14 +28,27 @@ const FavouriteMarketsTable = ({ items }: FavouriteItemsTableProps) => {
               <TableCell align="center" sx={{ width: 48 }}>
                 Info
               </TableCell>
-              <TableCell align="center" sx={{ width: 48 }}>
-                Fav
-              </TableCell>
+              {dotNetUserDetails && (
+                <TableCell align="center" sx={{ width: 48 }}>
+                  Fav
+                </TableCell>
+              )}
               <TableCell align="left">Item</TableCell>
               <TableCell align="left">Type</TableCell>
-              <TableCell align="left">Subtype</TableCell>
-              <TableCell align="center">Item Page</TableCell>
-              <TableCell align="center">Torn</TableCell>
+              <TableCell align="right">Bazaar (latest)</TableCell>
+              <TableCell align="center" sx={{ width: 100 }}>
+                Bazaar trend
+              </TableCell>
+              <TableCell align="right">Market (latest)</TableCell>
+              <TableCell align="center" sx={{ width: 100 }}>
+                Market trend
+              </TableCell>
+              <TableCell align="center" sx={{ width: 48 }}>
+                Item Page
+              </TableCell>
+              <TableCell align="center" sx={{ width: 48 }}>
+                Torn
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>

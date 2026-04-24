@@ -31,7 +31,11 @@ interface ForeignMarketItemsTableProps {
   showCountry?: boolean
 }
 
-const ForeignMarketItemsTable = ({ items, saleOutlet, showCountry = false }: ForeignMarketItemsTableProps) => {
+const ForeignMarketItemsTable = ({
+  items,
+  saleOutlet,
+  showCountry = false,
+}: ForeignMarketItemsTableProps) => {
   const { dotNetUserDetails } = useUser()
   const { summaries: bazaarSummaries } = useBazaarSummaries()
 
@@ -51,19 +55,17 @@ const ForeignMarketItemsTable = ({ items, saleOutlet, showCountry = false }: For
   const sortableItems = useMemo(
     () =>
       items.map((item) => {
-        const sellPrice = (() => {
-          if (saleOutlet === 'bazaar') {
-            const s = bazaarSummaries[item.itemId]
-            return s ? s.minPrice : null
-          }
-          return item.item.valueMarketPrice != null
-            ? Math.floor(item.item.valueMarketPrice * (1 - SALE_TAX[saleOutlet]))
-            : null
-        })()
+        const grossSellPrice =
+          saleOutlet === 'bazaar'
+            ? (bazaarSummaries[item.itemId]?.minPrice ?? null)
+            : (item.item.valueMarketPrice ?? null)
+        const sellPrice =
+          grossSellPrice != null ? Math.floor(grossSellPrice * (1 - SALE_TAX[saleOutlet])) : null
         return {
           ...item,
           itemType: item.item.type,
           sellPrice,
+          grossSellPrice,
           profit: sellPrice != null ? sellPrice - item.cost : null,
         } as SortableForeignStockItem
       }),
@@ -155,7 +157,12 @@ const ForeignMarketItemsTable = ({ items, saleOutlet, showCountry = false }: For
             </TableHead>
             <TableBody>
               {sortedItems.map((item) => (
-                <ForeignMarketItemsTableRow key={`${item.itemId}-${item.country}`} item={item} showCountry={showCountry} />
+                <ForeignMarketItemsTableRow
+                  key={`${item.itemId}-${item.country}`}
+                  item={item}
+                  showCountry={showCountry}
+                  saleOutlet={saleOutlet}
+                />
               ))}
             </TableBody>
           </Table>

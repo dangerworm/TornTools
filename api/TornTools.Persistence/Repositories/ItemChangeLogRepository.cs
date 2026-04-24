@@ -24,6 +24,7 @@ public class ItemChangeLogRepository(
     FROM "public"."item_change_logs"
     WHERE
       "item_id" = @itemId
+      AND "source" = @source
       AND "change_time" >= @windowStart
       AND "change_time" <  @windowEnd
     GROUP BY "Bucket"
@@ -56,9 +57,9 @@ public class ItemChangeLogRepository(
     return changeLogs.Select(cl => cl.AsDto());
   }
 
-  public async Task<IEnumerable<ItemHistoryPointDto>> GetItemPriceHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken)
+  public async Task<IEnumerable<ItemHistoryPointDto>> GetItemPriceHistoryAsync(int itemId, HistoryWindow window, Source source, CancellationToken stoppingToken)
   {
-    var buckets = await GetAggregatedHistoryAsync(itemId, window, stoppingToken);
+    var buckets = await GetAggregatedHistoryAsync(itemId, window, source, stoppingToken);
 
     return [.. buckets
             .Select(b => new ItemHistoryPointDto
@@ -68,9 +69,9 @@ public class ItemChangeLogRepository(
             })];
   }
 
-  public async Task<IEnumerable<ItemHistoryPointDto>> GetItemVelocityHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken)
+  public async Task<IEnumerable<ItemHistoryPointDto>> GetItemVelocityHistoryAsync(int itemId, HistoryWindow window, Source source, CancellationToken stoppingToken)
   {
-    var buckets = await GetAggregatedHistoryAsync(itemId, window, stoppingToken);
+    var buckets = await GetAggregatedHistoryAsync(itemId, window, source, stoppingToken);
 
     return [.. buckets
             .Select(b => new ItemHistoryPointDto
@@ -80,7 +81,7 @@ public class ItemChangeLogRepository(
             })];
   }
 
-  private async Task<IEnumerable<ItemMarketHistoryPointEntity>> GetAggregatedHistoryAsync(int itemId, HistoryWindow window, CancellationToken stoppingToken)
+  private async Task<IEnumerable<ItemMarketHistoryPointEntity>> GetAggregatedHistoryAsync(int itemId, HistoryWindow window, Source source, CancellationToken stoppingToken)
   {
     var (range, bucket) = window.ToWindowConfiguration();
     var bucketSeconds = bucket.TotalSeconds;
@@ -92,6 +93,7 @@ public class ItemChangeLogRepository(
         .FromSqlRaw(
             ItemMarketHistoryPointQuery,
             new NpgsqlParameter("bucket", bucketSeconds),
+            new NpgsqlParameter("source", source.ToString()),
             new NpgsqlParameter("windowStart", cutoffDate),
             new NpgsqlParameter("windowEnd", now),
             new NpgsqlParameter("itemId", itemId)

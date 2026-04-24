@@ -21,7 +21,7 @@ import {
 import { useCallback, useMemo, useState } from 'react'
 import { Link as RouterLink } from 'react-router'
 import Loading from '../components/Loading'
-import LoginRequiredForToken from '../components/LoginRequiredForToken'
+import LoginRequired from '../components/LoginRequired'
 import {
   BAZAAR_CATEGORIES,
   BAZAAR_MIN_ACCESS_LEVEL,
@@ -164,47 +164,14 @@ const BazaarPriceLookup = () => {
     [currentState],
   )
 
-  // Login guard
-  if (!dotNetUserDetails) {
+  // Sign-in / access-level guard
+  if (!dotNetUserDetails || (dotNetUserDetails.accessLevel ?? 1) < BAZAAR_MIN_ACCESS_LEVEL) {
     return (
       <Box>
         <Typography variant="h4" gutterBottom>
           Bazaar Price Lookup
         </Typography>
-        <LoginRequiredForToken />
-      </Box>
-    )
-  }
-
-  // Access-level guard
-  if ((dotNetUserDetails.accessLevel ?? 1) < BAZAAR_MIN_ACCESS_LEVEL) {
-    return (
-      <Box>
-        <Typography variant="h4" gutterBottom>
-          Bazaar Price Lookup
-        </Typography>
-        <Alert severity="info" sx={{ mb: 2 }}>
-          <AlertTitle>Minimal access required</AlertTitle>
-          <Typography variant="body1" gutterBottom>
-            This page reads your personal Torn inventory, which requires a key with at least
-            <strong> Minimal</strong> access. Your current key is Public-only.
-          </Typography>
-          <Typography variant="body1" gutterBottom>
-            To upgrade, generate a new Minimal-access key on your{' '}
-            <Link
-              href="https://www.torn.com/preferences.php#tab=api"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Torn API preferences page
-            </Link>{' '}
-            and{' '}
-            <Link component={RouterLink} to="/signin">
-              sign in again
-            </Link>{' '}
-            with it.
-          </Typography>
-        </Alert>
+        <LoginRequired tool="Bazaar Price Lookup" requiredLevel="minimal" />
       </Box>
     )
   }

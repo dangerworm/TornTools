@@ -1,4 +1,6 @@
 import CloseIcon from '@mui/icons-material/Close'
+import VisibilityIcon from '@mui/icons-material/Visibility'
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import {
   Alert,
   Box,
@@ -9,12 +11,14 @@ import {
   Divider,
   Grid,
   IconButton,
+  InputAdornment,
   Link,
   styled,
   TextField,
   Typography,
 } from '@mui/material'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Loading from '../components/Loading'
 import PrivacyNotice from '../components/PrivacyNotice'
 import { useUser } from '../hooks/useUser'
@@ -35,18 +39,51 @@ const SignIn = () => {
     tornUserProfile,
     loadingTornUserProfile,
     errorTornUserProfile,
+    loadingDotNetUserDetails,
+    errorDotNetUserDetails,
     confirmApiKeyAsync,
+    dotNetUserDetails,
   } = useUser()
 
+  const navigate = useNavigate()
+
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [showKey, setShowKey] = useState(false)
+  // Only redirect on successful auth that followed an intentional Sign
+  // in click — not on arrival with an existing session cookie. This
+  // flag flips on via handleSignIn and flips off as soon as the
+  // redirect fires (or the dialog is closed).
+  const attemptedSignInRef = useRef(false)
+
+  // Redirect when the requested sign-in succeeds.
+  useEffect(() => {
+    if (attemptedSignInRef.current && dotNetUserDetails) {
+      attemptedSignInRef.current = false
+      setDialogOpen(false)
+      navigate('/')
+    }
+  }, [dotNetUserDetails, navigate])
+
+  // confirmApiKeyAsync swallows errors into errorDotNetUserDetails
+  // rather than throwing, so the try/catch around the await doesn't
+  // help us know when an attempt failed. Watch the backend error
+  // state instead: if we intended to sign in and the request produced
+  // an error (401, network, etc.), clear the in-flight flag so the
+  // user can edit the key and retry without reloading.
+  useEffect(() => {
+    if (attemptedSignInRef.current && !loadingDotNetUserDetails && errorDotNetUserDetails) {
+      attemptedSignInRef.current = false
+    }
+  }, [loadingDotNetUserDetails, errorDotNetUserDetails])
 
   const handleClose = () => {
+    attemptedSignInRef.current = false
     setDialogOpen(false)
   }
 
   const handleSignIn = () => {
-    confirmApiKeyAsync()
-    setDialogOpen(false)
+    attemptedSignInRef.current = true
+    void confirmApiKeyAsync()
   }
 
   return (
@@ -151,7 +188,22 @@ const SignIn = () => {
             value={apiKey || ''}
             onChange={(e) => setApiKey(e.target.value || null)}
             sx={{ mt: 2 }}
-            type={'password'}
+            type={showKey ? 'text' : 'password'}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={showKey ? 'hide API key' : 'show API key'}
+                      onClick={() => setShowKey((prev) => !prev)}
+                      edge="end"
+                    >
+                      {showKey ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
           />
 
           {loadingTornUserProfile && (
@@ -196,8 +248,19 @@ const SignIn = () => {
                 Click the button below to add your API key. By doing so you agree to the usage terms
                 and that your data will be stored and used as described.
               </Typography>
-              <Button fullWidth variant="contained" sx={{ my: 2 }} onClick={() => handleSignIn()}>
-                Sign in
+              {errorDotNetUserDetails && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {errorDotNetUserDetails}
+                </Alert>
+              )}
+              <Button
+                fullWidth
+                variant="contained"
+                sx={{ my: 2 }}
+                onClick={handleSignIn}
+                disabled={loadingDotNetUserDetails}
+              >
+                {loadingDotNetUserDetails ? 'Signing in…' : 'Sign in'}
               </Button>
             </Box>
           )}

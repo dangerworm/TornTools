@@ -115,7 +115,7 @@ const Weav3rMarketTable = ({ payload }: Weav3rMarketTableProps) => {
         <TableContainer component={Paper}>
           <Table size="small">
             <TableHead>
-              <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
+              <TableRow>
                 <TableCell align="left">Player</TableCell>
                 <TableCell align="right">Quantity</TableCell>
                 <TableCell align="right">Price</TableCell>

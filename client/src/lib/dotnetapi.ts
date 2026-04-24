@@ -59,11 +59,14 @@ export async function fetchItems(): Promise<Item[]> {
   return res.json();
 }
 
+export type HistorySource = "Torn" | "Weav3r";
+
 export async function fetchItemPriceHistory(
   itemId: number,
-  window: HistoryWindow
+  window: HistoryWindow,
+  source: HistorySource = "Torn"
 ): Promise<HistoryResult[]> {
-  const url = `${URL_ITEM_HISTORY_BASE}/${itemId}/history/price?window=${encodeURIComponent(window)}`;
+  const url = `${URL_ITEM_HISTORY_BASE}/${itemId}/history/price?window=${encodeURIComponent(window)}&source=${source}`;
   const res = await fetch(url, { headers: { accept: "application/json" } });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
@@ -71,9 +74,10 @@ export async function fetchItemPriceHistory(
 
 export async function fetchItemVelocityHistory(
   itemId: number,
-  window: HistoryWindow
+  window: HistoryWindow,
+  source: HistorySource = "Torn"
 ): Promise<HistoryResult[]> {
-  const url = `${URL_ITEM_HISTORY_BASE}/${itemId}/history/velocity?window=${encodeURIComponent(window)}`;
+  const url = `${URL_ITEM_HISTORY_BASE}/${itemId}/history/velocity?window=${encodeURIComponent(window)}&source=${source}`;
   const res = await fetch(url, { headers: { accept: "application/json" } });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
