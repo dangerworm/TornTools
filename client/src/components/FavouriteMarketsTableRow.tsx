@@ -9,7 +9,9 @@ import {
 import { Collapse, IconButton, TableCell, TableRow, Tooltip } from '@mui/material'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
 import { useUser } from '../hooks/useUser'
+import { getFormattedText } from '../lib/textFormat'
 import ItemDetails from '../pages/ItemDetails'
 import { type Item } from '../types/items'
 import ItemCell from './ItemCell'
@@ -23,6 +25,19 @@ const openTornMarketPage = (itemId: number) => {
   )
 }
 
+const formatRelative = (iso: string | null | undefined): string => {
+  if (!iso) return ''
+  const then = new Date(iso).getTime()
+  if (Number.isNaN(then)) return ''
+  const diffSec = Math.max(0, Math.floor((Date.now() - then) / 1000))
+  if (diffSec < 60) return `${diffSec}s ago`
+  const diffMin = Math.floor(diffSec / 60)
+  if (diffMin < 60) return `${diffMin}m ago`
+  const diffHr = Math.floor(diffMin / 60)
+  if (diffHr < 24) return `${diffHr}h ago`
+  return `${Math.floor(diffHr / 24)}d ago`
+}
+
 interface FavouriteItemsTableRowProps {
   item: Item
 }
@@ -30,12 +45,14 @@ interface FavouriteItemsTableRowProps {
 const FavouriteItemsTableRow = ({ item }: FavouriteItemsTableRowProps) => {
   const navigate = useNavigate()
   const { dotNetUserDetails, toggleFavouriteItemAsync } = useUser()
+  const { summaries: bazaarSummaries } = useBazaarSummaries()
 
   const [open, setOpen] = useState(false)
   const isFavourite = dotNetUserDetails?.favouriteItems?.includes(item.id) ?? false
-  // 7 base columns (Info, Item, Type, Sub-type, Market, Trend, Item Page, Torn)
-  // minus 1 if signed-out (no Fav column)
-  const expandedColSpan = 8 + (dotNetUserDetails ? 1 : 0)
+  const bazaarSummary = bazaarSummaries[item.id]
+  // 9 base columns (Info, Item, Type, Bazaar, BazaarTrend, Market, MarketTrend,
+  // Item Page, Torn) plus 1 if signed-in (Fav).
+  const expandedColSpan = 9 + (dotNetUserDetails ? 1 : 0)
 
   return (
     <>
@@ -62,14 +79,29 @@ const FavouriteItemsTableRow = ({ item }: FavouriteItemsTableRowProps) => {
 
         <TableCell>{item.type}</TableCell>
 
-        <TableCell>{item.subType ?? <span style={{ opacity: 0.4 }}>&mdash;</span>}</TableCell>
-
         <TableCell align="right">
-          <LazyLatestMarketPrice itemId={item.id} />
+          {bazaarSummary ? (
+            <Tooltip
+              title={`Latest scan: ${formatRelative(bazaarSummary.lastUpdated)}`}
+              placement="left"
+            >
+              <span>{getFormattedText('$', bazaarSummary.minPrice, '')}</span>
+            </Tooltip>
+          ) : (
+            <span style={{ opacity: 0.5 }}>&mdash;</span>
+          )}
         </TableCell>
 
         <TableCell align="center">
-          <LazySparkline itemId={item.id} />
+          <LazySparkline itemId={item.id} source="Weav3r" />
+        </TableCell>
+
+        <TableCell align="right">
+          <LazyLatestMarketPrice itemId={item.id} source="Torn" />
+        </TableCell>
+
+        <TableCell align="center">
+          <LazySparkline itemId={item.id} source="Torn" />
         </TableCell>
 
         <TableCell align="center" onClick={() => navigate(`/item/${item.id}`)}>

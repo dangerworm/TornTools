@@ -25,12 +25,14 @@ export default function Footer() {
           borderTop: (theme) => `1px solid ${theme.palette.divider}`,
         }}
       >
-        <Typography variant="caption" display="block" gutterBottom color="text.secondary">
-          Maintained by{' '}
+        <Typography variant="caption" display="block" color="text.secondary">
+          Made by{' '}
           <Link href="https://www.torn.com/index.php" target="_blank" rel="noopener noreferrer">
             dangerworm [3943900]
           </Link>
-          . View{' '}
+        </Typography>
+        <Typography variant="caption" display="block" color="text.secondary">
+          View{' '}
           <Link
             component="button"
             variant="caption"
@@ -39,18 +41,16 @@ export default function Footer() {
           >
             Privacy &amp; API key usage
           </Link>
-          .
         </Typography>
         <Typography variant="caption" display="block" color="text.secondary">
-          Source on{' '}
           <Link
             href="https://github.com/dangerworm/TornTools"
             target="_blank"
             rel="noopener noreferrer"
           >
-            GitHub
-          </Link>
-          .{' '}
+            Source
+          </Link>{' '}
+          on GitHub.{' '}
           <Link
             href="https://www.torn.com/messages.php#/p=compose&XID=3943900"
             target="_blank"

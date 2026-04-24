@@ -35,10 +35,13 @@ const FavouriteMarketsTable = ({ items }: FavouriteItemsTableProps) => {
               )}
               <TableCell align="left">Item</TableCell>
               <TableCell align="left">Type</TableCell>
-              <TableCell align="left">Sub-type</TableCell>
+              <TableCell align="right">Bazaar (latest)</TableCell>
+              <TableCell align="center" sx={{ width: 100 }}>
+                Bazaar trend
+              </TableCell>
               <TableCell align="right">Market (latest)</TableCell>
-              <TableCell align="center" sx={{ width: 110 }}>
-                Trend (1w)
+              <TableCell align="center" sx={{ width: 100 }}>
+                Market trend
               </TableCell>
               <TableCell align="center" sx={{ width: 48 }}>
                 Item Page
