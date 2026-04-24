@@ -59,6 +59,14 @@ public class ApiJobScheduler(
     );
 
     RecurringJob.AddOrUpdate(
+        nameof(RebuildUnusualCandidates),
+        () => RebuildUnusualCandidates(),
+        "45 */6 * * *" // 45 minutes past every 6 hours — after the
+                       // summariser AND volatility rebuild, so we can
+                       // share the same bucket data without competing.
+    );
+
+    RecurringJob.AddOrUpdate(
     nameof(UpdateForeignStock),
         () => UpdateForeignStock(),
         "0/10 * * * *" // At every 10th minute from 0 through 59.
@@ -95,6 +103,13 @@ public class ApiJobScheduler(
   {
     _logger.LogInformation("Running Hangfire job {JobName}", nameof(RebuildVolatilityStats));
     await _databaseService.RebuildVolatilityStatsAsync(stoppingToken: CancellationToken.None);
+  }
+
+  [DisplayName("Rebuild unusual candidates")]
+  public async Task RebuildUnusualCandidates()
+  {
+    _logger.LogInformation("Running Hangfire job {JobName}", nameof(RebuildUnusualCandidates));
+    await _databaseService.RebuildUnusualCandidatesAsync(stoppingToken: CancellationToken.None);
   }
 
   [DisplayName("Foreign stock update")]

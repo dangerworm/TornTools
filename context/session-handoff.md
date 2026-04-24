@@ -54,32 +54,38 @@ items with less history. Accepting this limitation is the right move because the
 of work (see below) reframes the whole card around "unusual activity" rather than "who rose/fell",
 which makes the reversion signal legitimate rather than misleading.
 
-### Next: the "Unusual activity" pivot
+### Unusual Activity pivot — shipped
 
-Drew suggested (and I strongly agree) pivoting the Top Movers card from "who went up / down" to
-"markets departing from their normal trends". Fundamental reason: with ~29 active keys and 6-hour
-polling, we genuinely cannot reliably identify "the top N movers" — we can identify items whose
-recent behaviour is statistically unusual, because the departures are large relative to dispersion
-even with sparse data. Changing the framing to match what we can actually do.
+Pivoted the Top Movers widget from "who went up / down" to "markets departing from their normal
+trends". With ~29 keys and 6-hour polling we can't reliably identify "the top N movers" — we
+*can* identify items whose recent behaviour is statistically unusual, because the departures are
+large relative to dispersion even with sparse data. Honest framing about what the data supports.
 
-Risers/fallers cards stay — Drew's call ("markets are expected to be messy, people will use their
-own judgement"). The pivot is about broadening the set of signals shown, not replacing the existing
-structure.
+What landed:
 
-Sketch of the architecture (for next-session planning; not yet built):
+- **Flyway V1.22** — summary buckets resized 6h → 1h (clean truncate + repopulate from raw
+  change logs). Unlocks intraday resolution for multi-horizon analysis.
+- **Flyway V1.23** — Codex P1 follow-up; truncates `item_volatility_stats` so V1.22 + V1.23
+  do an atomic cutover (both source and derived tables empty, both rebuild from scratch).
+- **Flyway V1.24** — new `item_unusual_candidates` table. One row per `(item_id, source)`
+  with the multi-horizon stats flattened across columns. Partial index on
+  `(source, unusualness_score DESC)` for the ranking query.
+- **`ItemUnusualCandidatesRepository.RebuildAsync`** — single SQL pass. Trimmed-median
+  baseline (10/90 percentile bounds, NOW-30d to NOW-1d, min 10 buckets); CV of daily medians
+  for dispersion (min 14 days). Per-horizon (1h / 6h / 24h / 7d) median + sample count + move
+  + z-score with min-sample thresholds 1/3/6/24 buckets. Derived `unusualness_score = max(|z|)`,
+  `dominant_horizon`, `direction`. UPSERT.
+- **Hangfire `RebuildUnusualCandidates`** — runs at minute 45 past every 6h, after the
+  summariser (minute 0) and the volatility rebuild (minute 30) so they don't compete.
+- **`GET /api/items/unusual?source=&limit=&minScore=`** — returns DTOs ordered by
+  `unusualness_score DESC`. Default minScore 1.5σ, limit 15.
+- **Widget rewrite** — three cards now: Top risers, Top fallers, Unusual activity. Most-active
+  card removed (saturation made it useless per Drew's call). Unusual rows show name + a
+  server-formatted "↑ 3.4σ in last 24h vs month" string + the dominant-horizon's window price.
 
-- **Two-step pass.** Hangfire (every 6h) writes a new `item_unusual_candidates` table: ~50 items per
-  source with rich per-item metrics (multi-horizon medians: 1h/6h/24h/7d; dispersion; sample counts;
-  30d range; trimmed baseline; maybe mode-to-nearest-1%-of-range for display). Home-page load hits a
-  cheap endpoint that joins the shortlist against the freshest bucket data and re-scores. Fresh
-  data + deep stats without either side being expensive.
-- **Multi-horizon z-score.** Each candidate gets a z-score at several horizons; "unusualness" = max
-  |z|. Short-horizon spikes and slow drifts both surface.
-- **"Why flagged" chip per row.** Lets the widget say "Price +X% vs month" or "Dispersion up 4σ" so
-  users see the reason.
-- **Mode-to-bucket** — Drew raised it. Useful as a **display** metric on item detail pages (shows
-  "where sellers actually cluster"), marginal as a ranking signal. Add to the candidates table when
-  we do the pivot, but don't rank on it.
+Deferred to follow-ups (see TODO.md): re-score on home-page load, mode-to-bucket display on item
+detail pages, volatility-of-volatility signal, confidence chips, dropping legacy
+`current_price` / `price_change_1d` / `price_change_1w` columns.
 
 ### Two open design questions from the end of this session
 

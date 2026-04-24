@@ -16,6 +16,7 @@ public class DatabaseService(
     IItemChangeLogRepository itemChangeLogRepository,
     IItemChangeLogSummaryRepository itemChangeLogSummaryRepository,
     IItemVolatilityStatsRepository itemVolatilityStatsRepository,
+    IItemUnusualCandidatesRepository itemUnusualCandidatesRepository,
     IItemRepository itemRepository,
     IListingRepository listingRepository,
     IQueueItemRepository queueItemRepository,
@@ -34,6 +35,7 @@ public class DatabaseService(
   private readonly IItemChangeLogRepository _itemChangeLogRepository = itemChangeLogRepository ?? throw new ArgumentNullException(nameof(itemChangeLogRepository));
   private readonly IItemChangeLogSummaryRepository _itemChangeLogSummaryRepository = itemChangeLogSummaryRepository ?? throw new ArgumentNullException(nameof(itemChangeLogSummaryRepository));
   private readonly IItemVolatilityStatsRepository _itemVolatilityStatsRepository = itemVolatilityStatsRepository ?? throw new ArgumentNullException(nameof(itemVolatilityStatsRepository));
+  private readonly IItemUnusualCandidatesRepository _itemUnusualCandidatesRepository = itemUnusualCandidatesRepository ?? throw new ArgumentNullException(nameof(itemUnusualCandidatesRepository));
   private readonly IItemRepository _itemRepository = itemRepository ?? throw new ArgumentNullException(nameof(itemRepository));
   private readonly IListingRepository _listingRepository = listingRepository ?? throw new ArgumentNullException(nameof(listingRepository));
   private readonly IQueueItemRepository _queueItemRepository = queueItemRepository ?? throw new ArgumentNullException(nameof(queueItemRepository));
@@ -67,6 +69,20 @@ public class DatabaseService(
       CancellationToken stoppingToken)
   {
     return _itemVolatilityStatsRepository.GetTopAsync(source, sortKey, limit, ascending, stoppingToken);
+  }
+
+  public Task RebuildUnusualCandidatesAsync(CancellationToken stoppingToken)
+  {
+    return _itemUnusualCandidatesRepository.RebuildAsync(stoppingToken);
+  }
+
+  public Task<IEnumerable<ItemUnusualCandidateDto>> GetTopUnusualItemsAsync(
+      Source source,
+      int limit,
+      decimal minScore,
+      CancellationToken stoppingToken)
+  {
+    return _itemUnusualCandidatesRepository.GetTopAsync(source, limit, minScore, stoppingToken);
   }
 
   public async Task SummariseChangeLogsAsync(CancellationToken stoppingToken)

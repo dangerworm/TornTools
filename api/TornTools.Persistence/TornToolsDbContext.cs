@@ -12,6 +12,7 @@ public class TornToolsDbContext(
   public DbSet<ItemChangeLogEntity> ItemChangeLogs { get; set; } = null!;
   public DbSet<ItemChangeLogSummaryEntity> ItemChangeLogSummaries { get; set; } = null!;
   public DbSet<ItemVolatilityStatsEntity> ItemVolatilityStats { get; set; } = null!;
+  public DbSet<ItemUnusualCandidatesEntity> ItemUnusualCandidates { get; set; } = null!;
   public DbSet<ItemEntity> Items { get; set; } = null!;
   public DbSet<ListingEntity> Listings { get; set; } = null!;
   public DbSet<BazaarSummaryView> BazaarSummaries { get; set; } = null!;
@@ -72,6 +73,11 @@ public class TornToolsDbContext(
     modelBuilder.Entity<ItemMarketHistoryPointEntity>().HasNoKey();
 
     modelBuilder.Entity<ItemVolatilityStatsEntity>(e =>
+    {
+      e.HasKey(x => new { x.ItemId, x.Source });
+    });
+
+    modelBuilder.Entity<ItemUnusualCandidatesEntity>(e =>
     {
       e.HasKey(x => new { x.ItemId, x.Source });
     });

@@ -62,21 +62,26 @@
   table + slider filters rather than just the Top Movers widget on Home. Worth waiting on the Top
   Movers redesign below so the ranking is honest before we give it a whole page.
   ([Trello](https://trello.com/c/qELgIPtT))
-- **Top Movers redesign — remaining slices** - Phase 1 shipped (median-window latest/baseline +
-  per-item dispersion + z-scored ranking; Flyway V1.21). Still open from the six-item review in
-  `context/session-handoff.md`:
-  - (3) Volatility-bucket separation: classify items stable / medium / high and give high-
-    volatility items their own card so they don't crowd Top Risers/Fallers with noise. The
-    `price_dispersion` column is already populated; this is a UI + ranking-filter change.
-  - (4) "Most active" ceiling: raw `changes_1d` saturates at the polling ceiling (~353/24h). Show a
-    "saturated — under-sampled" chip when count hits the ceiling; rank saturated items by a
-    secondary key (circulation, dispersion).
-  - (5) Confidence chips: sample counts are stored (`sample_count_recent` /
-    `sample_count_baseline`). Expose as tooltips or thin chips so "n=3" rows read differently from
-    "n=24".
+- **Top Movers redesign — Phase 1 + Unusual Activity pivot shipped.** Median-window
+  latest/baseline + per-item dispersion + z-scored ranking (V1.21). Trimmed-median baseline + 2-day
+  buffer + `|z|>=1.5` threshold. 1h summary buckets (V1.22 + V1.23 reset). Multi-horizon
+  unusual-activity card (V1.24 + new `item_unusual_candidates` table; max |z| across 1h/6h/24h/7d vs
+  30d trimmed baseline; "why flagged" chips). Most-active card removed (saturation made it
+  meaningless).
+- **Top Movers — remaining follow-ups** (deferred, all small):
+  - **Mode-to-nearest-1%-of-range** as a display metric on item detail pages. Useful for "where
+    sellers cluster". Add to `item_unusual_candidates` (or to item details directly via a per-item
+    query) when the item-details page next gets attention.
+  - **Re-score on home-page load.** Currently the unusual-activity card uses stored values (~6h
+    stale at worst). Could grow a "freshen the 1h horizon" join in the controller against the latest
+    bucket data. Cheap to add later; not a problem at 1h-bucket cadence.
+  - **Volatility-of-volatility signal.** Item whose dispersion has spiked vs its own normal CV is a
+    different "unusual" axis than price departure. Could become a fourth dimension in the rebuild
+    query and a chip variant ("Volatility ↑ 4σ").
+  - **Confidence chips** using stored sample counts so "n=3" rows visually differ from "n=24".
   - **Drop legacy columns** (`current_price`, `price_change_1d`, `price_change_1w`) once nothing
-    consumes them any more. Currently read by the widget as fallbacks and by some item-details
-    paths; audit before dropping.
+    consumes them as fallbacks. Currently the widget falls through to them; item details may too.
+    Audit before dropping.
 - **Cross-item spike correlation / Torn event-calendar analysis** - Scalpel and Chain Whip
   occasionally spike for reasons that aren't obvious. Hypothesis: some spikes correlate with Torn
   in-game events (e.g. Cannabis on 4/20). Would want cross-item price-movement correlation over time

@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
     services.AddScoped<IItemChangeLogRepository, ItemChangeLogRepository>();
     services.AddScoped<IItemChangeLogSummaryRepository, ItemChangeLogSummaryRepository>();
     services.AddScoped<IItemVolatilityStatsRepository, ItemVolatilityStatsRepository>();
+    services.AddScoped<IItemUnusualCandidatesRepository, ItemUnusualCandidatesRepository>();
     services.AddScoped<IItemRepository, ItemRepository>();
     services.AddScoped<IListingRepository, ListingRepository>();
     services.AddScoped<IQueueItemRepository, QueueItemRepository>();
