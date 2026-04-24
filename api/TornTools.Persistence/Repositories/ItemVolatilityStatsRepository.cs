@@ -206,21 +206,24 @@ public class ItemVolatilityStatsRepository(
       (VolatilitySortKey.PriceChange1w, true) => query
           .Where(s => s.PriceChange1w != null)
           .OrderBy(s => s.PriceChange1w),
+      // Risers: require a positive move of at least MinAbsMovePct AND a
+      // positive z-score of at least MinAbsZScore. Sign predicates matter
+      // here — without them, a low-signal window with fewer than `limit`
+      // positive movers silently backfills the card with negative ones.
       (VolatilitySortKey.MoveZScore1d, false) => query
           .Where(s => s.MovePctWindow != null
                    && s.PriceDispersion != null
                    && s.PriceDispersion > 0
-                   && (s.MovePctWindow >= MinAbsMovePct || s.MovePctWindow <= -MinAbsMovePct)
-                   && (s.MovePctWindow / s.PriceDispersion >= MinAbsZScore
-                    || s.MovePctWindow / s.PriceDispersion <= -MinAbsZScore))
+                   && s.MovePctWindow >= MinAbsMovePct
+                   && s.MovePctWindow / s.PriceDispersion >= MinAbsZScore)
           .OrderByDescending(s => s.MovePctWindow / s.PriceDispersion),
+      // Fallers: mirror image — negative move + negative z-score.
       (VolatilitySortKey.MoveZScore1d, true) => query
           .Where(s => s.MovePctWindow != null
                    && s.PriceDispersion != null
                    && s.PriceDispersion > 0
-                   && (s.MovePctWindow >= MinAbsMovePct || s.MovePctWindow <= -MinAbsMovePct)
-                   && (s.MovePctWindow / s.PriceDispersion >= MinAbsZScore
-                    || s.MovePctWindow / s.PriceDispersion <= -MinAbsZScore))
+                   && s.MovePctWindow <= -MinAbsMovePct
+                   && s.MovePctWindow / s.PriceDispersion <= -MinAbsZScore)
           .OrderBy(s => s.MovePctWindow / s.PriceDispersion),
       _ => query.OrderByDescending(s => s.Changes1d),
     };
