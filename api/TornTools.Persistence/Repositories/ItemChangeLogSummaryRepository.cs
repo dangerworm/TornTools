@@ -58,12 +58,26 @@ public class ItemChangeLogSummaryRepository(
 
   public async Task BuildSummariesAsync(DateTimeOffset fromBucket, DateTimeOffset toBucket, double bucketSeconds, CancellationToken stoppingToken)
   {
-    await DbContext.Database.ExecuteSqlRawAsync(
-        BuildSummariesQuery,
-        new NpgsqlParameter("bucket", bucketSeconds),
-        new NpgsqlParameter("windowStart", fromBucket),
-        new NpgsqlParameter("windowEnd", toBucket)
-    );
+    // Default Npgsql command timeout is 30s, which is too tight for the
+    // group-by-aggregating UPSERT on a meaningful window (especially the
+    // post-V1.22 backfill of ~5 months of 1h-bucketed history). The
+    // orchestration layer chunks into ~weekly windows; even so, give
+    // each chunk plenty of headroom.
+    var previousTimeout = DbContext.Database.GetCommandTimeout();
+    DbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(10));
+    try
+    {
+      await DbContext.Database.ExecuteSqlRawAsync(
+          BuildSummariesQuery,
+          new NpgsqlParameter("bucket", bucketSeconds),
+          new NpgsqlParameter("windowStart", fromBucket),
+          new NpgsqlParameter("windowEnd", toBucket)
+      );
+    }
+    finally
+    {
+      DbContext.Database.SetCommandTimeout(previousTimeout);
+    }
   }
 
   public async Task<DateTimeOffset?> GetLatestBucketStartAsync(CancellationToken stoppingToken)
