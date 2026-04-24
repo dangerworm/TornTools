@@ -7,6 +7,7 @@ import LoginRequired from '../components/LoginRequired'
 import MarketToolbar from '../components/MarketToolbar'
 import { menuItems } from '../components/Menu'
 import SectionHeader from '../components/SectionHeader'
+import StaleDataBanner from '../components/StaleDataBanner'
 import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
 import { useItems } from '../hooks/useItems'
 import { useUser } from '../hooks/useUser'
@@ -125,6 +126,8 @@ const CityMarkets = () => {
       <Typography variant="h4" gutterBottom>
         City Markets
       </Typography>
+
+      <StaleDataBanner surface="bazaar scan" />
 
       {countries.map((country: string | undefined) => (
         <Fragment key={country}>
