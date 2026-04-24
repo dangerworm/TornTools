@@ -8,10 +8,10 @@
 
 - **Add page for users' items** - sortable table of inventory; show profit on bazaar/market; link to
   item details and add-items pages ([Trello](https://trello.com/c/6e2Jfkmu))
-- **Home page: interesting items table** - high volatility, rising average price, etc. _Blocked:
-  requires Hangfire price/volatility job_ ([Trello](https://trello.com/c/hYOe6Kej))
-- **Add stale-data warning** - surface a warning when the backend hasn't updated recently
-  ([Trello](https://trello.com/c/WIhkHBt0))
+- **Home page: interesting items table** - the "Top Movers" widget shipped (Most active, Top
+  risers, Top fallers over 24h, powered by `item_volatility_stats`). Still open: a richer
+  "interesting items" page that cross-references volatility with profitability and bazaar gaps.
+  ([Trello](https://trello.com/c/hYOe6Kej))
 - **Document and display price source** - City vs Item Market vs Weav3r
   ([Trello](https://trello.com/c/GU1LDPMz))
 - **Alerts and notifications** - e.g. for rare high-value bargains
@@ -42,19 +42,16 @@
 - **Min/max filters** - change most filters from single value to min/max range
   ([Trello](https://trello.com/c/mhlT5P45))
 - **Filter by quantity** ([Trello](https://trello.com/c/hCwp8Kkr))
-- **Filter out non-bulk markets** - most weapons and armour cannot be bought in bulk, which is faffy
-  and takes a long time ([Trello](https://trello.com/c/vcbymt73)). The filter would enable users to
-  view only markets where bulk buying is possible. The filter is easy: items.type == 'Armor' ||
-  (items.type == 'Weapon' && items.sub_type != 'Temporary')
 
 ### Data and Analysis
 
-- **Hangfire job: price and volatility data** - daily/twice-daily job storing per-market change
-  counts and price deltas over 1 day/1 week. Schema: `item_id`, `market_changes_1_day … N_days`,
-  `price_change_1_day … N_days`. Enables slider-driven filtering by volatility/price change.
-  Unblocks home page and several indicators. ([Trello](https://trello.com/c/dahdcJHy))
-- **"Item is heating up" volatility trend indicator** ([Trello](https://trello.com/c/mtc0N6ab))
-- **Global high-volatility items list** - cross-item comparison
+- **"Item is heating up" volatility trend indicator** - data is now available on
+  `item_volatility_stats` (changes_1d, price_change_1d). Needs a UI treatment on item details —
+  badge or banner when the item's changes_1d is top-N across the catalogue.
+  ([Trello](https://trello.com/c/mtc0N6ab))
+- **Global high-volatility items list** - cross-item comparison. The `/api/items/volatility`
+  endpoint returns the ranked data; needs a dedicated page (e.g. `/volatility`) with a sortable
+  table + slider filters rather than just the Top Movers widget on Home.
   ([Trello](https://trello.com/c/qELgIPtT))
 
 ### Item Quality
@@ -78,8 +75,6 @@
 ### Item Details Page
 
 - **Add link to market and shop** where applicable ([Trello](https://trello.com/c/32izh7of))
-- **Rename "City Buy Price"** to "Buy Price" and add the country in which to buy
-  ([Trello](https://trello.com/c/fLk2OwZP))
 
 ### Foreign Markets
 
