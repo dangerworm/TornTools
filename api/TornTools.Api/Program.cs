@@ -94,17 +94,4 @@ var jobScheduler = scope.ServiceProvider.GetRequiredService<IApiJobScheduler>();
 jobScheduler.RegisterRecurringJobs();
 startupLogger.LogInformation("Recurring Hangfire jobs registered.");
 
-// One-shot encryption backfill: any user row that still carries a plaintext
-// API key but no ciphertext gets encrypted in place. Idempotent — once every
-// row has ApiKeyEncrypted populated, subsequent calls no-op. Removed by the
-// post-release tidy once the plaintext column is dropped.
-{
-  var backfillService = scope.ServiceProvider.GetRequiredService<IDatabaseService>();
-  var backfilled = await backfillService.BackfillEncryptedApiKeysAsync(CancellationToken.None);
-  if (backfilled > 0)
-  {
-    startupLogger.LogInformation("Encrypted {Count} legacy plaintext API key(s) at startup.", backfilled);
-  }
-}
-
 await app.RunAsync();

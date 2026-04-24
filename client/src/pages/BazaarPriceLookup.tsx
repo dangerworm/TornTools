@@ -31,7 +31,7 @@ import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
 import { useItems } from '../hooks/useItems'
 import { useUser } from '../hooks/useUser'
 import { proxyTornUserInventory } from '../lib/dotnetapi'
-import type { TornInventoryItem } from '../lib/tornapi'
+import type { TornInventoryItem } from '../types/torn'
 
 interface CategoryState {
   loading: boolean

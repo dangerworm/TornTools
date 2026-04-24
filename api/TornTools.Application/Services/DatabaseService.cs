@@ -382,11 +382,6 @@ public class DatabaseService(
     return _userRepository.MarkKeyUnavailableAsync(userId, stoppingToken);
   }
 
-  public Task<int> BackfillEncryptedApiKeysAsync(CancellationToken stoppingToken)
-  {
-    return _userRepository.BackfillEncryptedApiKeysAsync(stoppingToken);
-  }
-
   public Task<UserDto> UpsertUserDetailsAsync(UserDetailsInputModel userDetails, CancellationToken stoppingToken)
   {
     var userDto = new UserDto

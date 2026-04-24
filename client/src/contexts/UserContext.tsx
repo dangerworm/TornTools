@@ -9,7 +9,7 @@ import {
   proxyTornUserBasic,
   type DotNetUserDetails,
 } from '../lib/dotnetapi'
-import type { TornUserProfile } from '../lib/tornapi'
+import type { TornUserProfile } from '../types/torn'
 
 // Legacy localStorage keys from the pre-Phase-2 design (when the plaintext
 // API key was cached in the browser). Cleaned on first load so returning

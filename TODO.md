@@ -176,34 +176,31 @@
 
 ## Security
 
-### Post-release tidy: drop plaintext API key column + dead code
+### API key encryption — shipped
 
-**Phase 1 (at-rest AES-GCM encryption) and Phase 2 (server-side Torn proxy, key purged from browser)
-have shipped.** Dual-write runs until every row has `api_key_encrypted` populated, then the
-plaintext column goes away:
+Phase 1 (at-rest AES-GCM encryption), Phase 2 (server-side Torn proxy, key purged from browser), and
+Phase 3 (drop plaintext column + dead code) are all in. Only the encrypted column exists; the
+browser never holds a Torn API key after sign-in.
 
-- **Flyway V1.20**: `ALTER TABLE users DROP COLUMN api_key`. Only do this after confirming every row
-  has `api_key_encrypted IS NOT NULL` in prod.
-- `UserEntity.ApiKey` — remove the property (and the EF mapping).
-  `UserRepository.UpsertUserDetailsAsync` stops dual-writing; `GetNextApiKeyAsync` /
-  `GetApiKeyForUserAsync` stop falling back to plaintext.
-- `UserDto.ApiKey` — cleaner split between read and write DTOs, or keep the write-only compromise.
-- `Program.cs` — remove the startup backfill block.
-- `client/src/lib/tornapi.ts` — delete the file. Types it exports (`KeyInfo`, `TornUserProfile`,
-  etc.) move to `client/src/types/torn.ts` or inline into `dotnetapi.ts`.
-- `UserContext.tsx` — remove the legacy-localStorage cleanup once enough time has passed that no
-  returning user could still have the stale cache.
+Remaining items that aren't blockers:
 
-### Configuration / Key management
+- `UserContext.tsx` has a legacy-localStorage cleanup that removes pre-Phase-2 keys on mount. Safe
+  to remove once enough real time has passed that no returning user still has the stale cache. No
+  rush.
+- `UserDto.ApiKey` is a write-only-by-convention field (write paths populate it; read paths leave it
+  empty). A cleaner split into read/write DTOs would remove the asymmetry.
 
-- Before first deploy of Phase 1+2: generate a base64-encoded 32-byte AES key
-  (`openssl rand -base64 32`) and add it as the GitHub secret `TORN_KEY_ENCRYPTION_KEY_V1`. Also set
-  it in `infra/terraform.dev.tfvars` (`torn_key_encryption_key_v1`) for local runs. The KV vault's
-  `purge_protection_enabled` is now `true` — once applied, this cannot be turned off.
-- Rotation: add `TORN_KEY_ENCRYPTION_KEY_V2` secret + `torn_key_encryption_key_v2` variable +
-  `azurerm_key_vault_secret "torn_key_encryption_v2"` resource + `TornKeyEncryption__Keys__2`
-  app_setting. Bump `torn_key_encryption_current_version` to `"2"`. Old rows stay decryptable via v1
-  until a re-encryption pass promotes them.
+### Key management (reference)
+
+- Source of truth: GitHub secret `TORN_KEY_ENCRYPTION_KEY_V1`. Also mirrored in
+  `infra/terraform.dev.tfvars` as `torn_key_encryption_key_v1` for local runs, and in the KV vault
+  as `torn-key-encryption-v1` (backup / rotation tooling).
+- The KV vault has `purge_protection_enabled = true` — this cannot be turned off.
+- Rotation workflow: add `TORN_KEY_ENCRYPTION_KEY_V2` GitHub secret + `torn_key_encryption_key_v2`
+  variable + `azurerm_key_vault_secret "torn_key_encryption_v2"` resource +
+  `TornKeyEncryption__Keys__2` app_setting. Bump `torn_key_encryption_current_version` to `"2"`. Old
+  rows stay decryptable via v1 until a re-encryption pass promotes them. Retire v1 once every row is
+  v2-encrypted.
 
 ---
 

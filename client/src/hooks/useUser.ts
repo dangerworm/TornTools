@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
 import type { DotNetUserDetails } from '../lib/dotnetapi'
-import type { TornUserProfile } from '../lib/tornapi'
+import type { TornUserProfile } from '../types/torn'
 
 export interface UserContextModel {
   tornUserProfile: TornUserProfile | null
