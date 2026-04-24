@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TornTools.Core.DataTransferObjects;
@@ -115,9 +116,26 @@ public class UserRepository(
       // Only re-encrypt and reset usage state when the plaintext key
       // actually changed. Signing in again with the same key is a no-op
       // on ApiKeyLastUsed / KeyAvailable.
-      var existingPlaintext = userEntity.ApiKeyEncrypted is not null
-          ? _apiKeyProtector.Unprotect(userEntity.ApiKeyEncrypted)
-          : null;
+      //
+      // Unprotect can throw if the stored ciphertext is corrupted or was
+      // encrypted under a retired key version. Treat that as a key change
+      // so the user can sign in with a fresh key and overwrite the
+      // unreadable row — otherwise a decrypt failure locks them out of
+      // their own account via sign-in.
+      string? existingPlaintext = null;
+      if (userEntity.ApiKeyEncrypted is not null)
+      {
+        try
+        {
+          existingPlaintext = _apiKeyProtector.Unprotect(userEntity.ApiKeyEncrypted);
+        }
+        catch (CryptographicException ex)
+        {
+          Logger.LogWarning(ex,
+              "Stored API key ciphertext for user {UserId} is unreadable; treating sign-in as a key change and re-encrypting.",
+              userEntity.Id);
+        }
+      }
 
       if (!string.Equals(existingPlaintext, userDto.ApiKey, StringComparison.Ordinal))
       {
