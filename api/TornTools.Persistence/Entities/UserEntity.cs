@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using TornTools.Core.DataTransferObjects;
 
@@ -11,13 +11,12 @@ public class UserEntity
   [Column("id")]
   public long? Id { get; set; }
 
-  [Required]
-  [Column("api_key")]
-  public required string ApiKey { get; set; }
-
-  // Populated by UpsertUserDetailsAsync via IApiKeyProtector. Reads prefer
-  // this column; the plaintext ApiKey stays as a fallback until the post-
-  // release migration drops it.
+  // AES-GCM ciphertext of the Torn API key. Layout is
+  // [1 byte version][12 byte nonce][16 byte tag][ciphertext]; resolved by
+  // IApiKeyProtector. Required in practice (every row has one after the
+  // Phase 1 backfill and the V1.20 drop of the legacy plaintext column)
+  // but kept nullable so a partially-provisioned row during user creation
+  // doesn't trip a NOT NULL constraint before the upsert populates it.
   [Column("api_key_encrypted")]
   public byte[]? ApiKeyEncrypted { get; set; }
 
@@ -49,9 +48,8 @@ public class UserEntity
     return new UserDto
     {
       Id = Id,
-      // Plaintext deliberately NOT copied — read-side DTOs must not carry
-      // the Torn API key past the persistence boundary. Write paths that
-      // genuinely need to send a key pass a fresh UserDto with ApiKey set.
+      // Read-side DTOs don't carry the Torn API key. Write paths build a
+      // UserDto from scratch with ApiKey populated.
       ApiKey = string.Empty,
       ApiKeyLastUsed = ApiKeyLastUsed,
       KeyAvailable = KeyAvailable,
