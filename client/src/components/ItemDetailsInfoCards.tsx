@@ -1,5 +1,5 @@
 import { Box, Grid, Typography } from '@mui/material'
-import { isItemProfitableInBazaar, isItemProfitableOnMarket, type Item } from '../types/items'
+import { isItemProfitableInBazaar, type Item } from '../types/items'
 
 import type { MarketAdvice } from '../hooks/useItemMarketAdvice'
 import { SALE_TAX } from '../lib/profitCalculations'
@@ -33,9 +33,9 @@ const formatRelative = (iso: string): string => {
 //   • City Buy / City Sell — static catalogue data; no chip.
 //   • Bazaar Price (latest Weav3r listing) — green when listing.price >
 //     valueBuyPrice. The bazaar has no outlet tax.
-//   • Market Price (Torn's daily average) — green when
-//     valueMarketPrice * (1 - SALE_TAX.market) > valueBuyPrice, i.e.
-//     you net a profit after the 5% market fee.
+//   • Market Price (latest scan, or daily average as fallback) — green
+//     when price * (1 - SALE_TAX.market) > valueBuyPrice, i.e. you net
+//     a profit after the 5% market fee.
 
 const ItemDetailsInfoCards = ({
   advice,
@@ -45,13 +45,33 @@ const ItemDetailsInfoCards = ({
 }: ItemDetailsInfoCardsProps) => {
   const bazaarDataAvailable = firstBazaarListing !== undefined
 
-  const latestMarketSubtitle =
-    advice && advice.currentPrice != null ? (
-      <>
-        Latest scan: {getFormattedText('$', advice.currentPrice, '')}
-        {advice.currentPriceTimestamp ? ` · ${formatRelative(advice.currentPriceTimestamp)}` : ''}
-      </>
-    ) : null
+  // Prefer the latest scanned market price; fall back to Torn's daily
+  // average if no scan exists yet (fresh items, gaps in the history).
+  const latestMarketPrice = advice?.currentPrice ?? null
+  const marketPriceToShow = latestMarketPrice ?? item?.valueMarketPrice ?? null
+  const usingLatestScan = latestMarketPrice != null
+
+  const marketCardHeading = usingLatestScan ? 'Market Price (latest)' : 'Market Price (avg)'
+
+  const marketSubtitle: React.ReactNode = (() => {
+    if (usingLatestScan) {
+      const freshness = advice?.currentPriceTimestamp
+        ? formatRelative(advice.currentPriceTimestamp)
+        : null
+      const avg =
+        item?.valueMarketPrice != null
+          ? `daily avg ${getFormattedText('$', item.valueMarketPrice, '')}`
+          : null
+      if (freshness && avg) return `${freshness} · ${avg}`
+      return freshness ?? avg
+    }
+    return null
+  })()
+
+  const marketIsProfitable = (() => {
+    if (!marketPriceToShow || !item?.valueBuyPrice || !item.isTradable) return false
+    return marketPriceToShow * (1 - SALE_TAX.market) > item.valueBuyPrice
+  })()
 
   const bazaarSubtitle =
     firstBazaarListing && firstBazaarListing.last_checked_relative
@@ -83,12 +103,12 @@ const ItemDetailsInfoCards = ({
 
         <Grid size={{ xs: 6, md: bazaarDataAvailable ? 3 : 4 }}>
           <InfoCard
-            heading="Market Price (avg)"
+            heading={marketCardHeading}
             isCurrency={true}
-            isProfitable={isItemProfitableOnMarket(item, 'market')}
+            isProfitable={marketIsProfitable}
             taxType={SALE_TAX['market']}
-            subtitle={latestMarketSubtitle}
-            value={item?.valueMarketPrice}
+            subtitle={marketSubtitle}
+            value={marketPriceToShow}
           />
         </Grid>
       </Grid>
