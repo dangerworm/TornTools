@@ -32,6 +32,7 @@ public class ItemVolatilityController(
       "changes_1w" or "changes-1w" => VolatilitySortKey.Changes1w,
       "price_change_1d" or "price-change-1d" => VolatilitySortKey.PriceChange1d,
       "price_change_1w" or "price-change-1w" => VolatilitySortKey.PriceChange1w,
+      "move_z_score_1d" or "move-z-score-1d" => VolatilitySortKey.MoveZScore1d,
       _ => VolatilitySortKey.Changes1d,
     };
   }

@@ -1,32 +1,32 @@
 Hi Claude. Read context/session-handoff.md and context/note-to-next-instance.md before doing anything.
 
-This session shipped two rounds on top of development:
+**Session of 2026-04-24 shipped a lot.** On development (and, after Drew releases this batch, main):
 
-1. **TODO quick-wins sweep** (commit e5df589) — Torn market link on item details, dead dark-mode
-branches removed, SectionHeader adoption, sortable FavouriteMarkets + Weav3r tables, useRequiresLogin
-hook, site description, polished 404.
+- TODO quick-wins sweep (Torn market link, sortable tables, login refactor, polish).
+- API key security phases 1+2+3 — at-rest AES-GCM, browser proxy, plaintext column dropped, dead code removed, Codex P1s addressed.
+- Top Movers redesign first slice — median-window latest/baseline + per-item dispersion + z-scored ranking with min-move/min-z filters. Flyway V1.21 adds six new columns to `item_volatility_stats`. Widget switched to `move_z_score_1d`. Validated against a 550k-row data export before ship.
 
-2. **API key security — Phase 1 + 2** (uncommitted at time of handoff) — at-rest AES-GCM encryption
-via a KV-held base64 key (dual-write with plaintext column during the transition), and a server-side
-/api/torn proxy so the browser never holds a Torn API key after sign-in. Full details in the
-"API key security — Phase 1 + Phase 2" section of session-handoff.md.
+Uncommitted at time of handoff: the Top Movers redesign files plus the TODO/handoff updates. Everything builds clean (dotnet + tsc + npm run build). Drew will commit + deploy.
 
-**Before Drew can deploy**, he MUST set the GitHub secret `TORN_KEY_ENCRYPTION_KEY_V1` (generate with
-`openssl rand -base64 32`) and add it to `infra/terraform.dev.tfvars` for local runs. Without this,
-the API will crash on startup with "TornKeyEncryption:Keys is empty". This is called out in the
-handoff's "Deploy order — CRITICAL" subsection.
+**Priorities in order for the next session:**
 
-**Next session priorities in order**:
+1. If Drew hasn't already done so, verify the Top Movers Phase 1 deploy: wait for (or trigger via /hangfire) a RebuildVolatilityStats run, then eyeball the widget. Expected: Ski Mask gone, Scalpel/Edomondo noise, low-range items (Slingshot/Plastic Sword/Fine Chisel) mid-rank, real movers (Rope/Chain Whip/Cassock/Lubricant etc. in the 2026-04-24 snapshot) on top.
 
-1. **Post-release tidy** ("second shot" Drew planned): drop the plaintext `api_key` column via
-Flyway V1.20, delete `client/src/lib/tornapi.ts`, remove the dual-write from UserRepository, strip
-the startup backfill. Only do this after confirming every prod user row has `api_key_encrypted
-IS NOT NULL` (SQL check first). Full list in TODO.md's Security section.
+2. Top Movers remaining slices from the review (see TODO.md):
+   - (3) Volatility-bucket separation for naturally-noisy items.
+   - (4) "Most active" ceiling chip + secondary ranking key.
+   - (5) Confidence chips using stored sample counts.
+   - Drop legacy columns (current_price, price_change_1d, price_change_1w) once nothing reads them.
 
-2. **Top Movers redesign** — still the urgent item. The widget currently misleads users; diagnosis
-and six-item priority list in the "Top Movers review (2026-04-24)" section of session-handoff.md.
-Recommended first slice: (1) median-window latest/baseline with min sample count + (2) stored
-per-item dispersion measure used to z-score the ranked move. Touches Flyway + the rebuild query +
-the API + the widget; plan before editing.
+3. Parked (need explicit sign-off):
+   - Read-only prod DB access for offline analysis.
+   - Cross-item spike correlation / event-calendar tool.
 
-Don't start (2) without a plan. (1) is mechanical once the prod DB confirms readiness.
+**Data exports**: `data-exports/` (gitignored) holds the CSV dumps Drew provided during the Top Movers work. Five files from 2026-04-24 — summaries, items, current ivs, listings, foreign stocks. Useful reference if iterating on the ranking thresholds or the (3)-(5) slices.
+
+**Key ranking thresholds** (tune these if needed, knobs in ItemVolatilityStatsRepository.GetTopAsync):
+- 10% minimum absolute move
+- 1.0σ minimum absolute z-score
+- 3 recent-window buckets minimum
+- 10 baseline-window buckets minimum
+- 14 days minimum for dispersion CV
