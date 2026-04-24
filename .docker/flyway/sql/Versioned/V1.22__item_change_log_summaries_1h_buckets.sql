@@ -1,0 +1,21 @@
+-- Resize item_change_log_summaries buckets from 6h to 1h. Required for the
+-- "Unusual activity" pivot's multi-horizon z-scores: at 6h buckets the 1h
+-- and 6h windows would both collapse to "last bucket" with no intraday
+-- resolution.
+--
+-- Going to 1h directly (rather than 2h) so we don't have to re-bucket
+-- again later if a finer horizon turns out to be useful. Storage cost is
+-- ~1.2GB at 1-year retention on top of an empty start, well within the
+-- B1ms 32GB budget.
+--
+-- The bucket-size constant lives in DatabaseService.cs (SummaryBucketSeconds).
+-- This migration must ship together with that change — a 6h-constant app
+-- writing into a freshly-truncated 1h-intent table would happily produce
+-- 6h-aligned rows again.
+--
+-- After deploy, the existing SummariseChangeLogsAsync job backfills from
+-- the earliest item_change_logs row (currently 2025-11-19). First run is
+-- one-time long; subsequent runs are incremental. Trigger manually via
+-- /hangfire to skip the 30-min wait.
+
+TRUNCATE TABLE public.item_change_log_summaries;
