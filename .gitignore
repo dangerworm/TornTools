@@ -164,3 +164,6 @@ infra/.terraform.lock.hcl
 .claude/
 .gitnexus/
 torn-war-checker.html
+
+# Data Exports
+data-exports/

@@ -33,8 +33,16 @@ const percentColor = (fraction: number | null): string => {
 }
 
 // Home-page widget: three columns of top movers from the pre-computed
-// volatility stats table. "Active" = most recent changes_1d. "Risers"
-// and "Fallers" sort by price_change_1d.
+// volatility stats table.
+//   Active  = raw change count (changes_1d) — still the cheapest "this
+//             item is trading right now" signal; the polling-ceiling
+//             saturation is tracked as a follow-up in the Top Movers
+//             review.
+//   Risers  = highest positive z-scored move (window median vs 30d
+//             baseline, scaled by per-item dispersion). Filtered to
+//             |move| >= 10% AND |z| >= 1.0 in the API layer so low-
+//             dispersion tiny moves don't flood the list.
+//   Fallers = same, ascending.
 const TopMovers = ({ limit = 5 }: TopMoversProps) => {
   const { itemsById } = useItems()
 
@@ -45,12 +53,12 @@ const TopMovers = ({ limit = 5 }: TopMoversProps) => {
   })
   const risers = useItemVolatility({
     source: 'Torn',
-    sort: 'price_change_1d',
+    sort: 'move_z_score_1d',
     limit,
   })
   const fallers = useItemVolatility({
     source: 'Torn',
-    sort: 'price_change_1d',
+    sort: 'move_z_score_1d',
     limit,
     ascending: true,
   })
@@ -84,6 +92,12 @@ const TopMovers = ({ limit = 5 }: TopMoversProps) => {
                 {section.data.map((row) => {
                   const item = itemsById[row.itemId]
                   const name = item?.name ?? `Item ${row.itemId}`
+                  // Prefer the new window-median fields; fall back to the
+                  // legacy single-bucket fields for items ranked before
+                  // the redesign shipped (e.g. the Most active card,
+                  // which doesn't require a completed window baseline).
+                  const movePct = row.movePctWindow ?? row.priceChange1d
+                  const displayPrice = row.windowPrice ?? row.currentPrice
                   return (
                     <Box
                       key={row.itemId}
@@ -119,19 +133,19 @@ const TopMovers = ({ limit = 5 }: TopMoversProps) => {
                         <Typography
                           variant="body2"
                           sx={{
-                            color: percentColor(row.priceChange1d),
+                            color: percentColor(movePct),
                             fontWeight: 500,
                             whiteSpace: 'nowrap',
                           }}
                         >
-                          {formatPercent(row.priceChange1d)}
-                          {row.currentPrice != null && (
+                          {formatPercent(movePct)}
+                          {displayPrice != null && (
                             <Typography
                               component="span"
                               variant="caption"
                               sx={{ color: 'text.secondary', ml: 0.75 }}
                             >
-                              {getFormattedText('$', row.currentPrice, '')}
+                              {getFormattedText('$', displayPrice, '')}
                             </Typography>
                           )}
                         </Typography>

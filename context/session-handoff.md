@@ -101,12 +101,12 @@ something to render. Manual trigger available at `/hangfire` if Drew doesn't wan
 
 ## Current state
 
-| Branch                          | Where it sits                                                                                                                                  |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `main`                          | All work from this session shipped: UI overhaul, feat/todo-data-signals, TODO quick-wins, API key security Phase 1+2+3. Up to date with origin. |
-| `development`                   | Same as main. Tip is `90f0234` (Codex P1 fix on phase 3 cleanup).                                                                              |
-| `feat/todo-data-signals`        | Merged; safe to delete locally.                                                                                                                |
-| `chore/drop-plaintext-api-key`  | Merged; safe to delete locally.                                                                                                                |
+| Branch                         | Where it sits                                                                                                                                   |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `main`                         | All work from this session shipped: UI overhaul, feat/todo-data-signals, TODO quick-wins, API key security Phase 1+2+3. Up to date with origin. |
+| `development`                  | Same as main. Tip is `90f0234` (Codex P1 fix on phase 3 cleanup).                                                                               |
+| `feat/todo-data-signals`       | Merged; safe to delete locally.                                                                                                                 |
+| `chore/drop-plaintext-api-key` | Merged; safe to delete locally.                                                                                                                 |
 
 Local uncommitted state: none (this handoff update is the only thing in flight).
 
@@ -120,11 +120,13 @@ Build state:
 
 ## Blockers / outstanding
 
-- **Top Movers widget shows unreliable data** — see the "Top Movers review" section below for the
-  diagnosis and proposed redesign. The job runs and the widget populates, but many of the listed
-  movers are outliers or reversions rather than durable moves. This is the next priority work.
-- Project-local `.venv` pattern for `curl_cffi` — workaround (system `pip install`) is in place
-  for Drew's machine; proper fix deferred.
+- **Top Movers Phase 1 shipped but not yet verified in prod** — once the next Hangfire rebuild runs,
+  spot-check the Top Risers/Fallers cards for honesty. The infamous items should no longer appear:
+  Ski Mask filtered by min-sample (2 buckets in 24h < 3), Scalpel z≈0, Edomondo z≈0.4, Slingshot /
+  Plastic Sword / Fine Chisel mid-rank, Pillow absorbed by its own 52% dispersion. Rope and Chain
+  Whip may still appear as movers — that's correct per the data at hand.
+- Project-local `.venv` pattern for `curl_cffi` — workaround (system `pip install`) is in place for
+  Drew's machine; proper fix deferred.
 - Some UI items deliberately deferred:
   - Vendor icons / item-type glyphs (section 10 of the UI plan).
   - Resale page drawer conversion.
@@ -133,20 +135,19 @@ Build state:
 
 ## Next action
 
-- **Top Movers redesign** — see the section below. Likely first-session scope: **(1) + (2)** from
-  the proposal together, i.e. median-window latest/baseline with a minimum sample count, plus a
-  stored per-item volatility measure used to z-score the ranked move. That alone fixes the Ski
-  Mask / Scalpel / Edomondo / Rope artifacts and lays the table structure for the rest. Touches
-  Flyway schema + the rebuild query + the API + the widget — plan before editing.
+- Smoke the Top Movers redesign post-deploy. Data exports + analysis in `data-exports/` (gitignored)
+  validated the expected rankings before ship; still worth eyeballing the live widget.
+- **Top Movers remaining slices** (noted in TODO.md): (3) volatility-bucket separation for
+  naturally-noisy items, (4) "Most active" ceiling chip, (5) confidence chips using the stored
+  `sample_count_recent` / `sample_count_baseline` columns. All non-urgent.
 - Parked for later (Drew has context; don't action without asking):
   - Read-only prod DB access for offline data analysis. Options discussed: read-only Postgres role
     on a replica, or nightly logical dump into DuckDB. Hosting shape drives the choice.
-  - Cross-item spike correlation analysis (is-this-a-Torn-event-day?). Separate analytics tool,
-    not a page on the site.
-- Follow-ups already noted in `TODO.md`:
-  - "Item is heating up" UI badge (data now available — but will become more honest after the
-    redesign above, so probably worth waiting).
-  - Dedicated `/volatility` page with sliders (endpoint now available; same caveat).
+  - Cross-item spike correlation analysis (is-this-a-Torn-event-day?). Separate analytics tool, not
+    a page on the site.
+- Follow-ups noted in `TODO.md`:
+  - "Item is heating up" UI badge (data available; now honest via z-score).
+  - Dedicated `/volatility` page with sliders (endpoint now returns ranked + filtered data).
 
 ---
 
@@ -155,6 +156,15 @@ Build state:
 Drew reviewed the widget after it had run a few times and flagged that the data isn't reliable
 enough to be honest to users. I read the job and confirmed every artifact is explainable from the
 current rebuild logic.
+
+**Status: Phase 1 of the redesign (steps 1+2 below) shipped the same day.** New columns in
+`item_volatility_stats`: `window_price`, `baseline_price`, `sample_count_recent`,
+`sample_count_baseline`, `price_dispersion`, `move_pct_window`. Ranking switched to z-scored move,
+filtered by `|move_pct_window| >= 0.10` AND `|z-score| >= 1.0`. Validated against a 550k-row summary
+export before shipping: Ski Mask filtered out (2 buckets), Scalpel z≈0, Edomondo z≈0.4, low-range
+items absorbed by their own dispersion. Rope and Chain Whip still flagged as movers where
+appropriate. Remaining slices (3)-(5) of the priority list below are tracked in TODO.md. The
+narrative below preserves the original diagnosis; skip it if you just need the state of the work.
 
 ### What the job actually does today
 
@@ -229,15 +239,15 @@ records the sample counts used for latest/baseline so (5) can be added cheaply l
 
 ## API key security — Phase 1 + 2 + 3 (2026-04-24, all shipped)
 
-Shipped end-to-end in this session. Plaintext Torn API keys no longer appear at rest in the DB,
-no longer appear in the browser after sign-in, and the transitional plaintext column + scaffolding
-are gone. Plan document lived in this chat; no separate plan file was written.
+Shipped end-to-end in this session. Plaintext Torn API keys no longer appear at rest in the DB, no
+longer appear in the browser after sign-in, and the transitional plaintext column + scaffolding are
+gone. Plan document lived in this chat; no separate plan file was written.
 
 **Deploy order that actually happened**: Phase 1+2 committed as `b19421c` → Drew deployed → prod
 verified (every user row had `api_key_encrypted` populated via the startup backfill) →
 `chore/drop-plaintext-api-key` branch with Phase 3 → Codex PR review flagged two P1s (unreadable-
-ciphertext throwing on sign-in; V1.20 missing a runtime guard) → both fixed in `90f0234` →
-Drew deployed again → prod clean.
+ciphertext throwing on sign-in; V1.20 missing a runtime guard) → both fixed in `90f0234` → Drew
+deployed again → prod clean.
 
 ### What landed
 
@@ -317,37 +327,35 @@ Drew deployed again → prod clean.
 
 **Phase 3 follow-ups (shipped as `11cb3fd` + Codex-P1 fix `90f0234`)**
 
-- **Flyway V1.20** `ALTER TABLE users DROP COLUMN api_key`. Self-gating: a plpgsql `DO` block at
-  the top counts rows with `api_key_encrypted IS NULL AND api_key IS NOT NULL AND api_key <> ''`
-  and `RAISE EXCEPTION` if non-zero. CI can't accidentally drop the column on a half-backfilled
-  table.
+- **Flyway V1.20** `ALTER TABLE users DROP COLUMN api_key`. Self-gating: a plpgsql `DO` block at the
+  top counts rows with `api_key_encrypted IS NULL AND api_key IS NOT NULL AND api_key <> ''` and
+  `RAISE EXCEPTION` if non-zero. CI can't accidentally drop the column on a half-backfilled table.
 - `UserEntity.ApiKey` property + EF mapping removed.
-- `UserRepository.UpsertUserDetailsAsync` change-detection now decrypts the existing ciphertext
-  to compare, but wraps `Unprotect` in a try/catch on `CryptographicException` — a decrypt
-  failure logs a warning and falls through to the key-change branch, letting the user re-sign
-  in with a fresh key to overwrite the unreadable row. (This was the first Codex P1; the naive
-  version I shipped in `11cb3fd` would have thrown a 500 on `/auth/login` for any row with
-  corrupted/retired ciphertext.)
+- `UserRepository.UpsertUserDetailsAsync` change-detection now decrypts the existing ciphertext to
+  compare, but wraps `Unprotect` in a try/catch on `CryptographicException` — a decrypt failure logs
+  a warning and falls through to the key-change branch, letting the user re-sign in with a fresh key
+  to overwrite the unreadable row. (This was the first Codex P1; the naive version I shipped in
+  `11cb3fd` would have thrown a 500 on `/auth/login` for any row with corrupted/retired ciphertext.)
 - `UserRepository.BackfillEncryptedApiKeysAsync` + its `IDatabaseService` / `DatabaseService`
   shims + the `Program.cs` startup call — all removed. Nothing left to backfill.
-- `client/src/lib/tornapi.ts` deleted; types moved to `client/src/types/torn.ts`. Three import
-  sites updated.
+- `client/src/lib/tornapi.ts` deleted; types moved to `client/src/types/torn.ts`. Three import sites
+  updated.
 
 **Left for a quieter future session** (deferred, not blockers):
 
-- `UserContext.tsx` has a legacy-localStorage cleanup that removes pre-Phase-2 keys on mount.
-  Safe to remove once real time has passed and no returning user could still have the stale
-  cache. No urgency.
-- `UserDto.ApiKey` is a write-only-by-convention field (write paths populate it; read paths
-  leave it empty). A proper read/write DTO split would remove the asymmetry.
+- `UserContext.tsx` has a legacy-localStorage cleanup that removes pre-Phase-2 keys on mount. Safe
+  to remove once real time has passed and no returning user could still have the stale cache. No
+  urgency.
+- `UserDto.ApiKey` is a write-only-by-convention field (write paths populate it; read paths leave it
+  empty). A proper read/write DTO split would remove the asymmetry.
 
 ### Build state at end of session
 
 - `dotnet build` clean (6 projects, 0 errors, 0 warnings).
 - `npx tsc --noEmit` clean.
 - `npm run build` clean (7.11s, pre-existing 500kB chunk warning only).
-- Prod smoke: Drew confirmed sign-in still works, `api_key_encrypted` populated for every row,
-  Phase 3 drop + cleanup deployed with no issues.
+- Prod smoke: Drew confirmed sign-in still works, `api_key_encrypted` populated for every row, Phase
+  3 drop + cleanup deployed with no issues.
 
 ### Notes for the next session
 

@@ -62,14 +62,21 @@
   table + slider filters rather than just the Top Movers widget on Home. Worth waiting on the Top
   Movers redesign below so the ranking is honest before we give it a whole page.
   ([Trello](https://trello.com/c/qELgIPtT))
-- **Top Movers redesign** _(urgent — widget currently misleads users)_ - the volatility job's
-  single-bucket latest/baseline means single-listing outliers (e.g. Ski Mask at $800M) and
-  reversions from intraday spikes (Scalpel, Edomondo Localé, Rope) show as "movers", and the "Most
-  active" count saturates at the polling ceiling so ranking past ~353 chg is arbitrary. Full
-  diagnosis, artifacts, and six-item priority list in `context/session-handoff.md` § "Top Movers
-  review (2026-04-24)". Recommended first slice: (1) median-window latest/baseline with min-sample
-  filtering + (2) stored per-item dispersion measure used to z-score the ranked move. That alone
-  fixes ~80% of the visible weirdness and sets up the schema for (3)–(5) without another migration.
+- **Top Movers redesign — remaining slices** - Phase 1 shipped (median-window latest/baseline +
+  per-item dispersion + z-scored ranking; Flyway V1.21). Still open from the six-item review in
+  `context/session-handoff.md`:
+  - (3) Volatility-bucket separation: classify items stable / medium / high and give high-
+    volatility items their own card so they don't crowd Top Risers/Fallers with noise. The
+    `price_dispersion` column is already populated; this is a UI + ranking-filter change.
+  - (4) "Most active" ceiling: raw `changes_1d` saturates at the polling ceiling (~353/24h). Show a
+    "saturated — under-sampled" chip when count hits the ceiling; rank saturated items by a
+    secondary key (circulation, dispersion).
+  - (5) Confidence chips: sample counts are stored (`sample_count_recent` /
+    `sample_count_baseline`). Expose as tooltips or thin chips so "n=3" rows read differently from
+    "n=24".
+  - **Drop legacy columns** (`current_price`, `price_change_1d`, `price_change_1w`) once nothing
+    consumes them any more. Currently read by the widget as fallbacks and by some item-details
+    paths; audit before dropping.
 - **Cross-item spike correlation / Torn event-calendar analysis** - Scalpel and Chain Whip
   occasionally spike for reasons that aren't obvious. Hypothesis: some spikes correlate with Torn
   in-game events (e.g. Cannabis on 4/20). Would want cross-item price-movement correlation over time

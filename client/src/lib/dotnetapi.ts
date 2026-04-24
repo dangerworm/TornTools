@@ -93,7 +93,12 @@ export async function fetchItemVelocityHistory(
   return res.json()
 }
 
-export type VolatilitySortKey = 'changes_1d' | 'changes_1w' | 'price_change_1d' | 'price_change_1w'
+export type VolatilitySortKey =
+  | 'changes_1d'
+  | 'changes_1w'
+  | 'price_change_1d'
+  | 'price_change_1w'
+  | 'move_z_score_1d'
 
 export interface ItemVolatilityStats {
   itemId: number
@@ -101,9 +106,19 @@ export interface ItemVolatilityStats {
   computedAt: string
   changes1d: number
   changes1w: number
+  // Legacy single-bucket values — still populated, no longer the basis
+  // for the Top Movers ranking.
   currentPrice: number | null
   priceChange1d: number | null
   priceChange1w: number | null
+  // New: window-median pricing + dispersion + z-scored move.
+  windowPrice: number | null
+  baselinePrice: number | null
+  sampleCountRecent: number
+  sampleCountBaseline: number
+  priceDispersion: number | null
+  movePctWindow: number | null
+  moveZScore1d: number | null
 }
 
 export async function fetchTopVolatileItems(params: {

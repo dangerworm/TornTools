@@ -1,33 +1,32 @@
 Hi Claude. Read context/session-handoff.md and context/note-to-next-instance.md before doing anything.
 
-Everything from the previous session is shipped to main: the TODO quick-wins sweep (e5df589),
-API key security phase 1+2 (b19421c), phase 3 cleanup (11cb3fd), and the Codex P1 fix on phase 3
-(90f0234). Development and main are in sync.
+**Session of 2026-04-24 shipped a lot.** On development (and, after Drew releases this batch, main):
 
-**Next priority: Top Movers redesign.**
+- TODO quick-wins sweep (Torn market link, sortable tables, login refactor, polish).
+- API key security phases 1+2+3 — at-rest AES-GCM, browser proxy, plaintext column dropped, dead code removed, Codex P1s addressed.
+- Top Movers redesign first slice — median-window latest/baseline + per-item dispersion + z-scored ranking with min-move/min-z filters. Flyway V1.21 adds six new columns to `item_volatility_stats`. Widget switched to `move_z_score_1d`. Validated against a 550k-row data export before ship.
 
-The widget on the home page currently misleads users — single-listing outliers (e.g. Ski Mask at
-$800M) and reversions from intraday spikes (Scalpel, Edomondo Localé, Rope) show as "movers", and
-"Most active" counts saturate at the polling ceiling so anything above ~353 chg/24h is
-indistinguishable. Full diagnosis, artifacts, and six-item priority list in the "Top Movers review
-(2026-04-24)" section of session-handoff.md.
+Uncommitted at time of handoff: the Top Movers redesign files plus the TODO/handoff updates. Everything builds clean (dotnet + tsc + npm run build). Drew will commit + deploy.
 
-Recommended first slice: (1) median-window latest/baseline with a minimum sample count +
-(2) stored per-item dispersion measure (MAD of log returns or CV of daily medians, over ~30d)
-used to z-score the ranked move. That alone fixes ~80% of the visible weirdness and lays the
-schema for (3)–(5) without another migration.
+**Priorities in order for the next session:**
 
-Do not start coding without a plan. The change touches the Flyway schema, the `ItemVolatilityStatsRepository`
-rebuild query, the /api/items/volatility endpoint, and the Home page TopMovers widget. Use /plan.
+1. If Drew hasn't already done so, verify the Top Movers Phase 1 deploy: wait for (or trigger via /hangfire) a RebuildVolatilityStats run, then eyeball the widget. Expected: Ski Mask gone, Scalpel/Edomondo noise, low-range items (Slingshot/Plastic Sword/Fine Chisel) mid-rank, real movers (Rope/Chain Whip/Cassock/Lubricant etc. in the 2026-04-24 snapshot) on top.
 
-Parked items (don't action without asking):
-- Read-only prod DB access for offline data science. Options discussed: read-only Postgres role
-  on a replica, or nightly DuckDB dump. Hosting shape drives the choice.
-- Cross-item spike / event-calendar correlation tool. Separate analytics tool, not a page on the site.
+2. Top Movers remaining slices from the review (see TODO.md):
+   - (3) Volatility-bucket separation for naturally-noisy items.
+   - (4) "Most active" ceiling chip + secondary ranking key.
+   - (5) Confidence chips using stored sample counts.
+   - Drop legacy columns (current_price, price_change_1d, price_change_1w) once nothing reads them.
 
-Smaller deferred items sitting in TODO.md:
-- Project-local .venv for curl_cffi (Python dep hygiene).
-- Resale page drawer conversion.
-- Vendor icons / item-type glyphs (UI plan §10).
-- EmptyState migration in FavouriteMarkets.
-- PriceWithTax in InfoCard and ResaleItemsTableRow.
+3. Parked (need explicit sign-off):
+   - Read-only prod DB access for offline analysis.
+   - Cross-item spike correlation / event-calendar tool.
+
+**Data exports**: `data-exports/` (gitignored) holds the CSV dumps Drew provided during the Top Movers work. Five files from 2026-04-24 — summaries, items, current ivs, listings, foreign stocks. Useful reference if iterating on the ranking thresholds or the (3)-(5) slices.
+
+**Key ranking thresholds** (tune these if needed, knobs in ItemVolatilityStatsRepository.GetTopAsync):
+- 10% minimum absolute move
+- 1.0σ minimum absolute z-score
+- 3 recent-window buckets minimum
+- 10 baseline-window buckets minimum
+- 14 days minimum for dispersion CV

@@ -9,6 +9,10 @@ public enum VolatilitySortKey
   Changes1w,
   PriceChange1d,
   PriceChange1w,
+  // Z-scored window move: (move_pct_window / price_dispersion), filtered
+  // by minimum absolute move (10%) and minimum |z-score| (1.0) in
+  // GetTopAsync. This is the ranking the Top Movers widget uses.
+  MoveZScore1d,
 }
 
 public interface IItemVolatilityStatsRepository
