@@ -53,7 +53,6 @@ public interface IDatabaseService
   Task<ApiKeyLeaseDto> GetNextApiKeyAsync(CancellationToken stoppingToken);
   Task<string?> GetApiKeyForUserAsync(long userId, CancellationToken stoppingToken);
   Task MarkKeyUnavailableAsync(long userId, CancellationToken stoppingToken);
-  Task<int> BackfillEncryptedApiKeysAsync(CancellationToken stoppingToken);
 
   Task<UserDto?> GetUserByIdAsync(long userId, CancellationToken stoppingToken);
   Task<List<UserDto>> GetUsersAsync(CancellationToken stoppingToken);

@@ -9,7 +9,7 @@ import type {
   TornInventoryPayload,
   TornUserBasicPayload,
   TornUserProfile,
-} from './tornapi'
+} from '../types/torn'
 
 export interface DotNetUserDetails {
   id: number
