@@ -81,8 +81,17 @@ const TopMovers = ({ limit = 5 }: TopMoversProps) => {
   if (noData) return null
 
   return (
-    <Grid container spacing={2} sx={{ mt: 2 }}>
-      {sections.map((section) => (
+    <>
+      <Typography gutterBottom sx={{ mt: 4 }} variant="h5">
+        Today's movers
+      </Typography>
+      <Typography variant="body2" color="text.secondary" gutterBottom>
+        Items whose prices moved most over the last 24 hours, alongside markets showing
+        statistically unusual activity. Refreshed every six hours from the scanned Torn market
+        history.
+      </Typography>
+      <Grid container spacing={2} sx={{ mt: 2 }}>
+        {sections.map((section) => (
         <Grid key={section.title} size={{ xs: 12, md: 4 }}>
           <Card variant="outlined" sx={{ height: '100%' }}>
             <CardContent>
@@ -108,8 +117,9 @@ const TopMovers = ({ limit = 5 }: TopMoversProps) => {
             </CardContent>
           </Card>
         </Grid>
-      ))}
-    </Grid>
+        ))}
+      </Grid>
+    </>
   )
 }
 
