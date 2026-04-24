@@ -22,7 +22,12 @@ public class DatabaseService(
     IUserRepository userRepository
 ) : IDatabaseService
 {
-  private const double SummaryBucketSeconds = 6 * 3600;
+  // 1-hour buckets give the multi-horizon z-score in the Unusual Activity
+  // pivot genuine intraday resolution. Resizing this constant must ship
+  // alongside V1.22 (which truncates the existing 6h-aligned rows) — a
+  // 6h-constant app writing into a freshly-truncated 1h-intent table
+  // would silently produce 6h-aligned rows again.
+  private const double SummaryBucketSeconds = 1 * 3600;
 
   private readonly ILogger<DatabaseService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
   private readonly IForeignStockItemRepository _foreignStockItemRepository = foreignStockItemRepository ?? throw new ArgumentNullException(nameof(foreignStockItemRepository));

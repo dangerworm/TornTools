@@ -19,7 +19,12 @@ public class ItemVolatilityStatsRepository(
   //
   // Thresholds (see Top Movers review 2026-04-24):
   //   recent window: last 24h, median of bucket averages, min 3 buckets
-  //   baseline:      NOW-30d to NOW-1d, min 10 buckets
+  //   baseline:      NOW-30d to NOW-3d with a 2-day buffer so a fresh
+  //                  spike doesn't immediately rotate into the baseline
+  //                  and trigger a "post-spike reversion" reading. 10%
+  //                  trim on each tail before taking the median so a
+  //                  single spike inside the baseline window doesn't
+  //                  drag the centre point. Min 10 kept buckets.
   //   dispersion:    CV of daily medians over 30d, min 14 days, mean > 0
   // Items failing a threshold get NULL in the new columns, which excludes
   // them from the z-score ranking automatically.
@@ -71,16 +76,32 @@ public class ItemVolatilityStatsRepository(
       WHERE bucket_start >= NOW() - INTERVAL '1 day'
       GROUP BY item_id, source
     ),
-    baseline_window AS (
+    -- Baseline trimming bounds: 10th and 90th percentiles per item. The
+    -- baseline_window CTE below keeps only values between these, so a
+    -- single multi-day spike can't drag the median.
+    baseline_bounds AS (
       SELECT
         item_id,
         source,
-        (percentile_cont(0.5) WITHIN GROUP (ORDER BY avg_price))::numeric AS median_price,
-        COUNT(*)::int4 AS n
+        (percentile_cont(0.10) WITHIN GROUP (ORDER BY avg_price))::numeric AS p10,
+        (percentile_cont(0.90) WITHIN GROUP (ORDER BY avg_price))::numeric AS p90
       FROM bucket_avgs
-      WHERE bucket_start <  NOW() - INTERVAL '1 day'
+      WHERE bucket_start <  NOW() - INTERVAL '3 days'
         AND bucket_start >= NOW() - INTERVAL '30 days'
       GROUP BY item_id, source
+    ),
+    baseline_window AS (
+      SELECT
+        b.item_id,
+        b.source,
+        (percentile_cont(0.5) WITHIN GROUP (ORDER BY b.avg_price))::numeric AS median_price,
+        COUNT(*)::int4 AS n
+      FROM bucket_avgs b
+      JOIN baseline_bounds bb USING (item_id, source)
+      WHERE b.bucket_start <  NOW() - INTERVAL '3 days'
+        AND b.bucket_start >= NOW() - INTERVAL '30 days'
+        AND b.avg_price BETWEEN bb.p10 AND bb.p90
+      GROUP BY b.item_id, b.source
     ),
     -- Daily medians feed the dispersion (CV) calculation
     daily_medians AS (
@@ -190,7 +211,7 @@ public class ItemVolatilityStatsRepository(
     // the values documented in the Top Movers review and exercised in
     // the analysis/ exploration scripts.
     const decimal MinAbsMovePct = 0.10m;   // item must have moved at least 10%
-    const decimal MinAbsZScore = 1.0m;     // ... and at least 1 dispersion-σ
+    const decimal MinAbsZScore = 1.5m;     // ... and at least 1.5 dispersion-σ
 
     query = (sortKey, ascending) switch
     {

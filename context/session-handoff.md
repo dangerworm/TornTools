@@ -6,6 +6,109 @@ rebased on top of the merged dev and pushed to origin, awaiting merge.
 
 ---
 
+## 2026-04-24 end-of-session summary (read first)
+
+**All of the following is on `development` (= `main` once Drew releases the final tweaks).**
+
+Shipped in chronological order:
+
+- `e5df589` — TODO quick-wins sweep (Torn market link, sortable tables, login refactor, polish).
+- `b19421c` — API key security Phase 1+2 (at-rest AES-GCM + browser proxy).
+- `11cb3fd` + `90f0234` — Phase 3 cleanup: drop plaintext `api_key` column, delete `tornapi.ts`;
+  Codex P1 fixes (unreadable-ciphertext graceful fall-through, V1.20 self-gating guard).
+- `fefe466` — handoff refresh.
+- `7d6844c` — **Top Movers Phase 1**: median-window latest/baseline, per-item dispersion (CV of
+  daily medians), z-scored ranking, new columns in V1.21, widget rewired.
+- `75d52e8` — Codex P2 fix: sign-gated the z-score sort so risers are strictly positive and fallers
+  strictly negative.
+- `629049e` — SQL fix: `percentile_cont` returns `double precision`, so cast to numeric before
+  `ROUND(x, n)` (the first deploy failed with
+  `function round(double precision, integer) does not exist`).
+
+Top Movers Phase 1 then went to prod. Drew eyeballed it against real item charts. Conclusions: 5/5
+risers looked genuinely unusual (Horse's Head, Raw Ivory, Insulin, Lubricant, Samurai Sword). 2/5
+fallers were borderline (Cocktail Ring, Psycho Clown Mask — both under the 10% move floor anyway).
+1/5 fallers (DSLR Camera) showed the post-spike reversion failure mode: the spike from 3-4 days ago
+was still inside the 30d baseline, pulling it up, so the current reverted price reads as a "fall".
+Same shape as the original Edomondo Localé problem.
+
+### Uncommitted tweaks from end-of-session
+
+One local commit pending, currently just files in the working tree — Drew to commit + deploy:
+
+1. **Trimmed-median baseline** — drop the top 10% and bottom 10% of bucket averages from the
+   baseline window before taking the median (via `percentile_cont(0.10/0.90)` as bounds). Makes a
+   single multi-day spike inside the baseline window less influential.
+2. **2-day baseline buffer** — baseline is now `NOW-30d` to `NOW-3d` (was `NOW-1d`). Fresh spikes
+   take 2 extra days to rotate into the baseline.
+3. **z-threshold raise** — `MinAbsZScore` bumped from `1.0` to `1.5`. Tightens the filter on
+   borderline "statistical noise" ranks.
+
+All three are in `ItemVolatilityStatsRepository.cs` only. Files to commit: that file + the TODO.md
+edits. Build clean.
+
+**Honest caveat**: validating against Drew's data export (see `data-exports/`), these tweaks don't
+fully fix the DSLR-Camera-style reversion — the spike lasted multiple days, so a 10% trim + 2-day
+buffer aren't aggressive enough. Going further (longer baseline, heavier trim) would start excluding
+items with less history. Accepting this limitation is the right move because the intended next piece
+of work (see below) reframes the whole card around "unusual activity" rather than "who rose/fell",
+which makes the reversion signal legitimate rather than misleading.
+
+### Next: the "Unusual activity" pivot
+
+Drew suggested (and I strongly agree) pivoting the Top Movers card from "who went up / down" to
+"markets departing from their normal trends". Fundamental reason: with ~29 active keys and 6-hour
+polling, we genuinely cannot reliably identify "the top N movers" — we can identify items whose
+recent behaviour is statistically unusual, because the departures are large relative to dispersion
+even with sparse data. Changing the framing to match what we can actually do.
+
+Risers/fallers cards stay — Drew's call ("markets are expected to be messy, people will use their
+own judgement"). The pivot is about broadening the set of signals shown, not replacing the existing
+structure.
+
+Sketch of the architecture (for next-session planning; not yet built):
+
+- **Two-step pass.** Hangfire (every 6h) writes a new `item_unusual_candidates` table: ~50 items per
+  source with rich per-item metrics (multi-horizon medians: 1h/6h/24h/7d; dispersion; sample counts;
+  30d range; trimmed baseline; maybe mode-to-nearest-1%-of-range for display). Home-page load hits a
+  cheap endpoint that joins the shortlist against the freshest bucket data and re-scores. Fresh
+  data + deep stats without either side being expensive.
+- **Multi-horizon z-score.** Each candidate gets a z-score at several horizons; "unusualness" = max
+  |z|. Short-horizon spikes and slow drifts both surface.
+- **"Why flagged" chip per row.** Lets the widget say "Price +X% vs month" or "Dispersion up 4σ" so
+  users see the reason.
+- **Mode-to-bucket** — Drew raised it. Useful as a **display** metric on item detail pages (shows
+  "where sellers actually cluster"), marginal as a ranking signal. Add to the candidates table when
+  we do the pivot, but don't rank on it.
+
+### Two open design questions from the end of this session
+
+1. **SQL-in-C# vs stored procedures.** My recommendation: keep in C#. One committer, app deploy is
+   cheap, versioned SQL with the app is easier to review. Only pivot to SPs if non-app consumers
+   need the logic or the SQL starts needing its own test harness. If individual queries (like the
+   volatility rebuild) grow much larger, worth moving to embedded `.sql` resources for syntax
+   highlighting / pgAdmin testing — but not SPs.
+2. **Shrink `item_change_log_summaries` bucket from 6h to 1h (or 3h)?** Strongly yes, 1h is the
+   right target for the pivot. The multi-horizon z-score needs genuine intraday resolution — at 6h
+   buckets the "1h" and "6h" windows both collapse to "last bucket". Cost: ~6× the row count (~10M
+   rows/year instead of ~1.6M, still fine), and the summariser job runs proportionally. Migration
+   gotcha: either rebuild from raw `item_change_logs` (requires that data going back 30d+), run both
+   bucket sizes in parallel during a cutover, or accept some coarser historical data. Worth planning
+   carefully. 3h buckets are a compromise that doesn't fully unlock intraday detection.
+
+### Deferred (still open, see TODO.md)
+
+- Top Movers review slices (3) volatility-bucket separation, (4) Most active saturation chip, (5)
+  confidence chips — the pivot above subsumes most of (3) and (5); (4) stands alone.
+- Drop legacy `current_price` / `price_change_1d` / `price_change_1w` columns after the pivot.
+- Data analysis tools / read-only prod DB access — still parked.
+
+---
+
+## Historical — original session narrative preserved below
+
+---
+
 ## Phase 1 — `ui/new-design` (merged)
 
 Branch has been merged to `main` and `development` on origin. Started from the plan at
