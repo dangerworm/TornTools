@@ -56,12 +56,16 @@ public class ItemVolatilityStatsRepository(
       WHERE bucket_start <= NOW() - INTERVAL '7 days'
       ORDER BY item_id, source, bucket_start DESC
     ),
-    -- Window/baseline medians for the new ranking
+    -- Window/baseline medians for the new ranking. percentile_cont returns
+    -- double precision in Postgres, so we cast to numeric up-front — that
+    -- lets the downstream ROUND(x, n) calls work (there is no ROUND(double,
+    -- int) overload) and preserves the precision we'd otherwise lose in
+    -- the CV calculation.
     recent_window AS (
       SELECT
         item_id,
         source,
-        percentile_cont(0.5) WITHIN GROUP (ORDER BY avg_price) AS median_price,
+        (percentile_cont(0.5) WITHIN GROUP (ORDER BY avg_price))::numeric AS median_price,
         COUNT(*)::int4 AS n
       FROM bucket_avgs
       WHERE bucket_start >= NOW() - INTERVAL '1 day'
@@ -71,7 +75,7 @@ public class ItemVolatilityStatsRepository(
       SELECT
         item_id,
         source,
-        percentile_cont(0.5) WITHIN GROUP (ORDER BY avg_price) AS median_price,
+        (percentile_cont(0.5) WITHIN GROUP (ORDER BY avg_price))::numeric AS median_price,
         COUNT(*)::int4 AS n
       FROM bucket_avgs
       WHERE bucket_start <  NOW() - INTERVAL '1 day'
@@ -84,7 +88,7 @@ public class ItemVolatilityStatsRepository(
         item_id,
         source,
         date_trunc('day', bucket_start) AS day,
-        percentile_cont(0.5) WITHIN GROUP (ORDER BY avg_price) AS daily_median
+        (percentile_cont(0.5) WITHIN GROUP (ORDER BY avg_price))::numeric AS daily_median
       FROM bucket_avgs
       GROUP BY item_id, source, date_trunc('day', bucket_start)
     ),
