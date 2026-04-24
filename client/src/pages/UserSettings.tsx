@@ -13,7 +13,6 @@ import {
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import Loading from '../components/Loading'
-import LoginRequired from '../components/LoginRequired'
 import { useUser } from '../hooks/useUser'
 
 const UserSettings = () => {
@@ -27,6 +26,7 @@ const UserSettings = () => {
     errorDotNetUserDetails,
     confirmApiKeyAsync,
     dotNetUserDetails,
+    sessionChecking,
   } = useUser()
 
   const navigate = useNavigate()
@@ -50,20 +50,22 @@ const UserSettings = () => {
     }
   }, [justSaved, navigate])
 
-  if (!dotNetUserDetails) {
-    // During the initial getMe() roundtrip apiKey may exist while
-    // dotNetUserDetails is still null — show the guard if we really aren't signed in.
-    if (!apiKey) {
-      return <Navigate to="/signin" replace />
-    }
+  // getMe() is still in flight — don't redirect yet; a valid session
+  // cookie could resolve any moment and land us here legitimately.
+  if (sessionChecking) {
     return (
       <Box>
         <Typography variant="h4" gutterBottom>
           Settings
         </Typography>
-        <LoginRequired tool="Settings" requiredLevel="public" />
+        <Loading message="Checking your session..." />
       </Box>
     )
+  }
+
+  if (!dotNetUserDetails) {
+    // Session check completed without producing a user — send them to sign in.
+    return <Navigate to="/signin" replace />
   }
 
   const handleSave = async () => {

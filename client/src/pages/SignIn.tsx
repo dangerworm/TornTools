@@ -17,7 +17,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Loading from '../components/Loading'
 import PrivacyNotice from '../components/PrivacyNotice'
@@ -39,6 +39,8 @@ const SignIn = () => {
     tornUserProfile,
     loadingTornUserProfile,
     errorTornUserProfile,
+    loadingDotNetUserDetails,
+    errorDotNetUserDetails,
     confirmApiKeyAsync,
     dotNetUserDetails,
   } = useUser()
@@ -46,28 +48,42 @@ const SignIn = () => {
   const navigate = useNavigate()
 
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [signInInFlight, setSignInInFlight] = useState(false)
   const [showKey, setShowKey] = useState(false)
+  // Only redirect on successful auth that followed an intentional Sign
+  // in click — not on arrival with an existing session cookie. This
+  // flag flips on via handleSignIn and flips off as soon as the
+  // redirect fires (or the dialog is closed).
+  const attemptedSignInRef = useRef(false)
 
+  // Redirect when the requested sign-in succeeds.
   useEffect(() => {
-    if (signInInFlight && dotNetUserDetails) {
-      setSignInInFlight(false)
+    if (attemptedSignInRef.current && dotNetUserDetails) {
+      attemptedSignInRef.current = false
       setDialogOpen(false)
       navigate('/')
     }
-  }, [signInInFlight, dotNetUserDetails, navigate])
+  }, [dotNetUserDetails, navigate])
+
+  // confirmApiKeyAsync swallows errors into errorDotNetUserDetails
+  // rather than throwing, so the try/catch around the await doesn't
+  // help us know when an attempt failed. Watch the backend error
+  // state instead: if we intended to sign in and the request produced
+  // an error (401, network, etc.), clear the in-flight flag so the
+  // user can edit the key and retry without reloading.
+  useEffect(() => {
+    if (attemptedSignInRef.current && !loadingDotNetUserDetails && errorDotNetUserDetails) {
+      attemptedSignInRef.current = false
+    }
+  }, [loadingDotNetUserDetails, errorDotNetUserDetails])
 
   const handleClose = () => {
+    attemptedSignInRef.current = false
     setDialogOpen(false)
   }
 
-  const handleSignIn = async () => {
-    setSignInInFlight(true)
-    try {
-      await confirmApiKeyAsync()
-    } catch {
-      setSignInInFlight(false)
-    }
+  const handleSignIn = () => {
+    attemptedSignInRef.current = true
+    void confirmApiKeyAsync()
   }
 
   return (
@@ -232,14 +248,19 @@ const SignIn = () => {
                 Click the button below to add your API key. By doing so you agree to the usage terms
                 and that your data will be stored and used as described.
               </Typography>
+              {errorDotNetUserDetails && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {errorDotNetUserDetails}
+                </Alert>
+              )}
               <Button
                 fullWidth
                 variant="contained"
                 sx={{ my: 2 }}
                 onClick={handleSignIn}
-                disabled={signInInFlight}
+                disabled={loadingDotNetUserDetails}
               >
-                Sign in
+                {loadingDotNetUserDetails ? 'Signing in…' : 'Sign in'}
               </Button>
             </Box>
           )}
