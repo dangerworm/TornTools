@@ -15,6 +15,7 @@ public class DatabaseService(
     IForeignStockItemRepository foreignStockItemRepository,
     IItemChangeLogRepository itemChangeLogRepository,
     IItemChangeLogSummaryRepository itemChangeLogSummaryRepository,
+    IItemVolatilityStatsRepository itemVolatilityStatsRepository,
     IItemRepository itemRepository,
     IListingRepository listingRepository,
     IQueueItemRepository queueItemRepository,
@@ -27,6 +28,7 @@ public class DatabaseService(
   private readonly IForeignStockItemRepository _foreignStockItemRepository = foreignStockItemRepository ?? throw new ArgumentNullException(nameof(foreignStockItemRepository));
   private readonly IItemChangeLogRepository _itemChangeLogRepository = itemChangeLogRepository ?? throw new ArgumentNullException(nameof(itemChangeLogRepository));
   private readonly IItemChangeLogSummaryRepository _itemChangeLogSummaryRepository = itemChangeLogSummaryRepository ?? throw new ArgumentNullException(nameof(itemChangeLogSummaryRepository));
+  private readonly IItemVolatilityStatsRepository _itemVolatilityStatsRepository = itemVolatilityStatsRepository ?? throw new ArgumentNullException(nameof(itemVolatilityStatsRepository));
   private readonly IItemRepository _itemRepository = itemRepository ?? throw new ArgumentNullException(nameof(itemRepository));
   private readonly IListingRepository _listingRepository = listingRepository ?? throw new ArgumentNullException(nameof(listingRepository));
   private readonly IQueueItemRepository _queueItemRepository = queueItemRepository ?? throw new ArgumentNullException(nameof(queueItemRepository));
@@ -45,6 +47,21 @@ public class DatabaseService(
   public Task CreateItemChangeLogAsync(ItemChangeLogDto changeLogDto, CancellationToken stoppingToken)
   {
     return _itemChangeLogRepository.CreateItemChangeLogAsync(changeLogDto, stoppingToken);
+  }
+
+  public Task RebuildVolatilityStatsAsync(CancellationToken stoppingToken)
+  {
+    return _itemVolatilityStatsRepository.RebuildStatsAsync(stoppingToken);
+  }
+
+  public Task<IEnumerable<ItemVolatilityStatsDto>> GetTopVolatileItemsAsync(
+      Source source,
+      VolatilitySortKey sortKey,
+      int limit,
+      bool ascending,
+      CancellationToken stoppingToken)
+  {
+    return _itemVolatilityStatsRepository.GetTopAsync(source, sortKey, limit, ascending, stoppingToken);
   }
 
   public async Task SummariseChangeLogsAsync(CancellationToken stoppingToken)

@@ -8,6 +8,7 @@ public interface ITornToolsDbContext
   DbSet<ForeignStockItemEntity> ForeignStockItems { get; set; }
   DbSet<ItemChangeLogEntity> ItemChangeLogs { get; set; }
   DbSet<ItemChangeLogSummaryEntity> ItemChangeLogSummaries { get; set; }
+  DbSet<ItemVolatilityStatsEntity> ItemVolatilityStats { get; set; }
   DbSet<ItemEntity> Items { get; set; }
   DbSet<ListingEntity> Listings { get; set; }
   DbSet<ProfitableListingView> ProfitableListings { get; set; }

@@ -19,6 +19,7 @@ import LoginRequired from '../components/LoginRequired'
 import MarketToolbar from '../components/MarketToolbar'
 import { menuItems } from '../components/Menu'
 import SectionHeader from '../components/SectionHeader'
+import StaleDataBanner from '../components/StaleDataBanner'
 import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
 import { useForeignMarketsScan } from '../hooks/useForeignMarketsScan'
 import { useUser } from '../hooks/useUser'
@@ -206,6 +207,8 @@ const ForeignMarkets = () => {
       <Typography variant="h4" gutterBottom>
         Foreign Markets
       </Typography>
+
+      <StaleDataBanner surface="foreign scan" />
 
       <Box>
         <Grid container spacing={0.5} sx={{ flexWrap: 'nowrap', overflow: 'hidden' }}>
