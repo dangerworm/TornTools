@@ -1,60 +1,84 @@
-import { useMemo, useState } from 'react'
 import {
   Alert,
+  Box,
   Card,
   CardContent,
   CardHeader,
+  Stack,
   ToggleButton,
   Typography,
   useMediaQuery,
 } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
+import { useMemo } from 'react'
 import {
+  Area,
   AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  Tooltip,
-  Area,
-  BarChart,
-  Bar,
-  ResponsiveContainer,
 } from 'recharts'
 import type { NameType, Payload } from 'recharts/types/component/DefaultTooltipContent'
 import { getFormattedText, type PrefixUnit, type SuffixUnit } from '../lib/textFormat'
 import {
-  HISTORY_WINDOWS_SMALL,
   HISTORY_WINDOWS_LARGE,
+  HISTORY_WINDOWS_SMALL,
   type HistoryWindow,
   type ItemHistoryPoint,
 } from '../types/history'
 import Loading from './Loading'
 
+export interface ChartSeries {
+  name: string
+  color: string
+  data: ItemHistoryPoint[]
+  fillOpacity?: number
+}
+
 interface ChartProps {
   chartType: 'area' | 'bar'
-  dataColour: string
-  itemId: number | undefined
+  series: ChartSeries[]
+  loading?: boolean
+  error?: string | null
+  timeWindow: HistoryWindow
+  onTimeWindowChange: (window: HistoryWindow) => void
   valueLabel?: string
   valuePrefix?: PrefixUnit
   valueSuffix?: SuffixUnit
   title?: string
   yAxisLabel?: string
-  dataFunction: (
-    itemId: number | undefined,
-    window: HistoryWindow,
-  ) => {
-    data: ItemHistoryPoint[]
-    loading: boolean
-    error: string | null
-  }
+}
+
+// Merge the timestamps across all series into one ordered set so recharts
+// can plot them on a shared X axis. Each series contributes a keyed column
+// named after the series.
+type MergedPoint = { timestamp: number } & Record<string, number | undefined>
+
+const mergeSeriesForChart = (series: ChartSeries[]): MergedPoint[] => {
+  const byTimestamp = new Map<number, MergedPoint>()
+  series.forEach((s) => {
+    s.data.forEach((point) => {
+      const existing = byTimestamp.get(point.timestamp) ?? { timestamp: point.timestamp }
+      existing[s.name] = point.value
+      byTimestamp.set(point.timestamp, existing)
+    })
+  })
+  return Array.from(byTimestamp.values()).sort((a, b) => a.timestamp - b.timestamp)
 }
 
 const Chart = ({
   chartType,
-  dataColour,
-  dataFunction,
-  itemId,
+  series,
+  loading = false,
+  error = null,
+  timeWindow,
+  onTimeWindowChange,
   valueLabel,
   valuePrefix,
   valueSuffix,
@@ -64,20 +88,23 @@ const Chart = ({
   const isSmallScreen = useMediaQuery((theme: any) => theme.breakpoints.down('lg'))
   const theme = useTheme()
 
-  const [timeWindow, setTimeWindow] = useState<HistoryWindow>('1w')
-
-  const { data, loading, error } = dataFunction(itemId, timeWindow)
-
   const axisColor = theme.palette.text.secondary
   const gridColor = alpha(theme.palette.text.primary, 0.12)
-
   const tickFormat = { fontSize: 13 }
 
-  const ticks: number[] = useMemo(() => {
-    if (!data || data.length === 0) return []
+  const mergedData = useMemo(() => mergeSeriesForChart(series), [series])
 
-    const minValue = Math.min(...data.map((point) => point.value))
-    const maxValue = Math.max(...data.map((point) => point.value))
+  const allValues = useMemo(() => {
+    const values: number[] = []
+    series.forEach((s) => s.data.forEach((p) => values.push(p.value)))
+    return values
+  }, [series])
+
+  const ticks: number[] = useMemo(() => {
+    if (allValues.length === 0) return []
+
+    const minValue = Math.min(...allValues)
+    const maxValue = Math.max(...allValues)
 
     let powers = 0
     while (maxValue >= Math.pow(10, powers + 1)) {
@@ -92,7 +119,7 @@ const Chart = ({
 
     if (numberOfTicks < 6) {
       tickDelta /= 6 - numberOfTicks
-      tickDelta = Math.max(1, Math.round(tickDelta)) // Don't round to 0
+      tickDelta = Math.max(1, Math.round(tickDelta))
 
       minTickValue = Math.floor(minValue / tickDelta) * tickDelta
       maxTickValue = Math.ceil(maxValue / tickDelta) * tickDelta
@@ -108,7 +135,7 @@ const Chart = ({
       ticks.push(i)
     }
     return ticks
-  }, [data])
+  }, [allValues])
 
   const timestampFormatter = useMemo(() => {
     if (timeWindow === '1h' || timeWindow === '4h' || timeWindow === '1d') {
@@ -136,10 +163,8 @@ const Chart = ({
     [valuePrefix, valueSuffix],
   )
 
-  // Widen the Y-axis gutter to fit the longest tick label. At font-size 13,
-  // each glyph averages ~7px; the +14 accounts for the tick line + the gap
-  // between text and plot area. 60 is the recharts default for short values
-  // like $12, so we only grow past that when digits demand it.
+  // Widen the Y-axis gutter to fit the longest tick label. See previous
+  // commit for the reasoning.
   const yAxisWidth = useMemo(() => {
     if (!ticks.length) return 60
     const longest = ticks.reduce((max, t) => Math.max(max, formatValue(t).length), 0)
@@ -153,28 +178,25 @@ const Chart = ({
   }
 
   const CustomTooltip = ({ active, label, payload }: CustomTooltipProps) => {
-    if (!active || !payload?.length) {
-      return null
-    }
-
-    const value = payload[0].value
-
+    if (!active || !payload?.length) return null
     return (
-      <div
-        style={{
-          padding: '4px 8px',
+      <Box
+        sx={{
           background: theme.palette.background.paper,
           border: `1px solid ${theme.palette.divider}`,
-          borderRadius: 6,
-          fontSize: '0.8rem',
+          borderRadius: 1,
           color: theme.palette.text.primary,
+          fontSize: '0.8rem',
+          p: '4px 8px',
         }}
       >
-        <div>Time: {formatTimestamp(label!)}</div>
-        <div>
-          {valueLabel ?? 'Value'}: {formatValue(value!)}
-        </div>
-      </div>
+        <Box>Time: {formatTimestamp(label!)}</Box>
+        {payload.map((p) => (
+          <Box key={p.dataKey as string} sx={{ color: p.color }}>
+            {p.name}: {p.value != null ? formatValue(p.value as number) : '—'}
+          </Box>
+        ))}
+      </Box>
     )
   }
 
@@ -197,37 +219,68 @@ const Chart = ({
     </ToggleButtonGroup>
   )
 
+  const hasAnyData = series.some((s) => s.data.length > 0)
+
   return (
     <Card elevation={2} sx={{ backgroundColor: 'background.paper', height: '100%' }}>
       <CardHeader
-        action={renderWindowToggle(timeWindow, setTimeWindow)}
+        action={renderWindowToggle(timeWindow, onTimeWindowChange)}
         sx={{ pb: 0 }}
         title={title}
       />
       <CardContent>
         {loading && !error && <Loading />}
         {!loading && error && <Alert severity="error">{error}</Alert>}
-        {!loading && !error && !data?.length && (
+        {!loading && !error && !hasAnyData && (
           <Typography color="text.secondary" sx={{ mt: 1 }}>
             No data available.
           </Typography>
         )}
-        {!loading && !error && data?.length && (
+        {!loading && !error && hasAnyData && (
           <>
+            {series.length > 1 && (
+              <Stack direction="row" spacing={2} sx={{ mb: 1, pl: 1 }}>
+                {series.map((s) => (
+                  <Box key={s.name} sx={{ alignItems: 'center', display: 'flex', gap: 0.75 }}>
+                    <Box
+                      sx={{
+                        backgroundColor: s.color,
+                        borderRadius: 0.5,
+                        height: 10,
+                        width: 14,
+                      }}
+                    />
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                      {s.name}
+                    </Typography>
+                  </Box>
+                ))}
+              </Stack>
+            )}
+
             {chartType === 'area' && (
               <ResponsiveContainer width="100%" height={300}>
                 <AreaChart
-                  data={data}
+                  data={mergedData}
                   margin={{
                     right: 8,
                     top: 10,
                   }}
                 >
                   <defs>
-                    <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={dataColour} stopOpacity={0.6} />
-                      <stop offset="95%" stopColor={dataColour} stopOpacity={0.05} />
-                    </linearGradient>
+                    {series.map((s, i) => (
+                      <linearGradient
+                        key={s.name}
+                        id={`priceGradient-${i}`}
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop offset="5%" stopColor={s.color} stopOpacity={s.fillOpacity ?? 0.6} />
+                        <stop offset="95%" stopColor={s.color} stopOpacity={0.05} />
+                      </linearGradient>
+                    ))}
                   </defs>
                   <CartesianGrid stroke={gridColor} strokeDasharray="3 3" />
                   <XAxis
@@ -247,13 +300,19 @@ const Chart = ({
                     width={yAxisWidth}
                   />
                   <Tooltip content={CustomTooltip} />
-                  <Area
-                    type="monotone"
-                    dataKey="value"
-                    stroke={dataColour}
-                    fill="url(#priceGradient)"
-                    strokeWidth={2}
-                  />
+                  {series.map((s, i) => (
+                    <Area
+                      key={s.name}
+                      type="monotone"
+                      name={s.name}
+                      dataKey={s.name}
+                      stroke={s.color}
+                      fill={`url(#priceGradient-${i})`}
+                      strokeWidth={2}
+                      connectNulls
+                      isAnimationActive={false}
+                    />
+                  ))}
                 </AreaChart>
               </ResponsiveContainer>
             )}
@@ -261,7 +320,7 @@ const Chart = ({
             {chartType === 'bar' && (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart
-                  data={data}
+                  data={mergedData}
                   margin={{
                     left: 8,
                     right: 8,
@@ -293,10 +352,21 @@ const Chart = ({
                     ticks={ticks}
                   />
                   <Tooltip content={CustomTooltip} />
-                  <Bar dataKey="value" fill={dataColour} maxBarSize={40} radius={[6, 6, 0, 0]} />
+                  {series.map((s) => (
+                    <Bar
+                      key={s.name}
+                      name={s.name}
+                      dataKey={s.name}
+                      fill={s.color}
+                      maxBarSize={40}
+                      radius={[6, 6, 0, 0]}
+                    />
+                  ))}
                 </BarChart>
               </ResponsiveContainer>
             )}
+
+            {valueLabel && <Legend content={() => null} />}
           </>
         )}
       </CardContent>
