@@ -58,6 +58,21 @@ const Home = () => {
         risk.
       </Typography>
 
+      <Alert severity="info" sx={{ mt: 3 }}>
+        <AlertTitle>API key access levels</AlertTitle>
+        <Typography variant="body2" gutterBottom>
+          Most tools work with a <strong>Public</strong> key — that's everything which only reads
+          the shared market-scan data: City Markets, Foreign Markets, Resale, and Favourites.
+        </Typography>
+        <Typography variant="body2" gutterBottom>
+          <strong>Bazaar Price Lookup</strong> reads your own inventory, so it needs at least a{' '}
+          <strong>Minimal</strong> key.
+        </Typography>
+        <Typography variant="body2">
+          You can check or upgrade your key on the <Link to="/settings">Settings page</Link>.
+        </Typography>
+      </Alert>
+
       <Divider sx={{ mt: 3 }} />
       {loading && <Loading message="Loading items..." />}
 

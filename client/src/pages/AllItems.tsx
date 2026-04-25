@@ -15,7 +15,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link as RouterLink } from 'react-router'
 import EmptyState from '../components/EmptyState'
 import FilterDrawer from '../components/FilterDrawer'
@@ -28,6 +28,7 @@ import TableSortCell from '../components/TableSortCell'
 import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
 import { useItems } from '../hooks/useItems'
 import { stableSort, getComparator, type SortOrder } from '../lib/comparisons'
+import { loadStringArray, saveStringArray } from '../lib/persistence'
 import { getFormattedText } from '../lib/textFormat'
 import type { Item } from '../types/items'
 
@@ -60,8 +61,14 @@ const AllItems = () => {
   const { summaries: bazaarSummaries } = useBazaarSummaries()
 
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>([])
+  const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>(() =>
+    loadStringArray('torntools:all-items:selected-item-types:v1'),
+  )
   const [page, setPage] = useState(0)
+
+  useEffect(() => {
+    saveStringArray('torntools:all-items:selected-item-types:v1', selectedItemTypes)
+  }, [selectedItemTypes])
   const [rowsPerPage, setRowsPerPage] = useState(25)
   const [orderBy, setOrderBy] = useState<keyof SortableAllItemsItem>('name')
   const [orderDirection, setOrderDirection] = useState<SortOrder>('asc')

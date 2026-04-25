@@ -229,8 +229,21 @@ const BazaarPriceLookup = () => {
                   {aggregatedRows.map((row) => {
                     const itemMeta = itemsById[row.id]
                     const summary = bazaarSummaries[row.id]
+                    const citySellPrice = itemMeta?.valueSellPrice ?? null
+                    const cityPaysMore =
+                      summary && citySellPrice !== null && citySellPrice > summary.minPrice
                     return (
-                      <TableRow key={row.id} hover>
+                      <TableRow
+                        key={row.id}
+                        hover
+                        sx={
+                          cityPaysMore
+                            ? {
+                                backgroundColor: (theme) => `${theme.palette.warning.main}1F`,
+                              }
+                            : undefined
+                        }
+                      >
                         <TableCell>
                           {itemMeta?.image ? (
                             <Avatar
@@ -242,9 +255,23 @@ const BazaarPriceLookup = () => {
                           ) : null}
                         </TableCell>
                         <TableCell>
-                          <Link component={RouterLink} to={`/item/${row.id}`}>
-                            {row.name}
-                          </Link>
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Link component={RouterLink} to={`/item/${row.id}`}>
+                              {row.name}
+                            </Link>
+                            {cityPaysMore && citySellPrice !== null && (
+                              <Tooltip
+                                title={`City vendor pays ${formatPrice(citySellPrice)} — more than the lowest bazaar listing.`}
+                              >
+                                <Chip
+                                  label={`Sell to city: ${formatPrice(citySellPrice)}`}
+                                  size="small"
+                                  color="warning"
+                                  variant="outlined"
+                                />
+                              </Tooltip>
+                            )}
+                          </Stack>
                         </TableCell>
                         <TableCell align="right">{row.totalQuantity.toLocaleString()}</TableCell>
                         <TableCell align="right">

@@ -10,6 +10,7 @@ import StaleDataBanner from '../components/StaleDataBanner'
 import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
 import { useItems } from '../hooks/useItems'
 import { useRequiresLogin } from '../hooks/useRequiresLogin'
+import { loadStringArray, saveStringArray } from '../lib/persistence'
 import { isItemProfitableOnMarket } from '../types/items'
 import type { SaleOutlet } from '../types/markets'
 
@@ -20,8 +21,12 @@ const CityMarkets = () => {
   const loginRequired = useRequiresLogin('/city-markets')
   const { summaries: bazaarSummaries } = useBazaarSummaries()
 
-  const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>([])
-  const [selectedVendors, setSelectedVendors] = useState<string[]>([])
+  const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>(() =>
+    loadStringArray('torntools:city-markets:selected-item-types:v1'),
+  )
+  const [selectedVendors, setSelectedVendors] = useState<string[]>(() =>
+    loadStringArray('torntools:city-markets:selected-vendors:v1'),
+  )
   const [showProfitableOnly, setShowProfitableOnly] = useState(
     () => localStorage.getItem('torntools:city-markets:show-profitable-only:v1') === 'true',
   )
@@ -36,6 +41,14 @@ const CityMarkets = () => {
   useEffect(() => {
     refresh()
   }, [refresh])
+
+  useEffect(() => {
+    saveStringArray('torntools:city-markets:selected-item-types:v1', selectedItemTypes)
+  }, [selectedItemTypes])
+
+  useEffect(() => {
+    saveStringArray('torntools:city-markets:selected-vendors:v1', selectedVendors)
+  }, [selectedVendors])
 
   const countries = useMemo(() => {
     if (!items) return []
