@@ -16,7 +16,20 @@ public static class ServiceCollectionExtensions
         .AddTornKeyEncryptionConfiguration(configuration)
         .AddWeav3rApiCallerConfiguration(configuration)
         .AddTornMarketsProcessorConfiguration(configuration)
-        .AddWeav3rBazaarsProcessorConfiguration(configuration);
+        .AddWeav3rBazaarsProcessorConfiguration(configuration)
+        .AddBargainAlertsConfiguration(configuration);
+  }
+
+  private static IServiceCollection AddBargainAlertsConfiguration(this IServiceCollection services, IConfiguration configuration)
+  {
+    services.Configure<BargainAlertsConfiguration>(
+        configuration.GetSection(nameof(BargainAlertsConfiguration)));
+
+    services.AddSingleton(sp =>
+        sp.GetRequiredService<IOptions<BargainAlertsConfiguration>>().Value
+    );
+
+    return services;
   }
 
   private static IServiceCollection AddLocalConfiguration(this IServiceCollection services, IConfiguration configuration)

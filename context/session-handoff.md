@@ -45,7 +45,10 @@ to be:
 
 ## Blockers / outstanding
 
-- None. The cards work is wrapped. Pending follow-ups are catalogued in `TODO.md`.
+- None on the cards work. Pending follow-ups are catalogued in `TODO.md`.
+- **Bargain alerts subscription feature**: design captured in `TODO.md` under "Bargain alerts
+  (subscription feature)". **Blocked on Torn staff sign-off** before any code — see ToS analysis
+  below.
 
 ## Next action
 
@@ -70,6 +73,122 @@ the backfill catches up, the constants are:
   6 / 24 buckets for 1h / 6h / 24h / 7d.
 - `DatabaseService.SummariseChunk = TimeSpan.FromDays(7)` — chunk size for the backfill loop. Drop
   to 3 days if a chunk times out; raise if backfill is fine and you want fewer chunks.
+
+## Bargain-alerts feature — discussion 2026-04-25 ~01:30
+
+Drew proposed a subscription feature: toast notification when a Torn-market item lists for <10% of
+city value, gated behind a 30-day rolling Xanax-gift subscription paid in-game to him. Persistent
+toast with "time since" counter and distinct sound. Click-through to the listing.
+
+### What we verified about the API access
+
+- Custom keys can be created via the Torn website prefs page; no API endpoint to create them, but
+  there is a deep-link URL that pre-fills the form:
+  `https://www.torn.com/preferences.php#tab=api?step=addNewKey&title=<TITLE>&<category>=<csv>`. Drew
+  used `...&user=events` and got a key (`eJCgm4nAvaGepgAQ` — _DREW: rotate this if you don't want it
+  captured here, it has Custom/events-only scope_).
+- Verified scope via `GET /v2/key/info`: `access.type: "Custom"`,
+  `selections.user: ["profile", "timestamp", "lookup", "events"]`, all other categories at default
+  `timestamp`/`lookup`. `basic` and `bazaar` selections correctly return error code 16.
+- The events feed contains the signal we need:
+  `"You were sent some Xanax from <a ... XID=3790183>IcePokeDude</a>"` with unix timestamp + stable
+  per-event ID. Bonus: also contains `"NAME bought N x ITEM from your bazaar for $PRICE"` events — a
+  "your bazaar just sold" notification falls out of the same poll for free.
+
+### API quirk worth remembering
+
+Torn sometimes returns the response _schema_ literal instead of real data — e.g.
+`event: string[144]` rather than the actual string, or `events: [{...}] (100)` for arrays. Looks
+like an error but isn't. Adding `&comment=tornttools-<feature>` reliably flips it to real data. The
+`comment` also shows up in `/key/log`. **Encode in the backend client: always send a comment.**
+
+### ToS finding — the actual blocker
+
+Drew brought a Claude.ai analysis to the chat:
+
+- **RMT clause** ("exchange of currency or assets on Torn for real-world money or services") on
+  Torn's rule violations page covers item-for-external-service swaps. Sellers historically
+  permabanned without first-offence warning.
+- **API ToS** on torn.com/api.html invites operators to contact staff for permission to charge users
+  for usage. Doesn't carve out item-based payments.
+- Recommended path: email webmaster@torn.com describing the feature _before any code_, ask for
+  explicit permission. They've invited that conversation in writing. Sanity-check the precedent by
+  looking at how TornStats / TornPDA handle paid tiers (real money vs items) before drafting.
+
+Risk-tiered fallbacks if staff say no to item-gating: voluntary tips with no gating; real-money
+subscription via Stripe; or just free for everyone.
+
+### Where this lives now
+
+Full design + ToS analysis + implementation sketch in `TODO.md` → **Bargain alerts** section, and
+plan at `context/plans/2026-04-25-bargain-alerts.md` (now annotated with build status).
+
+**Drew pivoted away from the subscription model**: rather than gate behind Xanax payments and need
+the staff conversation, he asked for the Drew-only variant of the feature for himself. That
+sidesteps the ToS issue (no item-for-service exchange) and lets the design sit on a clean
+authorisation seam ready for the subscription extension if/when staff approve it later.
+
+### Drew-only build (M1–M8) shipped this session
+
+Backend (`dotnet build`: clean):
+
+- Migration `V1.25__bargain_alerts.sql` — partial unique index `(item_id) WHERE status='active'`
+  enforces "one active alert per item" at the DB layer.
+- `BargainAlertEntity` / `BargainAlertDto` / `IBargainAlertRepository` / `BargainAlertRepository`
+  with
+  `Create / GetActiveByItem / GetById / GetAllActive / MarkExpired / MarkDismissed / GetActiveItemIds`.
+- `IBargainAlertService.EvaluateAsync(source, itemId, newListings, ct)` hooked into
+  `DatabaseService.ProcessListingsAsync` after `ReplaceListingsAsync`. Source-scoped (Torn market
+  only), idempotent open/expire decisions. Threshold =
+  `BargainAlertService.ProfitThreshold = 5_000`.
+- `BargainAlertsConfiguration` (`AuthorisedPlayerIds: [3943900]`, `MaxInterleaves: 50`) bound from
+  appsettings. `IBargainAlertAuthService` is a hashset-backed config check, ready to be replaced by
+  a ledger query later.
+- `AlertsController` at `/api/alerts/{authorised,active,{id}/dismiss}`. `[Authorize]` + the
+  authorisation gate. `authorised` returns `{authorised: bool}` so the frontend can branch cleanly
+  without 403s.
+- Snipe-loop: new virtual `TryGetPriorityQueueItemAsync` hook on `QueueProcessorBase`.
+  `TornMarketsProcessor` overrides it — every alternate tick returns a synthetic queue item for the
+  least-polled hot item, bounded by `MaxInterleaves`. Synthetic items have no DB queue id;
+  `RunWorkerAsync` skips `IncrementQueueItemAttempts`/`RemoveQueueItemAsync` for them. Hot-set
+  refreshes from the DB every 30s.
+
+Frontend (`npx tsc --noEmit`, `npm run build`: clean):
+
+- `BargainAlertsProvider` in `main.tsx`, between `BazaarSummariesProvider` and
+  `LocalizationProvider`. Mount-time `/api/alerts/authorised` probe; if false, the provider becomes
+  a no-op.
+- Visibility-aware 12s polling (suspends on hidden tab, immediate fetch on return-to-visible).
+- "Seen IDs" set primed on first poll so the sound only fires on _new_ alerts after that.
+- `<BargainAlertToast />` mounted at the top of `Layout`. Renders nothing for unauthorised users
+  (safe to mount globally).
+- Web Audio synthesised two-tone chirp (880 → 1320 Hz square waves) — distinctive, no asset needed.
+  Drew can swap to a file-based asset by replacing `playAlertSound` and dropping a sound into
+  `client/public/sounds/`.
+- Toast UI: persistent (no auto-dismiss), live "time since" counter, click-through to
+  `https://www.torn.com/imarket.php#/p=shop&type={id}`, dismiss button with optimistic local
+  removal + `POST /api/alerts/{id}/dismiss`.
+
+### What's left for Drew (M9 + M10)
+
+1. Boot the backend so Flyway applies V1.25 against the dev DB.
+2. Run the synthetic test in `context/plans/2026-04-25-bargain-alerts-verification.sql`. Step 2
+   inserts an alert directly (tests the toast path); step 3 inserts a sub-threshold listing (tests
+   the full detection hook end-to-end).
+3. Real-world latency check: post a real cheap listing on the Torn market (or wait for one) and
+   measure detection → endpoint → toast latency. If best-case is >30s the snipe-loop alone won't
+   make this useful and we'll need to reconsider scan cadence.
+
+### Known caveats / things to watch
+
+- Detection only fires when listings _change_. A pre-existing sub-threshold listing won't open an
+  alert until the next time the listing composition or minimum price changes. Acceptable in practice
+  — bargains rarely sit untouched.
+- The synthesised audio chirp won't play before the user has interacted with the page (browser
+  autoplay policy). Drew uses the app, so this almost never bites in practice.
+- Snipe-loop spends half the per-worker tick budget on hot items. With 1 worker and 1 hot item,
+  that's ~30 polls/min on the hot item before the bound trips at `MaxInterleaves=50`. Tune in prod
+  if needed.
 
 ## Data analysis assets
 

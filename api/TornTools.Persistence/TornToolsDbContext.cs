@@ -20,6 +20,7 @@ public class TornToolsDbContext(
   public DbSet<QueueItemEntity> QueueItems { get; set; } = null!;
   public DbSet<UserEntity> Users { get; set; } = null!;
   public DbSet<UserFavouriteItemEntity> UserFavourites { get; set; } = null!;
+  public DbSet<BargainAlertEntity> BargainAlerts { get; set; } = null!;
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
@@ -132,6 +133,13 @@ public class TornToolsDbContext(
               .WithMany(u => u.FavouriteItems)
               .HasForeignKey(ufi => ufi.UserId)
               .HasPrincipalKey(u => u.Id);
+    });
+
+    modelBuilder.Entity<BargainAlertEntity>(e =>
+    {
+      e.HasKey(x => x.Id);
+      e.Property(x => x.Status).IsRequired();
+      e.HasIndex(x => new { x.Status, x.FoundAt });
     });
 
     // View mapping

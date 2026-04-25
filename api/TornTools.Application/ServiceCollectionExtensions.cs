@@ -45,6 +45,8 @@ public static class ServiceCollectionExtensions
     services.AddScoped<IApiCallHandlerResolver, ApiCallHandlerResolver>();
 
     services.AddScoped<IDatabaseService, DatabaseService>();
+    services.AddScoped<IBargainAlertService, BargainAlertService>();
+    services.AddSingleton<IBargainAlertAuthService, BargainAlertAuthService>();
 
     services.AddSingleton<IApiKeyProtector, ApiKeyProtector>();
 

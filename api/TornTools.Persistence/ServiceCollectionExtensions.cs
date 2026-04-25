@@ -23,6 +23,7 @@ public static class ServiceCollectionExtensions
     services.AddScoped<IListingRepository, ListingRepository>();
     services.AddScoped<IQueueItemRepository, QueueItemRepository>();
     services.AddScoped<IUserRepository, UserRepository>();
+    services.AddScoped<IBargainAlertRepository, BargainAlertRepository>();
 
     return services;
   }

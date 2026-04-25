@@ -20,7 +20,8 @@ public class DatabaseService(
     IItemRepository itemRepository,
     IListingRepository listingRepository,
     IQueueItemRepository queueItemRepository,
-    IUserRepository userRepository
+    IUserRepository userRepository,
+    IBargainAlertService bargainAlertService
 ) : IDatabaseService
 {
   // 1-hour buckets give the multi-horizon z-score in the Unusual Activity
@@ -40,6 +41,7 @@ public class DatabaseService(
   private readonly IListingRepository _listingRepository = listingRepository ?? throw new ArgumentNullException(nameof(listingRepository));
   private readonly IQueueItemRepository _queueItemRepository = queueItemRepository ?? throw new ArgumentNullException(nameof(queueItemRepository));
   private readonly IUserRepository _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+  private readonly IBargainAlertService _bargainAlertService = bargainAlertService ?? throw new ArgumentNullException(nameof(bargainAlertService));
 
   public Task<IEnumerable<ForeignStockItemDto>> GetForeignStockItemsAsync(CancellationToken cancellationToken)
   {
@@ -275,6 +277,12 @@ public class DatabaseService(
       }, stoppingToken);
 
       await ReplaceListingsAsync(source, itemId, newListings, stoppingToken);
+
+      // Detection runs after persistence: a fresh scan that flips an
+      // item between "qualifies as a bargain" and "doesn't" should be
+      // reflected in bargain_alerts. Service is source-scoped (Torn
+      // market only in v1) and idempotent.
+      await _bargainAlertService.EvaluateAsync(source, itemId, newListings, stoppingToken);
     }
     else
     {
