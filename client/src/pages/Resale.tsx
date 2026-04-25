@@ -31,7 +31,10 @@ const PRICE_RANGE_VALUES = [
 ]
 
 const DEFAULT_MIN_PROFIT_INDEX = 3 // $50
+const DEFAULT_MAX_PROFIT_INDEX = PRICE_RANGE_VALUES.length - 1
+const DEFAULT_MIN_BUY_PRICE_INDEX = 0 // $0
 const DEFAULT_MAX_BUY_PRICE_INDEX = 17 // $1,000,000,000
+const DEFAULT_MIN_TIME_INDEX = 0 // 1 minute
 const DEFAULT_MAX_TIME_INDEX = 4 // 30 minutes
 
 const loadSliderIndex = (key: string, defaultIndex: number, values: number[]): number => {
@@ -81,24 +84,44 @@ const Resale = () => {
   const { itemsById } = useItems()
 
   // useMemo with [] ensures localStorage is read once on mount, not on every render.
-  // The indices are also passed as initialValueIndex props to SteppedSlider (mount-only).
+  // Indices are passed as initialMin/MaxIndex props to SteppedSlider (mount-only).
   const initialMinProfitIndex = useMemo(
-    () => loadSliderIndex('resale:minProfit:v1', DEFAULT_MIN_PROFIT_INDEX, PRICE_RANGE_VALUES),
+    () => loadSliderIndex('resale:minProfit:v2', DEFAULT_MIN_PROFIT_INDEX, PRICE_RANGE_VALUES),
+    [],
+  )
+  const initialMaxProfitIndex = useMemo(
+    () => loadSliderIndex('resale:maxProfit:v2', DEFAULT_MAX_PROFIT_INDEX, PRICE_RANGE_VALUES),
+    [],
+  )
+  const initialMinBuyPriceIndex = useMemo(
+    () => loadSliderIndex('resale:minBuyPrice:v2', DEFAULT_MIN_BUY_PRICE_INDEX, PRICE_RANGE_VALUES),
     [],
   )
   const initialMaxBuyPriceIndex = useMemo(
-    () => loadSliderIndex('resale:maxBuyPrice:v1', DEFAULT_MAX_BUY_PRICE_INDEX, PRICE_RANGE_VALUES),
+    () => loadSliderIndex('resale:maxBuyPrice:v2', DEFAULT_MAX_BUY_PRICE_INDEX, PRICE_RANGE_VALUES),
     [],
   )
-  const initialMaxTimeSinceLastUpdateIndex = useMemo(
-    () => loadSliderIndex('resale:maxTimeMinutes:v1', DEFAULT_MAX_TIME_INDEX, MINUTE_RANGE_VALUES),
+  const initialMinTimeIndex = useMemo(
+    () => loadSliderIndex('resale:minTimeMinutes:v2', DEFAULT_MIN_TIME_INDEX, MINUTE_RANGE_VALUES),
+    [],
+  )
+  const initialMaxTimeIndex = useMemo(
+    () => loadSliderIndex('resale:maxTimeMinutes:v2', DEFAULT_MAX_TIME_INDEX, MINUTE_RANGE_VALUES),
     [],
   )
 
   const [minProfit, setMinProfit] = useState(PRICE_RANGE_VALUES[initialMinProfitIndex])
+  const [maxProfit, setMaxProfit] = useState(PRICE_RANGE_VALUES[initialMaxProfitIndex])
+  const [minBuyPrice, setMinBuyPrice] = useState(PRICE_RANGE_VALUES[initialMinBuyPriceIndex])
   const [maxBuyPrice, setMaxBuyPrice] = useState(PRICE_RANGE_VALUES[initialMaxBuyPriceIndex])
+  const [minTimeSinceLastUpdate, setMinTimeSinceLastUpdate] = useState(
+    MINUTE_RANGE_VALUES[initialMinTimeIndex],
+  )
   const [maxTimeSinceLastUpdate, setMaxTimeSinceLastUpdate] = useState(
-    MINUTE_RANGE_VALUES[initialMaxTimeSinceLastUpdateIndex],
+    MINUTE_RANGE_VALUES[initialMaxTimeIndex],
+  )
+  const [applyBuyToTotal, setApplyBuyToTotal] = useState(
+    () => localStorage.getItem('resale:applyBuyToTotal:v1') === 'true',
   )
 
   const [secondsSinceUpdate, setSecondsSinceUpdate] = useState<number | null>(null)
@@ -194,38 +217,63 @@ const Resale = () => {
         Filters
       </Typography>
 
+      <FormGroup sx={{ mb: 1 }}>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={applyBuyToTotal}
+              onChange={(e) => {
+                const next = e.target.checked
+                setApplyBuyToTotal(next)
+                localStorage.setItem('resale:applyBuyToTotal:v1', String(next))
+              }}
+            />
+          }
+          label="Apply buy-price filter to total bargain (instead of per-item)"
+        />
+      </FormGroup>
+
       <Grid container spacing={2} alignItems="center">
         <SteppedSlider
-          label="Minimum Profit"
+          label="Profit"
           prefixUnit="$"
           suffixUnit=""
           sliderValues={PRICE_RANGE_VALUES}
-          initialValueIndex={initialMinProfitIndex}
-          onValueChange={(v) => {
-            setMinProfit(v)
-            localStorage.setItem('resale:minProfit:v1', String(v))
+          initialMinIndex={initialMinProfitIndex}
+          initialMaxIndex={initialMaxProfitIndex}
+          onValueChange={(lo, hi) => {
+            setMinProfit(lo)
+            setMaxProfit(hi)
+            localStorage.setItem('resale:minProfit:v2', String(lo))
+            localStorage.setItem('resale:maxProfit:v2', String(hi))
           }}
         />
         <SteppedSlider
-          label="Max Buy Price"
+          label={applyBuyToTotal ? 'Total Buy Price' : 'Buy Price'}
           prefixUnit="$"
           suffixUnit=""
           sliderValues={PRICE_RANGE_VALUES}
-          initialValueIndex={initialMaxBuyPriceIndex}
-          onValueChange={(v) => {
-            setMaxBuyPrice(v)
-            localStorage.setItem('resale:maxBuyPrice:v1', String(v))
+          initialMinIndex={initialMinBuyPriceIndex}
+          initialMaxIndex={initialMaxBuyPriceIndex}
+          onValueChange={(lo, hi) => {
+            setMinBuyPrice(lo)
+            setMaxBuyPrice(hi)
+            localStorage.setItem('resale:minBuyPrice:v2', String(lo))
+            localStorage.setItem('resale:maxBuyPrice:v2', String(hi))
           }}
         />
         <SteppedSlider
-          label="Max Updated Time"
+          label="Updated"
           prefixUnit=""
           suffixUnit="minute"
           sliderValues={MINUTE_RANGE_VALUES}
-          initialValueIndex={initialMaxTimeSinceLastUpdateIndex}
-          onValueChange={(v) => {
-            setMaxTimeSinceLastUpdate(v)
-            localStorage.setItem('resale:maxTimeMinutes:v1', String(v))
+          initialMinIndex={initialMinTimeIndex}
+          initialMaxIndex={initialMaxTimeIndex}
+          onValueChange={(lo, hi) => {
+            setMinTimeSinceLastUpdate(lo)
+            setMaxTimeSinceLastUpdate(hi)
+            localStorage.setItem('resale:minTimeMinutes:v2', String(lo))
+            localStorage.setItem('resale:maxTimeMinutes:v2', String(hi))
           }}
         />
       </Grid>
@@ -276,9 +324,13 @@ const Resale = () => {
 
       <ResaleItemsTable
         error={error}
+        applyBuyToTotal={applyBuyToTotal}
+        minBuyPrice={minBuyPrice}
         maxBuyPrice={maxBuyPrice}
+        minTimeSinceLastUpdate={minTimeSinceLastUpdate}
         maxTimeSinceLastUpdate={maxTimeSinceLastUpdate}
         minProfit={minProfit}
+        maxProfit={maxProfit}
         rows={sortedRows}
         purchaseOutlet={purchaseOutlet}
         saleOutlet={saleOutlet}

@@ -54,6 +54,14 @@ const ResaleItemsTableRow = ({
 
   const quantity = getQuantity(row, purchaseOutlet, saleOutlet)
 
+  // Aggregate buy cost across the listing range. The backend's totalProfit is
+  // computed against the actual mix of listings sold at the range's varying
+  // prices, so this back-derives the true total spent — not just min*qty.
+  const totalBuyCost =
+    sellRevenue !== null && totalProfit !== null && quantity !== null
+      ? sellRevenue * quantity - totalProfit
+      : null
+
   const rowColor = (date: Date | null): string => {
     if (date === null) return `rgba(128, 128, 128, 0.87)`
     const diffSeconds = getSecondsSinceLastUpdate(date)
@@ -119,6 +127,14 @@ const ResaleItemsTableRow = ({
         style={{ color: rgbToHex(color) }}
       >
         {quantity !== null ? getFormattedText('', quantity, '') : '-'}
+      </TableCell>
+
+      <TableCell
+        align="right"
+        onClick={() => openTornMarketPage(row.itemId)}
+        style={{ color: rgbToHex(color) }}
+      >
+        {totalBuyCost !== null ? getFormattedText('$', totalBuyCost, '') : '-'}
       </TableCell>
 
       <TableCell

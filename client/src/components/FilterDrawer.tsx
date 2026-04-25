@@ -161,22 +161,24 @@ const FilterDrawer = ({ activeCount, children, main, title = 'Filters' }: Filter
   )
 
   const mobileFab = (
-    <Fab
-      color="primary"
-      aria-label="open filters"
-      onClick={() => setMobileOpen(true)}
-      sx={{
-        display: { xs: 'inline-flex', md: 'none' },
-        position: 'fixed',
-        right: 16,
-        bottom: 16,
-        zIndex: (theme) => theme.zIndex.drawer + 1,
-      }}
-    >
-      <Badge badgeContent={hasActive ? activeCount : undefined} color="secondary">
-        <FilterListIcon />
-      </Badge>
-    </Fab>
+    <Tooltip title={strippedToggleTitle} placement="left">
+      <Fab
+        color="primary"
+        aria-label={strippedToggleTitle}
+        onClick={() => setMobileOpen(true)}
+        sx={{
+          display: { xs: 'inline-flex', md: 'none' },
+          position: 'fixed',
+          right: 16,
+          bottom: 16,
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+        }}
+      >
+        <Badge badgeContent={hasActive ? activeCount : undefined} color="secondary">
+          <FilterListIcon />
+        </Badge>
+      </Fab>
+    </Tooltip>
   )
 
   if (main !== undefined) {

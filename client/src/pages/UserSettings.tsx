@@ -4,10 +4,12 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   IconButton,
   InputAdornment,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
@@ -17,6 +19,28 @@ import { useUser } from '../hooks/useUser'
 import { proxyTornKeyValidate, type ValidatedKey } from '../lib/dotnetapi'
 
 const VALIDATE_DEBOUNCE_MS = 400
+
+const ACCESS_LEVEL_LABELS: Record<number, string> = {
+  1: 'Public',
+  2: 'Minimal',
+  3: 'Limited',
+  4: 'Full',
+}
+
+const accessLevelDescription = (level: number): string => {
+  switch (level) {
+    case 1:
+      return 'Public — used for the shared market scan pool. Personal data not exposed.'
+    case 2:
+      return 'Minimal — adds personal selections (inventory, bazaar, bars, cooldowns). Required for Bazaar Price Lookup.'
+    case 3:
+      return 'Limited — superset of Minimal. Everything we do works.'
+    case 4:
+      return 'Full — superset of Limited. We don’t currently need anything Full-only.'
+    default:
+      return 'Unknown access level.'
+  }
+}
 
 const UserSettings = () => {
   const {
@@ -122,9 +146,19 @@ const UserSettings = () => {
       </Typography>
 
       <Box sx={{ mt: 1 }}>
-        <Typography variant="h6" gutterBottom>
-          API Key
-        </Typography>
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+          <Typography variant="h6">API Key</Typography>
+          {dotNetUserDetails.accessLevel ? (
+            <Tooltip title={accessLevelDescription(dotNetUserDetails.accessLevel)}>
+              <Chip
+                size="small"
+                color="primary"
+                variant="outlined"
+                label={`${ACCESS_LEVEL_LABELS[dotNetUserDetails.accessLevel] ?? `Level ${dotNetUserDetails.accessLevel}`} access`}
+              />
+            </Tooltip>
+          ) : null}
+        </Stack>
         <Typography variant="body1" gutterBottom>
           Update your Torn API key or re-confirm it if you generated a new one.
         </Typography>

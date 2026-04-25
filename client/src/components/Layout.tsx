@@ -148,7 +148,7 @@ export default function Layout() {
       <Box
         sx={{
           backgroundColor: (theme) => theme.palette.background.default,
-          display: { xs: 'block', md: 'flex' },
+          display: 'flex',
           flexGrow: 1,
           maxWidth: MAX_CONTENT_WIDTH,
           mx: 'auto',

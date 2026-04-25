@@ -23,6 +23,7 @@ import { useBazaarSummaries } from '../hooks/useBazaarSummaries'
 import { useForeignMarketsScan } from '../hooks/useForeignMarketsScan'
 import { useRequiresLogin } from '../hooks/useRequiresLogin'
 import { useUser } from '../hooks/useUser'
+import { loadStringArray, saveStringArray } from '../lib/persistence'
 import {
   prettyPrintFlightTime,
   travelDestinations,
@@ -48,7 +49,11 @@ const ForeignMarkets = () => {
   )
 
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
-  const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>(itemTypesOfInterest)
+  const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>(() => {
+    const stored = localStorage.getItem('torntools:foreign-markets:selected-item-types:v1')
+    if (stored === null) return itemTypesOfInterest
+    return loadStringArray('torntools:foreign-markets:selected-item-types:v1')
+  })
   const [saleOutlet, setSaleOutlet] = useState<SaleOutlet>(() => {
     const stored = localStorage.getItem(
       'torntools:foreign-markets:sale-outlet:v1',
@@ -66,6 +71,10 @@ const ForeignMarkets = () => {
   )
 
   const [searchTerm, setSearchTerm] = useState('')
+
+  useEffect(() => {
+    saveStringArray('torntools:foreign-markets:selected-item-types:v1', selectedItemTypes)
+  }, [selectedItemTypes])
 
   const handleSaleOutletChange = (_: React.MouseEvent<HTMLElement>, newOutlet: string | number) => {
     const outlet = newOutlet as SaleOutlet

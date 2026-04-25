@@ -14,7 +14,13 @@ import {
 import { AnimatePresence } from 'framer-motion'
 import { useMemo, useRef } from 'react'
 import { useUser } from '../hooks/useUser'
-import { getBuyPriceRange, getLastUpdated, getTotalProfit } from '../lib/profitCalculations'
+import {
+  getBuyPriceRange,
+  getLastUpdated,
+  getQuantity,
+  getSellRevenue,
+  getTotalProfit,
+} from '../lib/profitCalculations'
 import { getSecondsSinceLastUpdate } from '../lib/time'
 import type { PurchaseOutlet, SaleOutlet } from '../types/markets'
 import type { ProfitableListing } from '../types/profitableListings'
@@ -23,8 +29,12 @@ import ResaleItemsTableRow from './ResaleItemsTableRow'
 interface ResaleItemsTableProps {
   rows: ProfitableListing[]
   minProfit?: number
+  maxProfit?: number
+  minBuyPrice?: number
   maxBuyPrice?: number
+  minTimeSinceLastUpdate?: number
   maxTimeSinceLastUpdate?: number
+  applyBuyToTotal?: boolean
   error: string | null
   purchaseOutlet: PurchaseOutlet
   saleOutlet: SaleOutlet
@@ -45,9 +55,13 @@ const saleOutletLabel: Record<SaleOutlet, string> = {
 
 const ResaleItemsTable = ({
   error,
+  applyBuyToTotal = false,
+  minBuyPrice = 0,
   maxBuyPrice = 500000,
+  minTimeSinceLastUpdate = 0,
   maxTimeSinceLastUpdate = 5,
   minProfit = 500,
+  maxProfit = Number.POSITIVE_INFINITY,
   rows,
   purchaseOutlet,
   saleOutlet,
@@ -60,22 +74,42 @@ const ResaleItemsTable = ({
       rows.filter((r) => {
         const totalProfit = getTotalProfit(r, purchaseOutlet, saleOutlet)
         if (totalProfit === null) return false
+        if (totalProfit < minProfit) return false
+        if (totalProfit > maxProfit) return false
 
         const buyPriceRange = getBuyPriceRange(r, purchaseOutlet, saleOutlet)
-        if (buyPriceRange === null || buyPriceRange.min > maxBuyPrice) return false
+        if (buyPriceRange === null) return false
 
-        if (minProfit > 0 && totalProfit < minProfit) return false
+        if (applyBuyToTotal) {
+          const sellRevenue = getSellRevenue(r, saleOutlet)
+          const quantity = getQuantity(r, purchaseOutlet, saleOutlet)
+          if (sellRevenue === null) return false
+          const totalBuyCost = sellRevenue * quantity - totalProfit
+          if (totalBuyCost < minBuyPrice || totalBuyCost > maxBuyPrice) return false
+        } else {
+          if (buyPriceRange.min < minBuyPrice || buyPriceRange.min > maxBuyPrice) return false
+        }
 
         const lastUpdated = getLastUpdated(r, purchaseOutlet)
-        if (
-          lastUpdated !== null &&
-          getSecondsSinceLastUpdate(lastUpdated) > maxTimeSinceLastUpdate * 60
-        )
-          return false
+        if (lastUpdated !== null) {
+          const secs = getSecondsSinceLastUpdate(lastUpdated)
+          if (secs < minTimeSinceLastUpdate * 60 || secs > maxTimeSinceLastUpdate * 60) return false
+        }
 
         return true
       }),
-    [rows, minProfit, maxBuyPrice, maxTimeSinceLastUpdate, purchaseOutlet, saleOutlet],
+    [
+      rows,
+      minProfit,
+      maxProfit,
+      minBuyPrice,
+      maxBuyPrice,
+      applyBuyToTotal,
+      minTimeSinceLastUpdate,
+      maxTimeSinceLastUpdate,
+      purchaseOutlet,
+      saleOutlet,
+    ],
   )
 
   if (error) {
@@ -99,6 +133,7 @@ const ResaleItemsTable = ({
               <TableCell>Item</TableCell>
               <TableCell align="right">{purchaseOutletLabel[purchaseOutlet]}</TableCell>
               <TableCell align="right">Qty</TableCell>
+              <TableCell align="right">Total</TableCell>
               <TableCell align="right">{saleOutletLabel[saleOutlet]}</TableCell>
               <TableCell align="right">Profit</TableCell>
               <TableCell align="right">Updated</TableCell>
