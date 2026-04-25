@@ -150,51 +150,56 @@ public abstract class QueueProcessorBase(
           _logger.LogError(ex, "[Worker {WorkerId}] {Processor} unhandled exception processing {QueueItemId}. Marking for retry.", workerId, GetType().Name, itemId);
         }
 
-        // Priority work isn't a queue row — skip the queue-table mutations.
+        // Priority work isn't a queue row — skip the queue-table
+        // mutations, but still fall through to the rate-limit delay
+        // at the bottom of the loop. Skipping the delay here would
+        // let the alternating snipe-loop double the per-worker call
+        // rate vs the configured budget.
         if (isPriorityWork)
         {
           if (!success)
           {
             _logger.LogDebug("[Worker {WorkerId}] {Processor} priority call returned no success. Will retry on the next priority tick.", workerId, GetType().Name);
           }
-          continue;
         }
-
-        // Increment attempt count
-        try
+        else
         {
-          queueItem = await databaseService.IncrementQueueItemAttempts(itemId, stoppingToken);
-        }
-        catch (Exception ex)
-        {
-          _logger.LogError(ex, "[Worker {WorkerId}] {Processor} unhandled exception incrementing attempts for {QueueItemId}.", workerId, GetType().Name, itemId);
-          continue;
-        }
-
-        // Handle failure
-        if (!success)
-        {
-          if (string.Equals(queueItem.ItemStatus, nameof(QueueStatus.Failed)))
+          // Increment attempt count
+          try
           {
-            _logger.LogWarning("[Worker {WorkerId}] {QueueItemId} failed after {Attempts} attempts.",
-                workerId, queueItem.Id, queueItem.Attempts);
+            queueItem = await databaseService.IncrementQueueItemAttempts(itemId, stoppingToken);
           }
-          else
+          catch (Exception ex)
           {
-            _logger.LogWarning("[Worker {WorkerId}] {QueueItemId} failed. Will retry at {NextAttemptAt}.",
-                workerId, queueItem.Id, queueItem.NextAttemptAt);
+            _logger.LogError(ex, "[Worker {WorkerId}] {Processor} unhandled exception incrementing attempts for {QueueItemId}.", workerId, GetType().Name, itemId);
+            continue;
           }
-          continue;
-        }
 
-        // Remove completed item
-        try
-        {
-          await databaseService.RemoveQueueItemAsync(itemId, stoppingToken);
-        }
-        catch (Exception ex)
-        {
-          _logger.LogWarning(ex, "[Worker {WorkerId}] Removal of {QueueItemId} failed.", workerId, itemId);
+          // Handle failure
+          if (!success)
+          {
+            if (string.Equals(queueItem.ItemStatus, nameof(QueueStatus.Failed)))
+            {
+              _logger.LogWarning("[Worker {WorkerId}] {QueueItemId} failed after {Attempts} attempts.",
+                  workerId, queueItem.Id, queueItem.Attempts);
+            }
+            else
+            {
+              _logger.LogWarning("[Worker {WorkerId}] {QueueItemId} failed. Will retry at {NextAttemptAt}.",
+                  workerId, queueItem.Id, queueItem.NextAttemptAt);
+            }
+            continue;
+          }
+
+          // Remove completed item
+          try
+          {
+            await databaseService.RemoveQueueItemAsync(itemId, stoppingToken);
+          }
+          catch (Exception ex)
+          {
+            _logger.LogWarning(ex, "[Worker {WorkerId}] Removal of {QueueItemId} failed.", workerId, itemId);
+          }
         }
       }
       catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

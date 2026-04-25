@@ -223,8 +223,16 @@ public class DatabaseService(
         .OrderBy(l => l.Price)
         .Take(QueryConstants.NumberOfListingsToStorePerItem)];
 
+    // Empty result — likely transient (API hiccup, item gone). We
+    // intentionally don't wipe the cached listings, but we still
+    // need to evaluate so an active alert whose listing has truly
+    // disappeared gets expired. EvaluateAsync handles the empty
+    // case correctly (no qualifying listing → expire any active alert).
     if (newListings.Count == 0)
+    {
+      await _bargainAlertService.EvaluateAsync(source, itemId, newListings, stoppingToken);
       return;
+    }
 
     var previousListings = (await GetListingsBySourceAndItemIdAsync(source, itemId, stoppingToken))
         .OrderBy(l => l.Price)
@@ -234,6 +242,9 @@ public class DatabaseService(
     if (previousListings.Count == 0)
     {
       await CreateListingsAsync(newListings, stoppingToken);
+      // First-snapshot path — must evaluate so a bargain present on
+      // the very first scan of an item doesn't get missed.
+      await _bargainAlertService.EvaluateAsync(source, itemId, newListings, stoppingToken);
       return;
     }
 
@@ -277,17 +288,18 @@ public class DatabaseService(
       }, stoppingToken);
 
       await ReplaceListingsAsync(source, itemId, newListings, stoppingToken);
-
-      // Detection runs after persistence: a fresh scan that flips an
-      // item between "qualifies as a bargain" and "doesn't" should be
-      // reflected in bargain_alerts. Service is source-scoped (Torn
-      // market only in v1) and idempotent.
-      await _bargainAlertService.EvaluateAsync(source, itemId, newListings, stoppingToken);
     }
     else
     {
       await TouchListingsTimestampAsync(source, itemId, DateTimeOffset.UtcNow, stoppingToken);
     }
+
+    // Bargain evaluation runs on every reachable code path —
+    // first-snapshot, change-detected, and unchanged-listings —
+    // because alert state depends on the latest listings, not on
+    // whether persistence touched anything. Idempotent and
+    // source-scoped; no-op for non-Torn sources.
+    await _bargainAlertService.EvaluateAsync(source, itemId, newListings, stoppingToken);
   }
 
   public Task<IEnumerable<ProfitableListingDto>> GetProfitableListingsAsync(CancellationToken stoppingToken)
