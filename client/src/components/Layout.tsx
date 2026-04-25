@@ -15,6 +15,7 @@ import { MAX_CONTENT_WIDTH } from '../constants/uiConstants'
 import { useItems } from '../hooks/useItems'
 import { useUser } from '../hooks/useUser'
 import '../index.css'
+import BargainAlertToast from './BargainAlertToast'
 import Footer from './Footer'
 import {
   DRAWER_WIDTH,
@@ -142,6 +143,7 @@ export default function Layout() {
       }}
     >
       <TopAppBar handleDrawerToggle={handleDrawerToggle} />
+      <BargainAlertToast />
 
       <Box
         sx={{

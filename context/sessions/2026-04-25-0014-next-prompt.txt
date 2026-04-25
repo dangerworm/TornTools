@@ -1,0 +1,28 @@
+Hi Claude. Read context/session-handoff.md — the top "2026-04-24 end-of-session summary" block is the current state; the rest is historical narrative worth reading once but skimmable thereafter.
+
+**Immediate state**:
+
+- Development/main: all Phase 1+2+3 security work + Top Movers redesign Phase 1 (including the sign-gate fix and the percentile_cont::numeric cast) shipped to prod. Drew verified the widget against real item charts.
+- Uncommitted tweaks in the working tree (ItemVolatilityStatsRepository.cs + TODO.md): trimmed-median baseline + 2-day baseline buffer + z-score threshold raised from 1.0 to 1.5. Build clean. Drew will review and commit when he's back.
+
+**Validated against Drew's data export**: these tweaks improve ranking noise filtering but don't fully eliminate the DSLR-Camera-style post-spike reversion. That's accepted as a known limitation because the next piece of work (the "Unusual activity" pivot) reframes the card so that reversion is a legitimate signal rather than misleading.
+
+**Next piece of work: "Unusual activity" pivot**.
+
+Drew wants to keep the risers/fallers cards but add an "unusual activity" framing for markets departing from their normal trends. With ~29 polling keys this is honestly what we CAN detect (vs top-N movers which we can't). Architecture sketch in the handoff:
+
+- Two-step pass: Hangfire writes an `item_unusual_candidates` shortlist; home-page endpoint joins against fresh data and re-scores cheaply.
+- Multi-horizon z-scores (1h / 6h / 24h / 7d) against 30d baseline; "unusualness" = max |z|.
+- "Why flagged" chip per row.
+- Mode-to-nearest-1%-of-range as a display metric for item pages (not a ranking signal).
+
+**Two open design questions Drew raised at end of session** (worth confirming before building):
+
+1. SQL in C# vs stored procedures — my vote: stay in C#.
+2. Shrink item_change_log_summaries buckets from 6h to 1h — my vote: yes, 1h. Needs a migration plan for existing data. This unlocks genuine intraday resolution for the multi-horizon pivot.
+
+**Do not** start building the pivot without Drew's go-ahead. It touches Flyway, a new table, the rebuild job, a new endpoint, and the widget. Plan first.
+
+Data exports from 2026-04-24 are in `data-exports/` (gitignored) and were useful for validating ranking tweaks. Python + pandas works fine on the summaries CSV (~550k rows, 33MB).
+
+Parked items needing explicit sign-off: read-only prod DB access; cross-item spike/event-calendar correlation tool.

@@ -4,6 +4,7 @@ import type { Item } from '../types/items'
 import type { HistoryResult, HistoryWindow } from '../types/history'
 import type { BazaarSummary } from '../types/bazaarSummaries'
 import type { ProfitableListing } from '../types/profitableListings'
+import type { BargainAlert } from '../types/bargainAlerts'
 import type {
   KeyInfo,
   TornInventoryPayload,
@@ -32,6 +33,11 @@ const URL_ITEM_HISTORY_BASE = `${API_BASE_URL}/items`
 const URL_AUTH_LOGIN = `${API_BASE_URL.replace(/\/api$/, '')}/auth/login`
 const URL_AUTH_ME = `${API_BASE_URL.replace(/\/api$/, '')}/auth/me`
 const URL_AUTH_LOGOUT = `${API_BASE_URL.replace(/\/api$/, '')}/auth/logout`
+const URL_ALERTS_AUTHORISED = `${API_BASE_URL.replace(/\/api$/, '')}/api/alerts/authorised`
+const URL_ALERTS_ACTIVE = `${API_BASE_URL.replace(/\/api$/, '')}/api/alerts/active`
+const URL_ALERTS_DISMISS = (id: number) =>
+  `${API_BASE_URL.replace(/\/api$/, '')}/api/alerts/${id}/dismiss`
+
 const URL_TORN_USER_BASIC = `${API_BASE_URL}/torn/user/basic`
 const URL_TORN_USER_INVENTORY = `${API_BASE_URL}/torn/user/inventory`
 const URL_TORN_KEY_VALIDATE = `${API_BASE_URL}/torn/key/validate`
@@ -301,4 +307,27 @@ async function postToggleUserFavourite(
   })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   return res.json()
+}
+
+export async function fetchBargainAlertsAuthorised(): Promise<boolean> {
+  const res = await fetch(URL_ALERTS_AUTHORISED, { credentials: 'include' })
+  if (res.status === 401) return false
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const body = (await res.json()) as { authorised: boolean }
+  return body.authorised
+}
+
+export async function fetchActiveBargainAlerts(): Promise<BargainAlert[]> {
+  const res = await fetch(URL_ALERTS_ACTIVE, { credentials: 'include' })
+  if (res.status === 401 || res.status === 403) return []
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
+}
+
+export async function dismissBargainAlert(id: number): Promise<void> {
+  const res = await fetch(URL_ALERTS_DISMISS(id), {
+    method: 'POST',
+    credentials: 'include',
+  })
+  if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}`)
 }

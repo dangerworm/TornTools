@@ -16,7 +16,8 @@
 - **Document and display price source** - City vs Item Market vs Weav3r
   ([Trello](https://trello.com/c/GU1LDPMz))
 - **Alerts and notifications** - e.g. for rare high-value bargains
-  ([Trello](https://trello.com/c/02MvgY6i))
+  ([Trello](https://trello.com/c/02MvgY6i)). Concrete spec for the bargain-alert variant is below
+  under **Bargain alerts (subscription feature)** — has design notes and a ToS blocker.
 - **Improve Markets page UI** - clearer than YATA competitors
   ([Trello](https://trello.com/c/VkQsEZOC))
 - **Remove deleted keys** - if the API returns an error saying the key no longer exists
@@ -84,10 +85,10 @@
     Audit before dropping.
   - **Ranking threshold tuning.** The risers/fallers card uses `MinAbsMovePct = 0.10m` and
     `MinAbsZScore = 1.5m` in `ItemVolatilityStatsRepository.GetTopAsync`; the unusual card uses
-    `DefaultMinScore = 1.5m` in `UnusualController`. If too few items surface in prod, drop
-    toward 1.0σ; if too noisy, push toward 2.0σ. Each is a one-line constant. Same goes for the
-    per-horizon min-sample thresholds (1/3/6/24 buckets) in `RebuildAsync` if any horizon is
-    pruning more than expected.
+    `DefaultMinScore = 1.5m` in `UnusualController`. If too few items surface in prod, drop toward
+    1.0σ; if too noisy, push toward 2.0σ. Each is a one-line constant. Same goes for the per-horizon
+    min-sample thresholds (1/3/6/24 buckets) in `RebuildAsync` if any horizon is pruning more than
+    expected.
 - **Cross-item spike correlation / Torn event-calendar analysis** - Scalpel and Chain Whip
   occasionally spike for reasons that aren't obvious. Hypothesis: some spikes correlate with Torn
   in-game events (e.g. Cannabis on 4/20). Would want cross-item price-movement correlation over time
@@ -184,11 +185,137 @@
 
 ---
 
-## Bugs
+## Bargain alerts
 
-### Market price chart sometimes hides Y-axis values
+**Drew-only v1 — build complete (M1–M8); verification + prod latency check pending**.
 
-**File:** client (chart component) ([Trello](https://trello.com/c/fxFTT2gN))
+Plan + status at `context/plans/2026-04-25-bargain-alerts.md`; synthetic-test SQL at
+`context/plans/2026-04-25-bargain-alerts-verification.sql`. Threshold is single-unit profit > $5,000
+(`valueSellPrice - listing_price > 5_000`), markets only, authorised via single-element config list
+of player IDs (`appsettings.json` → `BargainAlertsConfiguration.AuthorisedPlayerIds`, seeded with
+3943900). Detection hooks `DatabaseService.ProcessListingsAsync`; snipe-loop is a priority-hook in
+`QueueProcessorBase` that `TornMarketsProcessor` overrides to interleave hot items with the normal
+queue (bounded by `MaxInterleaves`, default 50). Endpoints at
+`/api/alerts/{authorised,active,{id}/dismiss}`, gated to authorised player IDs. Frontend toast at
+top-right via `<BargainAlertToast/>` mounted in `Layout`; provider is `BargainAlertsProvider` in
+`main.tsx`; visibility-aware 12s polling; Web Audio synthesised two-tone chirp on first sighting of
+each alert (Drew can swap for an MP3 in `client/public/sounds/`). Side-steps the ToS issue below by
+not exchanging anything for anything.
+
+Next: apply V1.25 migration (auto on next backend boot), run synthetic verification per the SQL
+file, then a real-world latency check.
+
+### Subscription extension (deferred — needs ToS sign-off)
+
+**BLOCKED on Torn staff sign-off — do not extend to subscribers without it.**
+
+### The feature
+
+Toast notification when an item appears on the Torn market (and possibly bazaars later) for <10% of
+the city sell value. Persistent until dismissed or tab-closed; shows a "time since listed" counter;
+plays a distinctive sound so a backgrounded tab is still useful. Click-through deep-links to the
+listing.
+
+Subscriber model: free for Drew, free for anyone who's sent Drew Xanax in-game in the last 30 days
+(rolling window). Tracked automatically by polling Drew's events feed for "You were sent some Xanax
+from X" lines.
+
+### ToS blocker — must resolve first
+
+A separate analysis (Claude.ai, 2026-04-25) flagged two Torn rules that this feature touches:
+
+1. **RMT clause** on Torn's rule violations page: "exchange of currency or assets on Torn for
+   real-world money or services". Gating an external-tool feature behind in-game item payment is a
+   strict-reading violation. Sellers historically permabanned without first-offence warning; buyers
+   banned + items removed. Staff actively investigate externally hosted services.
+2. **API ToS** on torn.com/api.html: explicitly invites operators to **contact staff** if they want
+   to advertise, accept donations, or charge for usage. Doesn't carve out item-based payments, so
+   safest assumption is item-gated subscriptions fall under "charging for usage" and need the same
+   approval.
+
+**Required action before any implementation work**: email webmaster@torn.com (or the staff contact
+linked from the API page) describing the feature, the Xanax-gated subscription model, and asking
+explicitly if it's permitted. The API ToS invites this conversation in writing — staff are generally
+reasonable with established tool authors who ask first, and brutal with people who ship and hope.
+Get the "yes" in your inbox before writing any code.
+
+Sanity-check first: see whether TornStats / TornPDA paid tiers accept in-game items or are
+real-money only. That tells us what staff have actually waved through in practice and informs the
+email.
+
+Risk-tiered design fallbacks if staff say no to item-gating:
+
+- **Voluntary tips, no gating**: feature free for all users; an "If you found this useful, you can
+  send Xanax to dangerworm" footer. Strictly the RMT clause's "or services" wording is still
+  ambient, but loads of tools accept tips informally. Lowest-temperature variant.
+- **Real-money subscription** via Stripe/etc., with staff approval. Higher friction but
+  unambiguously inside the ToS framework once approved.
+- **Free for everyone** — the feature is the reward, supports the rest of the tool.
+
+### Design notes (for when/if it's unblocked)
+
+API access verified 2026-04-25:
+
+- Custom key created via deep-link
+  `https://www.torn.com/preferences.php#tab=api?step=addNewKey&title=...&user=events`. Key info
+  confirms `access.type: "Custom"`, `selections.user: ["profile", "timestamp", "lookup", "events"]`,
+  all other categories at default. `basic` and `bazaar` selections correctly return error code 16 —
+  properly scoped.
+- The events feed includes the gift signal:
+  `"You were sent some Xanax from <a ... XID=NNN>NAME</a>"` with unix timestamp + stable per-event
+  ID like `yGtGSLLG0qOzXsO3eN4v`.
+- Bonus: same feed contains `"NAME bought N x ITEM from your bazaar for $PRICE"` events — a future
+  "your bazaar just sold" toast comes for free from the same poll.
+
+API quirk to encode in our client: Torn sometimes returns the _response schema_ literal (e.g.
+`event: string[144]`) instead of populated data. Adding `&comment=tornttools-<feature>` to the query
+reliably switches it to real data. The `comment` also surfaces in `/key/log` so we can grep
+TornTools traffic. **Backend client should always send a `comment`.**
+
+Implementation sketch:
+
+- **Server config**: store the custom Drew-events key alongside the existing
+  `TORN_KEY_ENCRYPTION_KEY_V1` pattern — encrypted at rest, KV-vault-backed, rotatable. New env var
+  (name TBD).
+- **Hangfire job**: poll
+  `https://api.torn.com/user/?selections=events&comment=tornttools-events&key=<key>` every N
+  minutes. Parse for `^You were sent some Xanax from <a [^>]+XID=(\d+)>([^<]+)</a>$`. Snapshot the
+  regex in a unit test so it screams when Torn rewords.
+- **Subscriber ledger table**:
+  `(event_id PK, sender_xid, sender_name, gift_timestamp, recorded_at)`. Append-only.
+  Active-subscriber set = `SELECT DISTINCT sender_xid WHERE gift_timestamp > now() - 30 days`.
+  Persist locally because Torn's events feed is finite (~recent N entries) — a lapsed subscriber
+  whose gift falls off the feed should still count for the 30-day window.
+- **Bargain detection**: a separate Hangfire job or hook on the existing `TornMarketsProcessor` that
+  flags listings where `listing_price < 0.1 * value_market_price`. Drop into a `bargain_alerts`
+  table with `(item_id, listing_id, listing_price, market_value, found_at, expires_at, status)`.
+- **Snipe-loop poll** (Drew's idea): when a bargain is active, `TornMarketsProcessor` interleaves
+  re-polls of that item with normal queue progression — `[item, next, item, next, …]` — until the
+  listing disappears, then transitions the alert to "expired/sold" and updates the toast. **Bound
+  the loop**: max N consecutive interleaved polls per item before forced fallback to normal order
+  (avoids starving the queue if someone keeps relisting cheap, or if a market glitch persists).
+  Constants TBD; suggest N=30 (~5 min at current cadence) as a starting point.
+- **Push transport (v1)**: short-interval browser polling on `/api/alerts/pending` returning the
+  authenticated user's currently-active bargains. SignalR/WebSockets/SSE deferred until usage proves
+  the feature is worth new infra.
+- **Toast UI**: persistent (no auto-dismiss), live "time since listed" counter, distinct sound
+  (asset choice TBD), click-through to the Torn listing URL, transitions to "Too late!" variant when
+  the backend marks the alert expired.
+- **Latency budget to validate**: item listed → next scan picks it up → backend evaluates threshold
+  → next browser poll picks it up → toast renders → human reacts → click. Worth measuring end-to-end
+  before committing — if best-case is 30s+, the feature ships disappointment because <10%-of-value
+  listings get sniped in seconds. Snipe-loop only helps after detection; initial detection latency
+  is still bounded by current `TornMarketsProcessor` cadence.
+
+Bazaars deferred from v1: we can't poll them directly (they're scraped via Weav3r at lower cadence),
+so detection latency would be hopeless. Markets-only for v1.
+
+### Bonus: deep-link key creation pattern
+
+`https://www.torn.com/preferences.php#tab=api?step=addNewKey&title=<TITLE>&<category>=<csv>` is a
+pre-fill deep-link into the Torn API prefs page. Useful UX for any future feature where TornTools
+asks subscribers to grant a narrow permission — render an "Authorise TornTools" button instead of
+"go to prefs → tick these boxes". File under nav/sign-in UX for later.
 
 ---
 

@@ -20,7 +20,8 @@ public class DatabaseService(
     IItemRepository itemRepository,
     IListingRepository listingRepository,
     IQueueItemRepository queueItemRepository,
-    IUserRepository userRepository
+    IUserRepository userRepository,
+    IBargainAlertService bargainAlertService
 ) : IDatabaseService
 {
   // 1-hour buckets give the multi-horizon z-score in the Unusual Activity
@@ -40,6 +41,7 @@ public class DatabaseService(
   private readonly IListingRepository _listingRepository = listingRepository ?? throw new ArgumentNullException(nameof(listingRepository));
   private readonly IQueueItemRepository _queueItemRepository = queueItemRepository ?? throw new ArgumentNullException(nameof(queueItemRepository));
   private readonly IUserRepository _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+  private readonly IBargainAlertService _bargainAlertService = bargainAlertService ?? throw new ArgumentNullException(nameof(bargainAlertService));
 
   public Task<IEnumerable<ForeignStockItemDto>> GetForeignStockItemsAsync(CancellationToken cancellationToken)
   {
@@ -221,8 +223,16 @@ public class DatabaseService(
         .OrderBy(l => l.Price)
         .Take(QueryConstants.NumberOfListingsToStorePerItem)];
 
+    // Empty result — likely transient (API hiccup, item gone). We
+    // intentionally don't wipe the cached listings, but we still
+    // need to evaluate so an active alert whose listing has truly
+    // disappeared gets expired. EvaluateAsync handles the empty
+    // case correctly (no qualifying listing → expire any active alert).
     if (newListings.Count == 0)
+    {
+      await _bargainAlertService.EvaluateAsync(source, itemId, newListings, stoppingToken);
       return;
+    }
 
     var previousListings = (await GetListingsBySourceAndItemIdAsync(source, itemId, stoppingToken))
         .OrderBy(l => l.Price)
@@ -232,6 +242,9 @@ public class DatabaseService(
     if (previousListings.Count == 0)
     {
       await CreateListingsAsync(newListings, stoppingToken);
+      // First-snapshot path — must evaluate so a bargain present on
+      // the very first scan of an item doesn't get missed.
+      await _bargainAlertService.EvaluateAsync(source, itemId, newListings, stoppingToken);
       return;
     }
 
@@ -280,6 +293,13 @@ public class DatabaseService(
     {
       await TouchListingsTimestampAsync(source, itemId, DateTimeOffset.UtcNow, stoppingToken);
     }
+
+    // Bargain evaluation runs on every reachable code path —
+    // first-snapshot, change-detected, and unchanged-listings —
+    // because alert state depends on the latest listings, not on
+    // whether persistence touched anything. Idempotent and
+    // source-scoped; no-op for non-Torn sources.
+    await _bargainAlertService.EvaluateAsync(source, itemId, newListings, stoppingToken);
   }
 
   public Task<IEnumerable<ProfitableListingDto>> GetProfitableListingsAsync(CancellationToken stoppingToken)
