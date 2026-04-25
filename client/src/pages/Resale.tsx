@@ -24,7 +24,7 @@ import type { PurchaseOutlet, SaleOutlet } from '../types/markets'
 const VALID_PURCHASE_OUTLETS: PurchaseOutlet[] = ['city', 'bazaar', 'market']
 const VALID_SALE_OUTLETS: SaleOutlet[] = ['city', 'bazaar', 'market', 'anonymousMarket']
 
-const MINUTE_RANGE_VALUES = [1, 2, 5, 10, 30, 60, 120, 300]
+const MINUTE_RANGE_VALUES = [0, 1, 2, 5, 10, 30, 60, 120, 300]
 const PRICE_RANGE_VALUES = [
   0, 1, 10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000,
   50000000, 100000000, 500000000, 1000000000, 50000000000, 100000000000,
@@ -34,8 +34,8 @@ const DEFAULT_MIN_PROFIT_INDEX = 3 // $50
 const DEFAULT_MAX_PROFIT_INDEX = PRICE_RANGE_VALUES.length - 1
 const DEFAULT_MIN_BUY_PRICE_INDEX = 0 // $0
 const DEFAULT_MAX_BUY_PRICE_INDEX = 17 // $1,000,000,000
-const DEFAULT_MIN_TIME_INDEX = 0 // 1 minute
-const DEFAULT_MAX_TIME_INDEX = 4 // 30 minutes
+const DEFAULT_MIN_TIME_INDEX = 0 // 0 minutes
+const DEFAULT_MAX_TIME_INDEX = 5 // 30 minutes
 
 const loadSliderIndex = (key: string, defaultIndex: number, values: number[]): number => {
   const stored = localStorage.getItem(key)
