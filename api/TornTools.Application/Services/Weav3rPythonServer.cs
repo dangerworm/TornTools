@@ -18,6 +18,14 @@ public sealed class Weav3rPythonServer : IDisposable
   private static readonly TimeSpan DefaultCooldown = TimeSpan.FromSeconds(30);
   // Sanity cap so a malformed or hostile Retry-After can't park us indefinitely.
   private static readonly TimeSpan MaxCooldown = TimeSpan.FromMinutes(5);
+  // 403s rarely self-resolve (fingerprint / WAF / IP) — back off harder than 429.
+  private static readonly TimeSpan ForbiddenCooldown = TimeSpan.FromMinutes(5);
+  // Circuit-breaker: after this many 403s in a row, assume we're being blocked
+  // wholesale and stop retrying until human intervention.
+  private const int ConsecutiveForbiddenThreshold = 20;
+  private static readonly TimeSpan CircuitBreakerCooldown = TimeSpan.FromHours(1);
+  // Truncate body snippets in error logs so a Cloudflare HTML page doesn't dominate the logs.
+  private const int BodySnippetLogLimit = 500;
 
   private readonly ILogger<Weav3rPythonServer> _logger;
   private readonly string _compiledPath;
@@ -26,6 +34,7 @@ public sealed class Weav3rPythonServer : IDisposable
   private Process? _process;
   private readonly SemaphoreSlim _requestLock = new(1, 1);
   private DateTime _cooldownUntilUtc = DateTime.MinValue;
+  private int _consecutiveForbidden;
 
   public Weav3rPythonServer(ILogger<Weav3rPythonServer> logger)
   {
@@ -69,10 +78,15 @@ public sealed class Weav3rPythonServer : IDisposable
       }
 
       var response = JsonSerializer.Deserialize<ResponsePayload>(responseLine);
-      if (response?.Ok == true) return response.Body;
+      if (response?.Ok == true)
+      {
+        _consecutiveForbidden = 0;
+        return response.Body;
+      }
 
       if (response?.Status == 429)
       {
+        _consecutiveForbidden = 0;
         var cooldown = DefaultCooldown;
         if (response.RetryAfterSeconds is double seconds && double.IsFinite(seconds) && seconds > 0)
         {
@@ -82,13 +96,43 @@ public sealed class Weav3rPythonServer : IDisposable
 
         _cooldownUntilUtc = DateTime.UtcNow + cooldown;
         _logger.LogWarning(
-            "bazaar_server got HTTP 429; pausing all Weav3r calls for {Seconds:F1}s (Retry-After: {RetryAfter}).",
+            "bazaar_server got HTTP 429; pausing all Weav3r calls for {Seconds:F1}s (Retry-After: {RetryAfter}). Body: {Body}",
             cooldown.TotalSeconds,
-            response.RetryAfterSeconds?.ToString("F1") ?? "absent");
+            response.RetryAfterSeconds?.ToString("F1") ?? "absent",
+            TruncateForLog(response.Body));
+      }
+      else if (response?.Status == 403)
+      {
+        _consecutiveForbidden++;
+        var tripped = _consecutiveForbidden >= ConsecutiveForbiddenThreshold;
+        var cooldown = tripped ? CircuitBreakerCooldown : ForbiddenCooldown;
+        _cooldownUntilUtc = DateTime.UtcNow + cooldown;
+
+        if (tripped)
+        {
+          _logger.LogCritical(
+              "bazaar_server: {Count} consecutive 403s — circuit breaker tripped, pausing Weav3r for {Minutes:F0} min. Body: {Body}",
+              _consecutiveForbidden,
+              cooldown.TotalMinutes,
+              TruncateForLog(response.Body));
+        }
+        else
+        {
+          _logger.LogWarning(
+              "bazaar_server got HTTP 403 ({Count}/{Threshold}); pausing all Weav3r calls for {Seconds:F0}s. Body: {Body}",
+              _consecutiveForbidden,
+              ConsecutiveForbiddenThreshold,
+              cooldown.TotalSeconds,
+              TruncateForLog(response.Body));
+        }
       }
       else
       {
-        _logger.LogError("bazaar_server returned error: {Error}", response?.Error);
+        _consecutiveForbidden = 0;
+        _logger.LogError(
+            "bazaar_server returned error: {Error}. Body: {Body}",
+            response?.Error,
+            TruncateForLog(response?.Body));
       }
       return null;
     }
@@ -155,6 +199,13 @@ public sealed class Weav3rPythonServer : IDisposable
   {
     KillProcess();
     _requestLock.Dispose();
+  }
+
+  private static string TruncateForLog(string? body)
+  {
+    if (string.IsNullOrEmpty(body)) return "<empty>";
+    var trimmed = body.Length > BodySnippetLogLimit ? body[..BodySnippetLogLimit] : body;
+    return trimmed.Replace('\n', ' ').Replace('\r', ' ');
   }
 
   private record RequestPayload(

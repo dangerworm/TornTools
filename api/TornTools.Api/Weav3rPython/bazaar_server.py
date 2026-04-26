@@ -4,8 +4,11 @@ Persistent Weav3r bazaar fetcher server.
 Protocol (line-delimited JSON over stdin/stdout):
   Request  → {"url": "...", "headers": {...}}
   Response ← {"ok": true,  "status": 200, "body": "..."}
-           ← {"ok": false, "status": 429, "error": "...", "retry_after_seconds": 12.0}
+           ← {"ok": false, "status": 429, "error": "...", "retry_after_seconds": 12.0, "body": "<snippet>"}
            ← {"ok": false, "error": "..."}                       (transport failure, no status)
+
+Non-2xx responses include up to BODY_SNIPPET_LIMIT chars of the response body so the
+host can identify Cloudflare error codes (1010, 1015, 1020, etc.) without fetching twice.
 
 One request at a time; the C# side serialises concurrent calls with a SemaphoreSlim.
 """
@@ -23,6 +26,8 @@ from curl_cffi.requests.exceptions import RequestException
 
 # PYTHONUNBUFFERED=1 is set by the host, but be explicit about line-buffering.
 sys.stdout.reconfigure(line_buffering=True)
+
+BODY_SNIPPET_LIMIT = 500
 
 
 def parse_retry_after(value):
@@ -71,11 +76,15 @@ while True:
             print(json.dumps({"ok": True, "status": status, "body": response.text}), flush=True)
         else:
             retry_after = parse_retry_after(response.headers.get("Retry-After"))
+            body = response.text or ""
+            if len(body) > BODY_SNIPPET_LIMIT:
+                body = body[:BODY_SNIPPET_LIMIT]
             print(json.dumps({
                 "ok": False,
                 "status": status,
                 "error": f"HTTP {status}",
                 "retry_after_seconds": retry_after,
+                "body": body,
             }), flush=True)
     except Exception as e:
         print(json.dumps({"ok": False, "error": f"Unexpected error: {e}"}), flush=True)
