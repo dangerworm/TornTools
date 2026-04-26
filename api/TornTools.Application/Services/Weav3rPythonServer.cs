@@ -74,11 +74,11 @@ public sealed class Weav3rPythonServer : IDisposable
       if (response?.Status == 429)
       {
         var cooldown = DefaultCooldown;
-        if (response.RetryAfterSeconds is double seconds && seconds > 0)
+        if (response.RetryAfterSeconds is double seconds && double.IsFinite(seconds) && seconds > 0)
         {
-          cooldown = TimeSpan.FromSeconds(seconds);
+          var capped = Math.Min(seconds, MaxCooldown.TotalSeconds);
+          cooldown = TimeSpan.FromSeconds(capped);
         }
-        if (cooldown > MaxCooldown) cooldown = MaxCooldown;
 
         _cooldownUntilUtc = DateTime.UtcNow + cooldown;
         _logger.LogWarning(

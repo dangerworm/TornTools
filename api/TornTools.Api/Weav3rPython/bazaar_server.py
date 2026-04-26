@@ -11,6 +11,7 @@ One request at a time; the C# side serialises concurrent calls with a SemaphoreS
 """
 import datetime
 import json
+import math
 import os
 import sys
 from email.utils import parsedate_to_datetime
@@ -30,15 +31,17 @@ def parse_retry_after(value):
         return None
     value = value.strip()
     try:
-        return max(0.0, float(value))
+        seconds = float(value)
     except ValueError:
-        pass
+        seconds = None
+    if seconds is not None:
+        return max(0.0, seconds) if math.isfinite(seconds) else None
     try:
         when = parsedate_to_datetime(value)
         if when.tzinfo is None:
             when = when.replace(tzinfo=datetime.timezone.utc)
         delta = (when - datetime.datetime.now(datetime.timezone.utc)).total_seconds()
-        return max(0.0, delta)
+        return max(0.0, delta) if math.isfinite(delta) else None
     except (TypeError, ValueError):
         return None
 
