@@ -14,12 +14,18 @@ namespace TornTools.Application.Services;
 /// </summary>
 public sealed class Weav3rPythonServer : IDisposable
 {
+  // Default pause when upstream returns 429 with no Retry-After header.
+  private static readonly TimeSpan DefaultCooldown = TimeSpan.FromSeconds(30);
+  // Sanity cap so a malformed or hostile Retry-After can't park us indefinitely.
+  private static readonly TimeSpan MaxCooldown = TimeSpan.FromMinutes(5);
+
   private readonly ILogger<Weav3rPythonServer> _logger;
   private readonly string _compiledPath;
   private readonly string _scriptPath;
   private readonly string _pythonExe;
   private Process? _process;
   private readonly SemaphoreSlim _requestLock = new(1, 1);
+  private DateTime _cooldownUntilUtc = DateTime.MinValue;
 
   public Weav3rPythonServer(ILogger<Weav3rPythonServer> logger)
   {
@@ -35,6 +41,15 @@ public sealed class Weav3rPythonServer : IDisposable
     await _requestLock.WaitAsync(ct);
     try
     {
+      var remaining = _cooldownUntilUtc - DateTime.UtcNow;
+      if (remaining > TimeSpan.Zero)
+      {
+        _logger.LogInformation(
+            "bazaar_server in cooldown; waiting {Seconds:F1}s before next request.",
+            remaining.TotalSeconds);
+        await Task.Delay(remaining, ct);
+      }
+
       EnsureProcessRunning();
 
       var requestLine = JsonSerializer.Serialize(new RequestPayload(url, headers ?? []));
@@ -56,7 +71,25 @@ public sealed class Weav3rPythonServer : IDisposable
       var response = JsonSerializer.Deserialize<ResponsePayload>(responseLine);
       if (response?.Ok == true) return response.Body;
 
-      _logger.LogError("bazaar_server returned error: {Error}", response?.Error);
+      if (response?.Status == 429)
+      {
+        var cooldown = DefaultCooldown;
+        if (response.RetryAfterSeconds is double seconds && seconds > 0)
+        {
+          cooldown = TimeSpan.FromSeconds(seconds);
+        }
+        if (cooldown > MaxCooldown) cooldown = MaxCooldown;
+
+        _cooldownUntilUtc = DateTime.UtcNow + cooldown;
+        _logger.LogWarning(
+            "bazaar_server got HTTP 429; pausing all Weav3r calls for {Seconds:F1}s (Retry-After: {RetryAfter}).",
+            cooldown.TotalSeconds,
+            response.RetryAfterSeconds?.ToString("F1") ?? "absent");
+      }
+      else
+      {
+        _logger.LogError("bazaar_server returned error: {Error}", response?.Error);
+      }
       return null;
     }
     catch (OperationCanceledException) when (!ct.IsCancellationRequested)
@@ -132,6 +165,8 @@ public sealed class Weav3rPythonServer : IDisposable
   private record ResponsePayload(
       [property: JsonPropertyName("ok")] bool Ok,
       [property: JsonPropertyName("body")] string? Body,
-      [property: JsonPropertyName("error")] string? Error
+      [property: JsonPropertyName("error")] string? Error,
+      [property: JsonPropertyName("status")] int? Status,
+      [property: JsonPropertyName("retry_after_seconds")] double? RetryAfterSeconds
   );
 }
