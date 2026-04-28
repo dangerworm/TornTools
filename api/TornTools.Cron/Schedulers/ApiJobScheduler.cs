@@ -71,6 +71,12 @@ public class ApiJobScheduler(
         () => UpdateForeignStock(),
         "0/10 * * * *" // At every 10th minute from 0 through 59.
     );
+
+    RecurringJob.AddOrUpdate(
+        nameof(ReapStaleQueueItems),
+        () => ReapStaleQueueItems(),
+        "*/2 * * * *" // Every 2 minutes — backstop for orphaned InProgress rows.
+    );
   }
 
   [DisplayName("Items update")]
@@ -110,6 +116,23 @@ public class ApiJobScheduler(
   {
     _logger.LogInformation("Running Hangfire job {JobName}", nameof(RebuildUnusualCandidates));
     await _databaseService.RebuildUnusualCandidatesAsync(stoppingToken: CancellationToken.None);
+  }
+
+  [DisplayName("Reap stale InProgress queue items")]
+  public async Task ReapStaleQueueItems()
+  {
+    var resetCount = await _databaseService.ReapStaleInProgressItemsAsync(
+        TimeSpan.FromMinutes(5),
+        CancellationToken.None
+    );
+
+    if (resetCount > 0)
+    {
+      _logger.LogWarning(
+          "Reaper reset {Count} stale InProgress queue item(s) back to Pending.",
+          resetCount
+      );
+    }
   }
 
   [DisplayName("Foreign stock update")]
