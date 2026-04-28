@@ -418,6 +418,16 @@ public class DatabaseService(
     return _queueItemRepository.RemoveInProgressItemsAsync(stoppingToken);
   }
 
+  public Task<int> ReapStaleInProgressItemsAsync(TimeSpan staleAfter, CancellationToken stoppingToken)
+  {
+    return _queueItemRepository.ReapStaleInProgressItemsAsync(staleAfter, stoppingToken);
+  }
+
+  public Task ResetQueueItemToPendingAsync(Guid id, CancellationToken stoppingToken)
+  {
+    return _queueItemRepository.ResetQueueItemToPendingAsync(id, stoppingToken);
+  }
+
   public Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken)
   {
     return _queueItemRepository.RemoveQueueItemAsync(id, stoppingToken);

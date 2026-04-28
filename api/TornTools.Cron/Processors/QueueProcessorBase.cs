@@ -164,14 +164,27 @@ public abstract class QueueProcessorBase(
         }
         else
         {
-          // Increment attempt count
+          // Increment attempt count.
+          // If this throws (DB blip, or stoppingToken cancelled mid-call so the
+          // attempt update can't run), the row would otherwise stay InProgress
+          // forever. Best-effort reset to Pending using CancellationToken.None
+          // so we still release the row even during shutdown; the reaper is the
+          // last-resort backstop.
           try
           {
             queueItem = await databaseService.IncrementQueueItemAttempts(itemId, stoppingToken);
           }
           catch (Exception ex)
           {
-            _logger.LogError(ex, "[Worker {WorkerId}] {Processor} unhandled exception incrementing attempts for {QueueItemId}.", workerId, GetType().Name, itemId);
+            _logger.LogError(ex, "[Worker {WorkerId}] {Processor} unhandled exception incrementing attempts for {QueueItemId}. Attempting to reset row to Pending.", workerId, GetType().Name, itemId);
+            try
+            {
+              await databaseService.ResetQueueItemToPendingAsync(itemId, CancellationToken.None);
+            }
+            catch (Exception resetEx)
+            {
+              _logger.LogError(resetEx, "[Worker {WorkerId}] Failed to reset {QueueItemId} to Pending — the reaper will recover it.", workerId, itemId);
+            }
             continue;
           }
 

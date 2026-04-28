@@ -13,8 +13,12 @@ public static class ServiceCollectionExtensions
 {
   public static IServiceCollection AddDependencies(this IServiceCollection services)
   {
+    // Per-request timeout so a stalled upstream can't tie a queue worker up
+    // for the HttpClient default of 100 s — we'd rather fail fast and retry.
+    var apiCallTimeout = TimeSpan.FromSeconds(30);
+
     services
-        .AddHttpClient(TornApiConstants.ClientName)
+        .AddHttpClient(TornApiConstants.ClientName, client => client.Timeout = apiCallTimeout)
         .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
         {
           AutomaticDecompression =
@@ -24,7 +28,7 @@ public static class ServiceCollectionExtensions
         });
 
     services
-        .AddHttpClient(YataApiConstants.ClientName)
+        .AddHttpClient(YataApiConstants.ClientName, client => client.Timeout = apiCallTimeout)
         .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
         {
           AutomaticDecompression =

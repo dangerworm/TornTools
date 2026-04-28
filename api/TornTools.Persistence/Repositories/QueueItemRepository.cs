@@ -66,9 +66,11 @@ public class QueueItemRepository(
   // Atomically claims the next eligible queue item of a given call type using
   // SELECT FOR UPDATE SKIP LOCKED. Each processor type only claims its own rows,
   // so TornMarketsProcessor and Weav3rBazaarsProcessor never contend with each other.
+  // last_attempt_at is stamped at claim time so the reaper can identify stuck rows.
   private const string ClaimNextItemSql = """
     UPDATE public.queue_items
-    SET item_status = 'InProgress'
+    SET item_status = 'InProgress',
+        last_attempt_at = NOW()
     WHERE id = (
         SELECT id
         FROM public.queue_items
@@ -83,6 +85,17 @@ public class QueueItemRepository(
         id, call_type, endpoint_url, http_method, headers_json::text, payload_json::text,
         item_status, attempts, created_at, last_attempt_at, next_attempt_at,
         processed_at, queue_index;
+    """;
+
+  // Resets InProgress rows whose claim is older than @staleAfterSeconds back to Pending
+  // so the next worker pass can re-claim them. Used by the reaper to recover from worker
+  // crashes / hangs that bypassed the normal Increment/Remove path.
+  private const string ReapStaleInProgressSql = """
+    UPDATE public.queue_items
+    SET item_status = 'Pending',
+        next_attempt_at = NULL
+    WHERE item_status = 'InProgress'
+      AND (last_attempt_at IS NULL OR last_attempt_at < NOW() - make_interval(secs => @staleAfterSeconds));
     """;
 
   public async Task<QueueItemDto?> GetNextQueueItemAsync(ApiCallType callType, CancellationToken stoppingToken)
@@ -219,6 +232,37 @@ public class QueueItemRepository(
       DbContext.QueueItems.RemoveRange(items);
       await DbContext.SaveChangesAsync(stoppingToken);
     }
+  }
+
+  public async Task<int> ReapStaleInProgressItemsAsync(TimeSpan staleAfter, CancellationToken stoppingToken)
+  {
+    await DbContext.Database.OpenConnectionAsync(stoppingToken);
+    try
+    {
+      var connection = (NpgsqlConnection)DbContext.Database.GetDbConnection();
+      await using var cmd = new NpgsqlCommand(ReapStaleInProgressSql, connection);
+      cmd.Parameters.AddWithValue("staleAfterSeconds", staleAfter.TotalSeconds);
+      return await cmd.ExecuteNonQueryAsync(stoppingToken);
+    }
+    finally
+    {
+      await DbContext.Database.CloseConnectionAsync();
+    }
+  }
+
+  public async Task ResetQueueItemToPendingAsync(Guid id, CancellationToken stoppingToken)
+  {
+    var queueItem = await DbContext.QueueItems.FindAsync([id, stoppingToken], stoppingToken);
+    if (queueItem is null)
+    {
+      // Already removed by another path — nothing to reset.
+      return;
+    }
+
+    queueItem.ItemStatus = nameof(QueueStatus.Pending);
+    queueItem.NextAttemptAt = null;
+
+    await DbContext.SaveChangesAsync(stoppingToken);
   }
 
   public async Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken)

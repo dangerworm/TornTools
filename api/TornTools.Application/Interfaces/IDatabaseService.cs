@@ -54,6 +54,8 @@ public interface IDatabaseService
   Task RemoveQueueItemsAsync(CancellationToken stoppingToken);
   Task RemoveQueueItemsAsync(ApiCallType callType, CancellationToken stoppingToken);
   Task RemoveInProgressItemsAsync(CancellationToken stoppingToken);
+  Task<int> ReapStaleInProgressItemsAsync(TimeSpan staleAfter, CancellationToken stoppingToken);
+  Task ResetQueueItemToPendingAsync(Guid id, CancellationToken stoppingToken);
   Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken);
 
   Task<int> GetApiKeyCountAsync(CancellationToken stoppingToken);
