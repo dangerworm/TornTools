@@ -252,7 +252,7 @@ public class QueueItemRepository(
 
   public async Task ResetQueueItemToPendingAsync(Guid id, CancellationToken stoppingToken)
   {
-    var queueItem = await DbContext.QueueItems.FindAsync([id, stoppingToken], stoppingToken);
+    var queueItem = await DbContext.QueueItems.FindAsync(new object?[] { id }, stoppingToken);
     if (queueItem is null)
     {
       // Already removed by another path — nothing to reset.
@@ -267,7 +267,7 @@ public class QueueItemRepository(
 
   public async Task RemoveQueueItemAsync(Guid id, CancellationToken stoppingToken)
   {
-    var itemToRemove = await DbContext.QueueItems.FindAsync(id, stoppingToken)
+    var itemToRemove = await DbContext.QueueItems.FindAsync(new object?[] { id }, stoppingToken)
         ?? throw new Exception($"{nameof(QueueItemEntity)} with ID {id} not found.");
 
     DbContext.QueueItems.Remove(itemToRemove);
@@ -276,7 +276,7 @@ public class QueueItemRepository(
 
   private async Task<QueueItemEntity> GetQueueItemByIdAsync(Guid id, CancellationToken stoppingToken)
   {
-    var queueItem = await DbContext.QueueItems.FindAsync([id, stoppingToken], stoppingToken);
+    var queueItem = await DbContext.QueueItems.FindAsync(new object?[] { id }, stoppingToken);
     return queueItem is null
         ? throw new Exception($"{nameof(QueueItemEntity)} with ID {id} not found.")
         : queueItem;
