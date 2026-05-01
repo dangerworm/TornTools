@@ -55,37 +55,9 @@ variable "developer_ip" {
   type        = string
 }
 
-variable "enable_local_user_access" {
-  description = "Whether to grant Key Vault access to the local user"
-  type        = bool
-  default     = false
-}
-
 variable "environment" {
   description = "Deployment environment (e.g., dev, staging, prod)"
   type        = string
-}
-
-variable "github_actions_object_id" {
-  description = "Object ID for the GitHub Actions service principal"
-  type        = string
-}
-
-variable "github_actions_tenant_id" {
-  description = "Tenant ID for the GitHub Actions service principal"
-  type        = string
-}
-
-variable "local_user_object_id" {
-  description = "Object ID of the local developer's Azure AD identity"
-  type        = string
-  default     = "" # override in .tfvars if needed
-}
-
-variable "local_user_tenant_id" {
-  description = "Tenant ID of the local developer's Azure AD identity"
-  type        = string
-  default     = "" # override in .tfvars if needed
 }
 
 variable "location" {
@@ -113,6 +85,32 @@ variable "subscription_id" {
 variable "tfstate_storage_account_name" {
   description = "Storage account name for Terraform state"
   type        = string
+}
+
+variable "shoplift_watcher_enabled" {
+  description = "Whether the JewelryShopliftingWatcher background service polls and pings Discord."
+  type        = bool
+  default     = false
+}
+
+variable "shoplift_watcher_public_api_key" {
+  description = "Public Torn API key used by the shoplift watcher. Any user-supplied key with public-data access works."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "shoplift_watcher_discord_webhook_url" {
+  description = "Discord webhook URL the shoplift watcher posts to when the Jewelry Store opens up."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "shoplift_watcher_mention_role_id" {
+  description = "Optional Discord role ID to ping in the watcher message (rendered as <@&id>)."
+  type        = string
+  default     = ""
 }
 
 locals {

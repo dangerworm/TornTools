@@ -3,7 +3,7 @@ resource "azurerm_postgresql_flexible_server" "db_server" {
   resource_group_name    = azurerm_resource_group.torntools_webapp_rg.name
   location               = azurerm_resource_group.torntools_webapp_rg.location
   administrator_login    = "pgadmin"
-  administrator_password = azurerm_key_vault_secret.db_password.value
+  administrator_password = var.db_admin_password
   sku_name               = var.sku_postgres
   storage_mb             = 32768
   version                = "17"
@@ -15,7 +15,7 @@ resource "azurerm_postgresql_flexible_server" "db_server" {
   }
 }
 
-resource "azurerm_postgresql_flexible_server_database" "postgres_db" { 
+resource "azurerm_postgresql_flexible_server_database" "postgres_db" {
   name      = "${var.app_name}-${var.environment}-postgres-db"
   server_id = azurerm_postgresql_flexible_server.db_server.id
   collation = "en_US.utf8"

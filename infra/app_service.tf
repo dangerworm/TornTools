@@ -30,7 +30,7 @@ resource "azurerm_linux_web_app" "backend_api" {
       var.environment,
       "Development"
     )
-    "ConnectionStrings__PostgresConnection"            = "Host=${azurerm_postgresql_flexible_server.db_server.fqdn};Database=${azurerm_postgresql_flexible_server_database.postgres_db.name};Username=${azurerm_postgresql_flexible_server.db_server.administrator_login};Password=${azurerm_key_vault_secret.db_password.value};Ssl Mode=Require"
+    "ConnectionStrings__PostgresConnection"            = "Host=${azurerm_postgresql_flexible_server.db_server.fqdn};Database=${azurerm_postgresql_flexible_server_database.postgres_db.name};Username=${azurerm_postgresql_flexible_server.db_server.administrator_login};Password=${var.db_admin_password};Ssl Mode=Require"
     "EnvironmentConfiguration__EnvironmentName"        = "${var.environment}"
     "EnvironmentConfiguration__PopulateQueue"          = "true"
     "EnvironmentConfiguration__RunQueueProcessor"      = "true"
@@ -40,6 +40,10 @@ resource "azurerm_linux_web_app" "backend_api" {
     "TornKeyEncryption__Keys__1"                       = var.torn_key_encryption_key_v1
     "TornMarketsProcessorConfiguration__WorkerCount"   = "1"
     "Weav3rBazaarsProcessorConfiguration__WorkerCount" = "1"
+    "ShopliftWatcher__Enabled"                         = tostring(var.shoplift_watcher_enabled)
+    "ShopliftWatcher__PublicApiKey"                    = var.shoplift_watcher_public_api_key
+    "ShopliftWatcher__DiscordWebhookUrl"               = var.shoplift_watcher_discord_webhook_url
+    "ShopliftWatcher__MentionRoleId"                   = var.shoplift_watcher_mention_role_id
   }
 
   depends_on = [azurerm_service_plan.backend_plan]

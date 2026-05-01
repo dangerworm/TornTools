@@ -105,14 +105,15 @@ jobs:
           TF_VAR_app_service_outbound_ips: ${{ secrets.TF_VAR_APP_SERVICE_OUTBOUND_IPS }}
           TF_VAR_db_admin_password: ${{ secrets.TF_VAR_DB_ADMIN_PASSWORD }}
           TF_VAR_developer_ip: ${{ secrets.TF_VAR_DEVELOPER_IP }}
-          TF_VAR_enable_local_user_access: false
           TF_VAR_environment: ${{ env.ENV_DISPLAY_NAME }}
-          TF_VAR_github_actions_object_id: ${{ secrets.TF_VAR_GITHUB_ACTIONS_OBJECT_ID }}
-          TF_VAR_github_actions_tenant_id: ${{ secrets.TF_VAR_GITHUB_ACTIONS_TENANT_ID }}
           TF_VAR_subscription_id: ${{ secrets.TF_VAR_SUBSCRIPTION_ID }}
           TF_VAR_tfstate_storage_account_name: "torntoolsstoretfstate"
           TF_VAR_custom_domains_enabled: ${{ secrets.TF_VAR_CUSTOM_DOMAINS_ENABLED || 'false' }}
           TF_VAR_torn_key_encryption_key_v1: ${{ secrets.TORN_KEY_ENCRYPTION_KEY_V1 }}
+          TF_VAR_shoplift_watcher_enabled: ${{ secrets.TF_VAR_SHOPLIFT_WATCHER_ENABLED || 'false' }}
+          TF_VAR_shoplift_watcher_public_api_key: ${{ secrets.TF_VAR_SHOPLIFT_WATCHER_PUBLIC_API_KEY }}
+          TF_VAR_shoplift_watcher_discord_webhook_url: ${{ secrets.TF_VAR_SHOPLIFT_WATCHER_DISCORD_WEBHOOK_URL }}
+          TF_VAR_shoplift_watcher_mention_role_id: ${{ secrets.TF_VAR_SHOPLIFT_WATCHER_MENTION_ROLE_ID }}
         run: |
           echo "📐 Running terraform plan..."
           set +e
@@ -165,14 +166,15 @@ jobs:
           TF_VAR_app_service_outbound_ips: ${{ secrets.TF_VAR_APP_SERVICE_OUTBOUND_IPS }}
           TF_VAR_db_admin_password: ${{ secrets.TF_VAR_DB_ADMIN_PASSWORD }}
           TF_VAR_developer_ip: ${{ secrets.TF_VAR_DEVELOPER_IP }}
-          TF_VAR_enable_local_user_access: false
           TF_VAR_environment: ${{ env.ENV_DISPLAY_NAME }}
-          TF_VAR_github_actions_object_id: ${{ secrets.TF_VAR_GITHUB_ACTIONS_OBJECT_ID }}
-          TF_VAR_github_actions_tenant_id: ${{ secrets.TF_VAR_GITHUB_ACTIONS_TENANT_ID }}
           TF_VAR_subscription_id: ${{ secrets.TF_VAR_SUBSCRIPTION_ID }}
           TF_VAR_tfstate_storage_account_name: "torntoolsstoretfstate"
           TF_VAR_custom_domains_enabled: ${{ secrets.TF_VAR_CUSTOM_DOMAINS_ENABLED || 'false' }}
           TF_VAR_torn_key_encryption_key_v1: ${{ secrets.TORN_KEY_ENCRYPTION_KEY_V1 }}
+          TF_VAR_shoplift_watcher_enabled: ${{ secrets.TF_VAR_SHOPLIFT_WATCHER_ENABLED || 'false' }}
+          TF_VAR_shoplift_watcher_public_api_key: ${{ secrets.TF_VAR_SHOPLIFT_WATCHER_PUBLIC_API_KEY }}
+          TF_VAR_shoplift_watcher_discord_webhook_url: ${{ secrets.TF_VAR_SHOPLIFT_WATCHER_DISCORD_WEBHOOK_URL }}
+          TF_VAR_shoplift_watcher_mention_role_id: ${{ secrets.TF_VAR_SHOPLIFT_WATCHER_MENTION_ROLE_ID }}
         run: terraform apply -auto-approve tfplan
         working-directory: infra
 
