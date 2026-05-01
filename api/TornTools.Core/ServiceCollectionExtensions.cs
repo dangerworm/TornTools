@@ -17,7 +17,23 @@ public static class ServiceCollectionExtensions
         .AddWeav3rApiCallerConfiguration(configuration)
         .AddTornMarketsProcessorConfiguration(configuration)
         .AddWeav3rBazaarsProcessorConfiguration(configuration)
-        .AddBargainAlertsConfiguration(configuration);
+        .AddBargainAlertsConfiguration(configuration)
+        .AddShopliftWatcherConfiguration(configuration);
+  }
+
+  private static IServiceCollection AddShopliftWatcherConfiguration(this IServiceCollection services, IConfiguration configuration)
+  {
+    // Section name is shorter than the class name so env-var keys
+    // (ShopliftWatcher__PublicApiKey, ShopliftWatcher__DiscordWebhookUrl)
+    // stay ergonomic in Terraform / key-vault wiring.
+    services.Configure<ShopliftWatcherConfiguration>(
+        configuration.GetSection("ShopliftWatcher"));
+
+    services.AddSingleton(sp =>
+        sp.GetRequiredService<IOptions<ShopliftWatcherConfiguration>>().Value
+    );
+
+    return services;
   }
 
   private static IServiceCollection AddBargainAlertsConfiguration(this IServiceCollection services, IConfiguration configuration)

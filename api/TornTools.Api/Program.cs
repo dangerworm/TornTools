@@ -9,6 +9,7 @@ using TornTools.Core.Enums;
 using TornTools.Cron;
 using TornTools.Cron.Interfaces;
 using TornTools.Cron.Processors;
+using TornTools.Cron.Watchers;
 using TornTools.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,6 +35,14 @@ if (environmentConfiguration.RunQueueProcessor)
 {
   builder.Services.AddHostedService<TornMarketsProcessor>();
   builder.Services.AddHostedService<Weav3rBazaarsProcessor>();
+}
+
+var shopliftWatcherConfiguration = builder.Configuration
+  .GetSection("ShopliftWatcher").Get<ShopliftWatcherConfiguration>();
+
+if (shopliftWatcherConfiguration?.Enabled == true)
+{
+  builder.Services.AddHostedService<JewelryShopliftingWatcher>();
 }
 
 var app = builder.Build();
