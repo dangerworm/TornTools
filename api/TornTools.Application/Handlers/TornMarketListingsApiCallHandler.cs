@@ -29,7 +29,7 @@ public class TornMarketListingsApiCallHandler(
     {
       var errorCode = payload.Error?.Code ?? 0;
       var errorMessage = payload.Error?.ErrorMessage ?? "Unknown error";
-      Logger.LogError("API call resulted in error: {ErrorMessage}", errorMessage);
+      Logger.LogError("API call resulted in error code {ErrorCode}: {ErrorMessage}", errorCode, errorMessage);
 
       // Codes 2 (Incorrect key) and 13 (Owner inactivity) mean this key will never work again.
       if (errorCode is 2 or 13)
