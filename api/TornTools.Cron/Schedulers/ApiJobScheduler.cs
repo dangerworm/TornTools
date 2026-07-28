@@ -59,6 +59,13 @@ public class ApiJobScheduler(
     );
 
     RecurringJob.AddOrUpdate(
+        nameof(PruneOldChangeLogs),
+        () => PruneOldChangeLogs(),
+        "30 3 * * *" // 03:30 UTC daily - a quiet window, and after the
+                     // 6-hourly summariser has captured the day into buckets.
+    );
+
+    RecurringJob.AddOrUpdate(
         nameof(RebuildUnusualCandidates),
         () => RebuildUnusualCandidates(),
         "45 */6 * * *" // 45 minutes past every 6 hours — after the
@@ -102,6 +109,13 @@ public class ApiJobScheduler(
   {
     _logger.LogInformation("Running Hangfire job {JobName}", nameof(SummariseChangeLogs));
     await _databaseService.SummariseChangeLogsAsync(stoppingToken: CancellationToken.None);
+  }
+
+  [DisplayName("Prune old change logs")]
+  public async Task PruneOldChangeLogs()
+  {
+    _logger.LogInformation("Running Hangfire job {JobName}", nameof(PruneOldChangeLogs));
+    await _databaseService.PruneOldChangeLogsAsync(stoppingToken: CancellationToken.None);
   }
 
   [DisplayName("Rebuild volatility stats")]

@@ -433,7 +433,21 @@ approach would reduce I/O and preserve history better.
 
 Will become increasingly slow as `item_change_logs` grows. The Hangfire volatility job (see Data and
 Analysis backlog above) is the right fix - pre-compute snapshots rather than querying raw history on
-demand.
+demand. (Note: `market_velocity` and `updated_markets` have no C# callers - orphaned DB objects.)
+
+### One-time `VACUUM FULL` on `item_change_logs` after first prune ⏳ REMINDER
+
+The `PruneOldChangeLogs` Hangfire job (30-day retention, daily `30 3 * * *`) now deletes old raw
+change-log rows, but `DELETE` doesn't return disk space - the table stays bloated (~7.1G) until a
+rewrite. **After the first prune run has drained the table**, run once in a quiet window:
+
+```sql
+VACUUM (FULL, VERBOSE, ANALYZE) public.item_change_logs;
+```
+
+Takes an ACCESS EXCLUSIVE lock (blocks reads+writes) for the rewrite; needs free disk ≈ post-prune
+table size. One-time only - autovacuum handles steady state, so do NOT make it recurring. Surfaced
+during the 2026-07-28 startup-crash-loop incident; pick this up next time we work on TornTools.
 
 ---
 

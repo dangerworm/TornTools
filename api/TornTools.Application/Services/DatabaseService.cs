@@ -139,6 +139,40 @@ public class DatabaseService(
     }
   }
 
+  // Raw item_change_logs are only read for history windows up to Week1 (7d);
+  // everything from Month1 up is served from item_change_log_summaries, as are
+  // the volatility and unusual-candidates rebuilds. Keep 30 days of raw rows —
+  // 4x the read need — and let the summaries carry the long-range history.
+  private static readonly TimeSpan ChangeLogRetention = TimeSpan.FromDays(30);
+
+  // One-day delete chunks: on the first (multi-month) cleardown this bounds
+  // each transaction; in steady state only the single day that just aged past
+  // the retention horizon is deleted.
+  private static readonly TimeSpan PruneChunk = TimeSpan.FromDays(1);
+
+  public async Task PruneOldChangeLogsAsync(CancellationToken stoppingToken)
+  {
+    var retentionCutoff = DateTimeOffset.UtcNow.Subtract(ChangeLogRetention);
+
+    // Never delete raw rows that haven't been rolled into the summaries yet.
+    // summarisedUpTo is the start of the most recent summarised bucket: every
+    // change_time before it lives in an earlier, complete bucket, so it is
+    // safe to delete. In steady state retentionCutoff (~30d ago) always binds;
+    // summarisedUpTo only takes over if the summariser falls badly behind. No
+    // summaries at all means we can't prove anything was captured, so we skip.
+    var summarisedUpTo = await _itemChangeLogSummaryRepository.GetLatestBucketStartAsync(stoppingToken);
+    if (summarisedUpTo is null)
+    {
+      _logger.LogWarning("Skipping change-log prune: no summaries exist yet, so nothing is safe to delete.");
+      return;
+    }
+
+    var cutoff = summarisedUpTo.Value < retentionCutoff ? summarisedUpTo.Value : retentionCutoff;
+
+    var deleted = await _itemChangeLogRepository.PruneOlderThanAsync(cutoff, PruneChunk, stoppingToken);
+    _logger.LogInformation("Change-log prune complete: {Deleted} rows older than {Cutoff:O} removed.", deleted, cutoff);
+  }
+
   public Task<IEnumerable<ItemDto>> GetAllItemsAsync(CancellationToken stoppingToken)
   {
     return _itemRepository.GetAllItemsAsync(stoppingToken);

@@ -46,6 +46,42 @@ public class ItemChangeLogRepository(
         .MinAsync(cl => (DateTimeOffset?)cl.ChangeTime, stoppingToken);
   }
 
+  // Deletes rows with change_time < olderThan, working oldest-first in
+  // time-window chunks. Each chunk is a single set-based ExecuteDeleteAsync
+  // in its own transaction, so progress is committed incrementally and a
+  // cancelled/interrupted run simply resumes from a higher earliest bound
+  // next time. Bounded transactions keep WAL and lock footprint small even
+  // on the first (multi-month) cleardown. Uses ix_item_change_logs_change_time.
+  public async Task<int> PruneOlderThanAsync(DateTimeOffset olderThan, TimeSpan chunk, CancellationToken stoppingToken)
+  {
+    var earliest = await GetEarliestChangeTimeAsync(stoppingToken);
+    if (earliest is null) return 0;
+
+    var totalDeleted = 0;
+    var chunkStart = earliest.Value;
+    while (chunkStart < olderThan && !stoppingToken.IsCancellationRequested)
+    {
+      var chunkEnd = chunkStart + chunk;
+      if (chunkEnd > olderThan) chunkEnd = olderThan;
+
+      var deleted = await DbContext.ItemChangeLogs
+          .Where(cl => cl.ChangeTime >= chunkStart && cl.ChangeTime < chunkEnd)
+          .ExecuteDeleteAsync(stoppingToken);
+
+      totalDeleted += deleted;
+      if (deleted > 0)
+      {
+        Logger.LogInformation(
+            "Pruned {Deleted} item_change_logs in window [{Start:O} .. {End:O}). Running total {Total}.",
+            deleted, chunkStart, chunkEnd, totalDeleted);
+      }
+
+      chunkStart = chunkEnd;
+    }
+
+    return totalDeleted;
+  }
+
   public async Task<IEnumerable<ItemHistoryPointDto>> GetItemPriceHistoryAsync(int itemId, HistoryWindow window, Source source, CancellationToken stoppingToken)
   {
     var buckets = await GetAggregatedHistoryAsync(itemId, window, source, stoppingToken);
