@@ -361,7 +361,6 @@ public class DatabaseService(
   {
     var minChanges = 2 * 7 * 24 / TimeConstants.StaleListingThresholdHours;
     var itemIds = (await _itemRepository.GetActiveMarketItemsForQueueAsync(minChanges, stoppingToken)).ToList();
-
     if (itemIds.Count == 0)
     {
       _logger.LogInformation("No active market items found for WBL; falling back to stale scan.");
@@ -371,7 +370,10 @@ public class DatabaseService(
           .Select(item => BuildWeav3rQueueItem(item.ItemId))
           .ToList();
       if (wblItems.Count > 0)
+      {
         await _queueItemRepository.CreateQueueItemsAsync(wblItems, stoppingToken);
+      }
+        
       return;
     }
 

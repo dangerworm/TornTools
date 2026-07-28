@@ -16,9 +16,8 @@ public class BazaarItemPayload
   [JsonPropertyName("bazaar_average")]
   public required long BazaarAverage { get; set; }
 
-  [JsonPropertyName("total_listings")]
-  public required int TotalListings { get; set; }
-
   [JsonPropertyName("listings")]
   public IEnumerable<Listing> Listings { get; set; } = [];
+
+  public int TotalListings => Listings.Count();
 }

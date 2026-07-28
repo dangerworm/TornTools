@@ -104,8 +104,16 @@ public abstract class QueueProcessorBase(
             {
               try
               {
-                if (!await databaseService.HasInProgressItems(CallType, stoppingToken))
+                var itemsTableCount = await databaseService.GetNumberOfItemsAsync(stoppingToken);
+                if (itemsTableCount == 0)
                 {
+                  _logger.LogInformation("Items table is empty. Must wait for initial population.");
+                }
+
+                var hasInProgressItems = await databaseService.HasInProgressItems(CallType, stoppingToken);
+                if (itemsTableCount > 0 && !hasInProgressItems)
+                {
+                  // The items table has entries and no in-progress items, safe to repopulate.
                   await databaseService.RemoveQueueItemsAsync(CallType, stoppingToken);
                   await RepopulateAsync(databaseService, stoppingToken);
                 }
