@@ -46,17 +46,6 @@ public class ItemChangeLogRepository(
         .MinAsync(cl => (DateTimeOffset?)cl.ChangeTime, stoppingToken);
   }
 
-  public async Task<IEnumerable<ItemChangeLogDto>> GetRecentItemChangeLogsAsync(int timeWindowHours, CancellationToken stoppingToken)
-  {
-    var cutoffDate = DateTime.UtcNow.AddHours(-timeWindowHours);
-    var changeLogs = await DbContext.ItemChangeLogs
-        .AsNoTracking()
-        .Where(cl => cl.ChangeTime >= cutoffDate)
-        .ToListAsync(stoppingToken);
-
-    return changeLogs.Select(cl => cl.AsDto());
-  }
-
   public async Task<IEnumerable<ItemHistoryPointDto>> GetItemPriceHistoryAsync(int itemId, HistoryWindow window, Source source, CancellationToken stoppingToken)
   {
     var buckets = await GetAggregatedHistoryAsync(itemId, window, source, stoppingToken);
