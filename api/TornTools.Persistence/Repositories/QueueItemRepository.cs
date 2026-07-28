@@ -51,7 +51,10 @@ public class QueueItemRepository(
 
     for (int i = 0; i < items.Count; i += DatabaseConstants.BulkUpdateSize)
     {
-      var batch = items.Skip(i).Take(DatabaseConstants.BulkUpdateSize).ToList();
+      var batch = items
+        .OrderBy(i => i.QueueIndex)
+        .Skip(i)
+        .Take(DatabaseConstants.BulkUpdateSize).ToList();
 
       foreach (var itemDto in batch)
       {
@@ -224,6 +227,7 @@ public class QueueItemRepository(
     {
       var items = await DbContext.QueueItems
           .Where(q => q.ItemStatus == nameof(QueueStatus.InProgress))
+          .OrderBy(q => q.QueueIndex)
           .Take(DatabaseConstants.BulkUpdateSize)
           .ToListAsync(stoppingToken);
 
