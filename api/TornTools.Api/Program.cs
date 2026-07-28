@@ -32,6 +32,7 @@ var environmentConfiguration = builder.Configuration
 
 if (environmentConfiguration.RunQueueProcessor)
 {
+  builder.Services.AddHostedService<TornItemsProcessor>();
   builder.Services.AddHostedService<TornMarketsProcessor>();
   builder.Services.AddHostedService<Weav3rBazaarsProcessor>();
 }

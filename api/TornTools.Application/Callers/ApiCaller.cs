@@ -63,17 +63,23 @@ public abstract class ApiCaller<TCaller>(
     catch (Exception ex)
     {
       var apiKeyHint = lease is null
-          ? "no-key call"
-          : lease.ApiKey.Length > 4
-              ? $"user {lease.UserId} key {lease.ApiKey[..4]}****"
-              : $"user {lease.UserId}";
+        ? "no-key call"
+        : lease.ApiKey.Length > 4
+            ? $"user {lease.UserId} key {lease.ApiKey[..4]}****"
+            : $"user {lease.UserId}";
 
-      if (ex is TornKeyUnavailableException exception && lease is not null)
+      if (ex is JsonException jsonException)
+      {
+        Logger.LogWarning("{Message}", jsonException.Message);
+        return false;
+      }
+
+      if (ex is TornKeyUnavailableException tornKeyException && lease is not null)
       {
         Logger.LogWarning(
             "API key for {ApiKeyHint} is unavailable (code {ErrorCode}). Marking as unavailable.",
             apiKeyHint,
-            exception.ErrorCode
+            tornKeyException.ErrorCode
         );
         await DatabaseService.MarkKeyUnavailableAsync(lease.UserId, stoppingToken);
         return false;

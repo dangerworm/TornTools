@@ -24,10 +24,4 @@ public class Listing
 
   [JsonPropertyName("last_checked")]
   public required long LastChecked { get; set; }
-
-  [JsonPropertyName("content_updated_relative")]
-  public required string ContentUpdatedRelative { get; set; }
-
-  [JsonPropertyName("last_checked_relative")]
-  public required string LastCheckedRelative { get; set; }
 }
