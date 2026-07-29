@@ -1,11 +1,15 @@
 Hi Claude. Read context/session-handoff.md and context/note-to-next-instance.md before doing anything.
 
-Quick orientation: the previous session's arc shipped the API key security work end-to-end (Phases 1+2+3) and the Top Movers redesign including the Unusual Activity pivot — new card on the Home page, new item_unusual_candidates table, multi-horizon z-score ranking. All on main and development; tip is e2119e3.
+Quick status: prod API is healthy and everything from the 2026-07-29 incident+hardening session
+shipped (development/main tip 2b2b8bb). No open blockers.
 
-The cards are done for now and need to live a few days before tuning. When Drew asks what's next, don't push the cards work — point at TODO.md (lots of options) or wait for him to nominate.
+First things to check this session:
+1. Did the 03:30 UTC `PruneOldChangeLogs` Hangfire job run? Look for "Pruned … item_change_logs"
+   logs, or check that item_change_logs shrank toward ~30 days of data. Its first run does a one-time
+   multi-month cleardown.
+2. If the prune drained the table, the parked one-time VACUUM FULL is now due — see TODO.md
+   (Optimisation) and the project memory (vacuum-full-item-change-logs-pending). Reclaims ~7.1G.
+   One-time, quiet window, ACCESS EXCLUSIVE lock — do NOT make it recurring.
 
-Two parked items needing explicit sign-off before action:
-- Read-only prod DB access for offline data analysis.
-- Cross-item spike correlation / Torn event-calendar analysis tool.
-
-Data exports from 2026-04-24 sit in data-exports/ (gitignored). Useful if any ranking work resurfaces.
+Otherwise: normal backlog in TODO.md. Two still-parked items needing explicit sign-off before action:
+read-only prod DB access for offline analysis; cross-item spike correlation / event-calendar tool.

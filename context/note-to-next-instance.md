@@ -1,56 +1,54 @@
 # Note to next instance
 
-This was a long session that did real work in three modes — security hardening, statistical
-modelling, and the discipline of choosing not to overbuild.
+This session was a production incident and its cleanup. Different mode from the last arc — less
+building, more diagnosis under pressure, then hardening. A few things worth carrying forward.
 
-The thing I'd most want you to carry forward isn't a fact about the code, it's the **honesty shift
-on the Top Movers card**. Drew started by saying the data wasn't reliable enough to support our
-claims; I started by proposing better statistics. We ended somewhere different and better: reframing
-the card from "who moved the most" to "what's currently unusual", because that's what 29 polling
-keys and 6h cadence can actually tell users honestly. The statistical work mattered, but the framing
-change was the thing that made it useful. Watch for that pattern. When the data can't support the
-claim, sometimes the answer isn't "better data" — it's a quieter claim.
+**Don't blame the code you just shipped. Read the platform.** The API was returning 503 on every
+endpoint right after a deploy that included our new `TornItemsProcessor`. The tempting story was "our
+change broke it." It hadn't. The discipline that found the truth was ruling out layers in order:
+frontend was up (served a 404 fast), the deploy pipeline was green, so the failure was the running
+app — and the App Service docker log said it plainly: *"no listening ports detected… container did
+not respond to startup probe within 230s."* The clincher was the app's own stdout: it logged
+`"Initialising queue."` **seven times** (seven crash-loop restarts) and never the next line. That
+located the hang precisely — in the synchronous startup block that runs *before* `app.RunAsync()`
+binds Kestrel. The cause predated the session (a 190k-row `queue_items` backlog choking an
+O(n/batch) clear). Lesson: when prod is down, the logs are the fast path, not the diff.
 
-Practical things worth remembering:
+**Know where the schema actually lives.** Codex left a confident PR comment that the prune needed a
+`change_time` index that didn't exist — it had searched the C# and the EF model. But this repo's
+schema is **Flyway-managed** (`.docker/flyway/sql/`), and the index has been there since V1.12. Codex
+was right in principle, wrong on the fact, because it looked in the wrong place. Two takeaways: verify
+against the real source of truth, and Codex's *principle* can be worth acting on even when its
+*premise* is wrong (its comment prompted the command-timeout hardening, which was genuinely useful).
 
-**Codex catches things.** Three P1s in this session — sign-in flow exception swallowing, the
-sign-gated z-score, the V1.22-without-V1.23-cutover-staleness, and the V1.20 self-gating guard. All
-legitimate. None things I'd have caught with my own diff hygiene at the speed I was moving. Treat
-the PR review as a real backstop, not a formality. If something it flags turns out to be wrong, push
-back; if it's right, fix it before merge rather than after.
+**Terraform: commit your lock file.** An unrelated deploy failed because `infra/.terraform.lock.hcl`
+was gitignored, so CI re-resolved `azurerm` every run and a new release made a key-vault argument
+required. This is a whole class of "it worked yesterday, nothing changed" breakage. It's committed
+and pinned now — keep it that way, and bump deliberately.
 
-**Stacked commits are an anti-pattern when hotfixes are needed.** The `652b6ec` summariser fix was
-committed on top of `2c23b8b` (unusual activity), and Drew couldn't cherry-pick it onto a clean base
-without dragging in unrelated lines. He solved it with branch surgery; I helped resolve the
-conflict. Lesson: hotfixes should land on a branch off `development` (or `main`) at a known-clean
-commit, not stacked on top of in-flight feature work. If Drew hadn't been comfortable with git-fu
-we'd have been in trouble.
+**The workflow auto-applies Terraform.** `terraform apply -auto-approve` with no manual gate. When we
+bumped azurerm 4.62→4.81 (19 minors), I flagged the risk and couldn't run `plan` locally (needs the
+GH secrets). The reassurance came from *Flyway migrations passing* — proof the DB survived the apply.
+Watch for this if any infra change could touch a stateful resource; there's no human gate to catch a
+bad plan before it lands.
 
-**Validate against real data before shipping ranking changes.** Drew dropped CSV exports into
-`data-exports/` for me. Running the proposed thresholds against those in pandas surfaced a real
-issue (low-dispersion items with tiny moves dominating risers — needed an absolute move floor, not
-just a z-score floor). The exact same risk would have existed in production. Cheap pre-validation.
-Use the data when you have it.
+**Know when to stop digging.** `gh run view --job --log` kept returning one line for the infra job. I
+tried a few variants, then stopped and got the answer another way (job/step statuses + Flyway
+success) rather than rat-holing on the CLI. The right call.
 
-**Postgres `percentile_cont` returns double precision.** Burned us once with V1.21 (deploy failed in
-prod with `ROUND(double precision, integer) does not exist`); cast to numeric up-front and the
-lesson holds across every aggregating CTE. The unusual-activity rebuild in V1.24 honours this from
-the start.
+**Drew works live and is comfortable in prod.** He `az login`ed, truncated `queue_items` on the DB
+server, flipped app settings, and merged — all in real time, at ~1am. Match that: give him the exact
+SQL/commands, flag the destructive edges (VACUUM FULL locks; truncate reclaims bloat), and let him
+drive the prod-touching actions. He made every real decision (30-day retention, VACUUM FULL over
+pg_repack, leave the Failed rows for debugging). Argue when you have a reason; he's egoless about it.
 
-**Drew has good instincts on framing and scope.** When he said "let's just get rid of the Most
-active card, it's useless" — that was right and saved a 2x2 layout I was about to propose. When he
-asked about cascading time-series tables (1h / 6h / 12h cascade), he was right to ask but the answer
-was no, because we're three orders of magnitude smaller than the use cases that warrant it. He
-pushed back on the "stored procedures vs SQL in C#" question — kept it in C# was the right call for
-our scale. He's not always going to take the recommendation, but the conversations have been
-productive. Argue back when you have a real reason; don't yes-man.
+**The good instinct this session:** the retention feature wasn't the task — it fell out of the
+incident ("we're in here anyway, let's make the DB better"). That was Drew, and it was right. The
+7.1G `item_change_logs` table is the real long-term cost; the prune addresses it and the audit proved
+30 days is safe (only ≤7d windows read raw; everything else reads summaries).
 
-**The handoff file gets long fast.** This session's archive is 30KB, mostly because it inherited
-content from prior sessions and accumulated. The fresh `session-handoff.md` I'm writing is
-deliberately tight — current state + next action + knobs. If you find yourself needing depth on
-something pre-this-session, look at `context/sessions/2026-04-25-0014-unusual-activity-pivot.md`.
+**Open loop for you:** the prune's first run (03:30 UTC) does the big cleardown, then the one-time
+`VACUUM FULL` is due to reclaim the disk. It's in TODO.md and in project memory. Check the prune
+actually ran before recommending the VACUUM. See `session-handoff.md` for the full state.
 
-The cards are done for now. Drew's energy was good through the whole arc — he was doing the deploys
-in real-time, eyeballing the live widget, screenshotting issues, providing data exports, catching
-the Codex comments quickly. Next session should pick something from `TODO.md` rather than continuing
-to churn on the cards. They need to live a few days before we know what to tune.
+He went to bed after this — good. It was a clean recovery and he stayed steady through it.
