@@ -31,12 +31,13 @@ resource "azurerm_key_vault_access_policy" "local_user" {
 }
 
 resource "azurerm_key_vault" "torntools_keyvault" {
-  name                     = "${var.app_name}-${var.environment}-key-vault"
-  location                 = var.location
-  resource_group_name      = local.resource_group_name
-  tenant_id                = data.azurerm_client_config.current.tenant_id
-  sku_name                 = "standard"
-  purge_protection_enabled = true
+  name                       = "${var.app_name}-${var.environment}-key-vault"
+  location                   = var.location
+  resource_group_name        = local.resource_group_name
+  tenant_id                  = data.azurerm_client_config.current.tenant_id
+  sku_name                   = "standard"
+  purge_protection_enabled   = true
+  rbac_authorization_enabled = false # Access-policy mode (see azurerm_key_vault_access_policy resources above); required explicitly by azurerm 4.63+.
 
   tags = {
     environment = var.environment
