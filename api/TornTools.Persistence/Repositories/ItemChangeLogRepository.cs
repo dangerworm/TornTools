@@ -46,15 +46,55 @@ public class ItemChangeLogRepository(
         .MinAsync(cl => (DateTimeOffset?)cl.ChangeTime, stoppingToken);
   }
 
-  public async Task<IEnumerable<ItemChangeLogDto>> GetRecentItemChangeLogsAsync(int timeWindowHours, CancellationToken stoppingToken)
+  // Deletes rows with change_time < olderThan, working oldest-first in
+  // time-window chunks. Each chunk is a single set-based ExecuteDeleteAsync
+  // in its own transaction, so progress is committed incrementally and a
+  // cancelled/interrupted run simply resumes from a higher earliest bound
+  // next time. Bounded transactions keep WAL and lock footprint small even
+  // on the first (multi-month) cleardown. Uses ix_item_change_logs_change_time.
+  public async Task<int> PruneOlderThanAsync(DateTimeOffset olderThan, TimeSpan chunk, CancellationToken stoppingToken)
   {
-    var cutoffDate = DateTime.UtcNow.AddHours(-timeWindowHours);
-    var changeLogs = await DbContext.ItemChangeLogs
-        .AsNoTracking()
-        .Where(cl => cl.ChangeTime >= cutoffDate)
-        .ToListAsync(stoppingToken);
+    var earliest = await GetEarliestChangeTimeAsync(stoppingToken);
+    if (earliest is null) return 0;
 
-    return changeLogs.Select(cl => cl.AsDto());
+    // The default 30s command timeout is fine for a steady-state daily run
+    // (one chunk), but the first cleardown deletes months of data one day at
+    // a time and a single high-traffic day can hold enough rows that the
+    // delete + index maintenance exceeds 30s. Give each chunk headroom so a
+    // busy day doesn't wedge the loop (same precedent as the summariser's
+    // BuildSummariesAsync). Restored in the finally.
+    var previousTimeout = DbContext.Database.GetCommandTimeout();
+    DbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(5));
+    try
+    {
+      var totalDeleted = 0;
+      var chunkStart = earliest.Value;
+      while (chunkStart < olderThan && !stoppingToken.IsCancellationRequested)
+      {
+        var chunkEnd = chunkStart + chunk;
+        if (chunkEnd > olderThan) chunkEnd = olderThan;
+
+        var deleted = await DbContext.ItemChangeLogs
+            .Where(cl => cl.ChangeTime >= chunkStart && cl.ChangeTime < chunkEnd)
+            .ExecuteDeleteAsync(stoppingToken);
+
+        totalDeleted += deleted;
+        if (deleted > 0)
+        {
+          Logger.LogInformation(
+              "Pruned {Deleted} item_change_logs in window [{Start:O} .. {End:O}). Running total {Total}.",
+              deleted, chunkStart, chunkEnd, totalDeleted);
+        }
+
+        chunkStart = chunkEnd;
+      }
+
+      return totalDeleted;
+    }
+    finally
+    {
+      DbContext.Database.SetCommandTimeout(previousTimeout);
+    }
   }
 
   public async Task<IEnumerable<ItemHistoryPointDto>> GetItemPriceHistoryAsync(int itemId, HistoryWindow window, Source source, CancellationToken stoppingToken)

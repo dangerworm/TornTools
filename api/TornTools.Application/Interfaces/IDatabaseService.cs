@@ -12,6 +12,7 @@ public interface IDatabaseService
 
   Task CreateItemChangeLogAsync(ItemChangeLogDto changeLogDto, CancellationToken stoppingToken);
   Task SummariseChangeLogsAsync(CancellationToken stoppingToken);
+  Task PruneOldChangeLogsAsync(CancellationToken stoppingToken);
   Task RebuildVolatilityStatsAsync(CancellationToken stoppingToken);
   Task<IEnumerable<ItemVolatilityStatsDto>> GetTopVolatileItemsAsync(
       Source source,

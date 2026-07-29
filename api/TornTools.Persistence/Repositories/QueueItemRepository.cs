@@ -51,7 +51,10 @@ public class QueueItemRepository(
 
     for (int i = 0; i < items.Count; i += DatabaseConstants.BulkUpdateSize)
     {
-      var batch = items.Skip(i).Take(DatabaseConstants.BulkUpdateSize).ToList();
+      var batch = items
+        .OrderBy(i => i.QueueIndex)
+        .Skip(i)
+        .Take(DatabaseConstants.BulkUpdateSize).ToList();
 
       foreach (var itemDto in batch)
       {
@@ -182,56 +185,32 @@ public class QueueItemRepository(
     return queueItem.AsDto();
   }
 
-  public async Task RemoveQueueItemsAsync(CancellationToken stoppingToken)
+  // Set-based bulk deletes. A single DELETE regardless of backlog size —
+  // the previous batch-and-loop approach issued O(rows / BulkUpdateSize)
+  // round trips, which at startup (Program.cs clears the queue before
+  // Kestrel binds) could exceed the 230s container startup probe and put
+  // the app into a crash loop when the queue had grown large.
+  public Task RemoveQueueItemsAsync(CancellationToken stoppingToken)
   {
-    while (true)
-    {
-      var items = await DbContext.QueueItems
-          .Where(q => q.ItemStatus == nameof(QueueStatus.Pending))
-          .OrderBy(q => q.QueueIndex)
-          .Take(DatabaseConstants.BulkUpdateSize)
-          .ToListAsync(stoppingToken);
-
-      if (items.Count == 0) break;
-
-      DbContext.QueueItems.RemoveRange(items);
-      await DbContext.SaveChangesAsync(stoppingToken);
-    }
+    return DbContext.QueueItems
+        .Where(q => q.ItemStatus == nameof(QueueStatus.Pending))
+        .ExecuteDeleteAsync(stoppingToken);
   }
 
-  public async Task RemoveQueueItemsAsync(ApiCallType callType, CancellationToken stoppingToken)
+  public Task RemoveQueueItemsAsync(ApiCallType callType, CancellationToken stoppingToken)
   {
     var callTypeStr = callType.ToString();
-    while (true)
-    {
-      var items = await DbContext.QueueItems
-          .Where(q => q.ItemStatus == nameof(QueueStatus.Pending)
-                   && q.CallType == callTypeStr)
-          .OrderBy(q => q.QueueIndex)
-          .Take(DatabaseConstants.BulkUpdateSize)
-          .ToListAsync(stoppingToken);
-
-      if (items.Count == 0) break;
-
-      DbContext.QueueItems.RemoveRange(items);
-      await DbContext.SaveChangesAsync(stoppingToken);
-    }
+    return DbContext.QueueItems
+        .Where(q => q.ItemStatus == nameof(QueueStatus.Pending)
+                 && q.CallType == callTypeStr)
+        .ExecuteDeleteAsync(stoppingToken);
   }
 
-  public async Task RemoveInProgressItemsAsync(CancellationToken stoppingToken)
+  public Task RemoveInProgressItemsAsync(CancellationToken stoppingToken)
   {
-    while (true)
-    {
-      var items = await DbContext.QueueItems
-          .Where(q => q.ItemStatus == nameof(QueueStatus.InProgress))
-          .Take(DatabaseConstants.BulkUpdateSize)
-          .ToListAsync(stoppingToken);
-
-      if (items.Count == 0) break;
-
-      DbContext.QueueItems.RemoveRange(items);
-      await DbContext.SaveChangesAsync(stoppingToken);
-    }
+    return DbContext.QueueItems
+        .Where(q => q.ItemStatus == nameof(QueueStatus.InProgress))
+        .ExecuteDeleteAsync(stoppingToken);
   }
 
   public async Task<int> ReapStaleInProgressItemsAsync(TimeSpan staleAfter, CancellationToken stoppingToken)
